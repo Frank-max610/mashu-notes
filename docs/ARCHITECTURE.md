@@ -2,7 +2,7 @@
 
 麻薯（Mashu）是一个**纯前端、本地优先**的单页应用：一个静态 `index.html` + 打包后的 JS/CSS，没有服务器、没有数据库服务、没有账号系统。这份文档说明代码如何组织、数据如何在浏览器里流动、本地助手与可编辑图谱如何工作，以及哪些地方适合扩展。
 
-当前版本 **0.3.0**：在 0.2.x 的 Markdown 笔记基础上加入了**生活记录**（饮食 / 健康 / 收支 / 日记）、**可编辑生活图谱**和**完全离线的本地助手**，并完成了「纸与墨」视觉重设计。产品名统一为「麻薯」；源码标识与存储键沿用早期内部代号 `mochi`，仅为兼容旧数据。
+当前版本 **0.3.1**：在 0.2.x 的 Markdown 笔记基础上加入了**生活记录**（饮食 / 健康 / 收支 / 日记）、**可编辑生活图谱**和**完全离线的本地助手**，并完成了「纸与墨」视觉重设计。0.3.1 是 **iOS / PWA 交付补丁**：`apple-touch-startup-image` 启动图、主屏幕安装卡片与首次安装提示、16px 表单、Web Share 文件导出、离线/联网提示，并把 Service Worker 缓存升级到 `mochi-v3`。产品名统一为「麻薯」；源码标识与存储键沿用早期内部代号 `mochi`，仅为兼容旧数据。
 
 ## 1. 总览
 
@@ -11,6 +11,7 @@
 - **纯逻辑优先。** 解析、派生关系、搜索、图谱布局、生活统计、助手问答都在 `src/lib/`，不依赖 React 和 DOM，可在 Node 里直接测试；`store.ts`（React hook）、`db.ts` / `prefs.ts` / `exportImport.ts`（浏览器 API 适配）保持薄。
 - **助手完全离线。** 规则式启发算法，不联网、不调用模型；同一份记录、同一个输入与 `now` 必然得到同样的结果。
 - **零第三方服务。** 运行时不发网络请求，唯一的网络访问来自用户在笔记里主动写入的外链/图片。
+- **静态交付、零服务器。** 构建产物由 GitHub Actions 自动发布到 GitHub Pages（免费静态托管）；用户从 Safari 安装到主屏幕后离线使用。维护者不需要 VPS、数据库或任何服务器运维。
 - **视觉由设计变量驱动。** 「纸与墨」两套色板、记录类型色、圆角与动效集中在 `src/styles/tokens.css`；装饰性元素克制，动效尊重 `prefers-reduced-motion`。
 
 ```text
@@ -31,14 +32,14 @@ src/main.tsx ──挂载（StrictMode）──▶ src/App.tsx（应用外壳：
    │                                            │
    │                                            └─ 派生查询：links.ts / markdown.ts / search.ts / graph.ts / insights.ts / agent.ts
    │
-   └─（生产构建 + 安全上下文）注册 public/sw.js：应用壳离线缓存（内部缓存名 `mochi-v2`）
+   └─（生产构建 + 安全上下文）注册 public/sw.js：应用壳离线缓存（内部缓存名 `mochi-v3`）
 ```
 
 ## 2. 请求 / 数据流
 
 ### 启动
 
-1. 浏览器加载 `index.html`，执行 `src/main.tsx`，React 挂载根组件；`index.html` 默认 `data-theme="light"`，首屏即浅色纸面。
+1. 浏览器加载 `index.html`，执行 `src/main.tsx`，React 挂载根组件；`index.html` 默认 `data-theme="light"`，首屏即浅色纸面。`<head>` 里同时包含 `apple-mobile-web-app-*` meta 与七种 iPhone 尺寸的 `apple-touch-startup-image` 启动图链接（由 `npm run splash` 生成）。
 2. `useNotes()` 初始化（模块级共享 Promise，只执行一次，避免 StrictMode 下重复播种）：
    - `loadNotes()` 打开 IndexedDB `mochi` v2，读出 `notes` 仓库的全部记录；若 db 升级到 v2，会在 `onupgradeneeded` 中逐条用 `normalizeNote()` 补齐 `kind` / `meta` / `manualLinks` / `position` 字段。
    - 若 `mochi` 库为空，会尝试迁移 0.1.x 的旧库与旧 localStorage 记录（见「持久化」）。
@@ -72,6 +73,18 @@ src/main.tsx ──挂载（StrictMode）──▶ src/App.tsx（应用外壳：
 - `tokens.css`：`:root` 是浅色「纸」色板（暖白底、鼠尾草绿强调色、按记录类型分配的 `--kind-*` 颜色），`:root[data-theme='dark']` 是深色「墨」色板；圆角 10–28px、克制的阴影与缓动。
 - `index.html` 的 `theme-color` 与 App 主题切换保持同步，手机状态栏颜色跟随。
 - 动效仅用于状态反馈（面板进出、按钮按压、图谱节点高亮），不追逐装饰性；`prefers-reduced-motion` 下时长归零，图谱直接渲染静态布局。正文与控件的对比度按 WCAG AA 检查，触控目标保持 40px 以上。
+
+### iOS / PWA 交付与离线壳
+
+**交付模型：静态站点 + 主屏幕安装，没有服务器。**
+
+- `npm run build` 产出 `dist/`；`.github/workflows/deploy-pages.yml` 在推送 `main`（或手动 `workflow_dispatch`）后自动构建并发布到 GitHub Pages。GitHub 在这里只是免费的静态托管：维护者不需要 VPS、数据库、后台进程或密钥，也不做任何服务器运维。`base: './'` 让产物在 `/<repo>/` 子路径下正常加载，hash 路由不需要服务端 rewrite。
+- 用户路径：Safari 打开 HTTPS 地址 → 分享 → 添加到主屏幕；安装后以 `display: standalone` 启动，没有浏览器地址栏。`index.html` 提供 `apple-mobile-web-app-capable` / `status-bar-style` / `title` meta，`manifest.webmanifest` 声明 `display: 'standalone'`、`orientation: 'portrait'`、`theme_color` 与图标；启动图按设备尺寸通过 `apple-touch-startup-image` + `media` 查询命中。
+- **安装引导**：`src/components/IosInstallCard.tsx` 渲染「我的 → 装到 iPhone 上」卡片，包含 Safari 三步步骤与状态胶囊（在线、离线壳已就绪、无需服务器、数据不出设备），已安装时显示「已装到主屏幕」；`NotesScreen` 在 iPhone（非 standalone）首次打开时显示一行安装提示，关闭状态存入 `mochi.installHint.v1`，之后不再打扰。
+- **Service Worker 生命周期**：`public/sw.js` 在生产构建 + 安全上下文（HTTPS / localhost）注册；`install` 预缓存应用壳（`./`、`index.html`、manifest、图标），`activate` 清理旧版本缓存并 `clients.claim()`；导航请求 network-first（在线时取最新页面并写回缓存，失败回退缓存的 `index.html`），其他同源 GET cache-first。缓存名 `mochi-v3` 由手工递增。结果是：**联网时重新打开主屏幕图标即可获得新版本**，没有更新弹窗；离线时使用最近一次缓存的应用壳。
+- **离线边界**：只缓存静态资源，**不读取、缓存或上传 IndexedDB / localStorage 中的记录**；断网时记录、助手、图谱继续在本地工作。
+- **iOS 细节**：`tokens.css` 使用 `env(safe-area-inset-*)` 适配刘海/底部安全区；`base.css` 在窄屏把 `input` / `textarea` / `select` 设为 16px，避免 Safari 聚焦输入框时自动放大页面；`App` 监听 `online` / `offline` 事件显示 toast；导出通过 `exportImport.shareOrDownload()` 优先调用 Web Share 文件分享（iOS 分享面板可存「文件」/ iCloud 云盘），不支持时回退普通下载；`IosInstallCard` 用 `navigator.standalone` / `display-mode: standalone` 判断是否已安装。运行时的网络访问只有加载静态文件与你主动写入笔记的外链/图片。
+- **手动测试矩阵**：iPhone SE（小屏/安全区）与 iPhone 15 尺寸各一遍；Safari 标签页与「添加到主屏幕」后的 standalone 各一遍。至少覆盖：离线重载、安装卡片与首次提示、16px 输入框不被放大、导出到「文件」、断网/恢复 toast、重新联网打开后加载新版本。
 
 ### 编辑一条记录
 
@@ -117,7 +130,7 @@ src/main.tsx ──挂载（StrictMode）──▶ src/App.tsx（应用外壳：
 
 ### 导入 / 导出
 
-- 导出：`exportImport.ts` 生成 JSON `VaultFile`（`app: 'mochi'`、`version: 2`、`exportedAt`、`notes`）或 Markdown 合集 → `downloadText()` 下载；「我的」页文件名形如 `mashu-<时间戳>.json` / `.md`。
+- 导出：`exportImport.ts` 生成 JSON `VaultFile`（`app: 'mochi'`、`version: 2`、`exportedAt`、`notes`）或 Markdown 合集 → `shareOrDownload()`：支持 Web Share 文件分享时打开 iOS 系统分享面板（可存到「文件」或 iCloud 云盘），否则回退普通下载；「我的」页文件名形如 `mashu-<时间戳>.json` / `.md`。
 - 导入：`parseVaultJson()` 兼容「带 `notes` 数组的对象」与「裸笔记数组」，逐条经 `normalizeNote()` 归一化（补 id、时间戳、kind/meta/manualLinks/position，重复 id 分配新 id）→ 两种模式：
   - **合并**：`mergeVaultNotes()` 按标题（trim + 小写）合并，同名保留 `updatedAt` 较新的版本，其余追加；已有记录不会被丢弃。
   - **替换**：`replaceAll()` 整库覆盖（二次确认）。
@@ -126,11 +139,12 @@ src/main.tsx ──挂载（StrictMode）──▶ src/App.tsx（应用外壳：
 
 ### 局域网、工具脚本与部署
 
-- `npm run share` → `scripts/serve.mjs`：只读静态文件服务器，把 `dist/` 托管在 `0.0.0.0:4173`，打印本机地址、局域网 URL 与终端二维码；每台设备使用各自 origin 下的独立记录库。
+- `npm run share` → `scripts/serve.mjs`：**仅开发者真机调试用**的只读静态文件服务器，把 `dist/` 托管在 `0.0.0.0:4173`，打印本机地址、局域网 URL 与终端二维码；通过 HTTP 局域网访问无法注册 Service Worker，所以这是在线调试模式。它不是用户路径。
 - `npm run qr` → `scripts/qr.mjs`：用 `qrcode` 生成 `docs/screenshots/lan-qr.png` 与 `lan-url.txt`，二维码只含 URL。
 - `npm run screenshots` → `scripts/screenshots.mjs`：驱动本机 Chrome（DevTools 协议，无 Puppeteer）按路由截图到 `docs/screenshots/`；可用 `CHROME_PATH` 指定浏览器。
 - `npm run icons` → `scripts/make_icons.py`：Python + Pillow 生成 PWA 图标。
-- `.github/workflows/deploy-pages.yml`：推送到 `main` 或手动触发后构建 `dist/` 并发布到 GitHub Pages（计划地址 <https://frank-max610.github.io/mashu-notes/>）；`base: './'` 保证子路径可用，hash 路由不需要服务端 rewrite。
+- `npm run splash` → `scripts/make_splash.py`：Python + Pillow 生成 `public/splash/iphone-*.png` 七种 iPhone 启动图，供 `apple-touch-startup-image` 使用。
+- `.github/workflows/deploy-pages.yml`：推送到 `main` 或手动触发后构建 `dist/` 并发布到 GitHub Pages（地址 <https://frank-max610.github.io/mashu-notes/>）。这是唯一的正式部署路径：GitHub 提供免费静态托管，维护者零服务器运维；`base: './'` 保证子路径可用，hash 路由不需要服务端 rewrite。
 
 ## 3. 模块地图
 
@@ -148,9 +162,9 @@ src/main.tsx ──挂载（StrictMode）──▶ src/App.tsx（应用外壳：
 | `graph.ts` | 生活图谱：`buildGraph`（wiki / manual / day 三类边、幽灵节点）、`seedPositions`、`tick`、`layoutSync` | `types.ts`、`links.ts` |
 | `db.ts` | 持久化适配：`loadNotes` / `saveNotes` / `deleteNoteFromDb` / `replaceAllNotes` / `clearAllNotes` / `storageEstimate` / `requestPersistentStorage` / `getStorageMode`；schema v2 升级与旧库迁移 | 浏览器 IndexedDB / localStorage |
 | `store.ts` | React 状态源 `useNotes()`：内存缓存、乐观更新、防抖写入、`settleWrites`、图谱位置与手动连线操作、生命周期 flush、`sortNotes` | React、`db.ts`、`links.ts`、`prefs.ts`、`seed.ts` |
-| `prefs.ts` | 主题、引导标记、助手人设（`mochi.agent.v1`）读写；`normalizeNote` / `makeNote` / `makeId`；`AGENT_AVATARS` | `types.ts`、`kinds.ts`、`links.ts` |
+| `prefs.ts` | 主题、引导标记、助手人设（`mochi.agent.v1`）、首次安装提示（`mochi.installHint.v1`）读写；`normalizeNote` / `makeNote` / `makeId`；`AGENT_AVATARS` | `types.ts`、`kinds.ts`、`links.ts` |
 | `seed.ts` | 首次运行的演示记录（生活记录 + 笔记，含链接与示例数据） | `types.ts`、`prefs.ts` |
-| `exportImport.ts` | `VaultFile`（vault v2）JSON 导出/解析、`normalizeNote` 归一化、`mergeVaultNotes`、Markdown 合集、下载与文件选择 | `types.ts`、`prefs.ts` |
+| `exportImport.ts` | `VaultFile`（vault v2）JSON 导出/解析、`normalizeNote` 归一化、`mergeVaultNotes`、Markdown 合集、`shareOrDownload`（Web Share 文件分享 + 普通下载回退）与文件选择 | `types.ts`、`prefs.ts` |
 | `format.ts` | 相对时间、日期、字节数等展示格式化 | 无 |
 | `useRoute.ts` | 轻量 hash 路由：`parseRoute` / `routeToHash` / `navigate` / `replaceRoute` / `useRoute` | React |
 
@@ -164,9 +178,10 @@ src/main.tsx ──挂载（StrictMode）──▶ src/App.tsx（应用外壳：
   - `CaptureSheet`（一句话快速记录 + 快捷字段 + 解析预览）；
   - `AgentPanel`（本地助手聊天与草稿确认）、`AgentAvatar`（预设/自定义 emoji 头像，`mochi` 预设使用吉祥物 SVG）；
   - `NodeEditorSheet`（新增/编辑节点：标题、类型、结构化字段、手动连线、删除）；
+  - `IosInstallCard`（「我的 → 装到 iPhone 上」：Safari 安装步骤、是否已安装、在线/离线壳/无需服务器/数据不出设备状态胶囊、复制链接）；
   - `Mascot`（内联 SVG 吉祥物，仅作为可选头像与少量空状态使用）。
-- `screens/` 是页面级组合：`NotesScreen`（首页：今天概览、快捷记录、类型筛选、按天分组）、`EditorScreen`（Markdown 编辑/预览、类型徽章、字数、反向链接、打开记录信息）、`SettingsScreen`（我的：助手人设、数据导入导出、存储占用、外观、关于）。
-- 样式手写 CSS：`tokens.css` 提供色板/类型色/圆角/动效/安全区变量，`base.css` 放 reset、通用类与动效降级，`app.css` 放外壳与页面样式；组件私有样式与组件同名并带前缀。没有 CSS 框架。
+- `screens/` 是页面级组合：`NotesScreen`（首页：今天概览、快捷记录、类型筛选、按天分组、iPhone 首次安装提示）、`EditorScreen`（Markdown 编辑/预览、类型徽章、字数、反向链接、打开记录信息）、`SettingsScreen`（我的：助手人设、装到 iPhone 上、数据导入导出、存储占用、外观、关于）。
+- 样式手写 CSS：`tokens.css` 提供色板/类型色/圆角/动效/安全区变量，`base.css` 放 reset、通用类、动效降级与手机 16px 表单规则，`app.css` 放外壳与页面样式；组件私有样式与组件同名并带前缀。没有 CSS 框架。
 
 ## 4. 数据模型
 
@@ -318,6 +333,7 @@ const STORE = 'notes';        // keyPath: 'id'，索引：updatedAt
 | `mochi.theme.v1` | `light` / `dark` / `system` |
 | `mochi.onboarded.v1` | 是否已完成首次引导（`'1'`） |
 | `mochi.agent.v1` | 助手人设 `{ name, avatar }` |
+| `mochi.installHint.v1` | iPhone 首次安装提示是否已关闭（`'1'`） |
 
 > `mochi` 是历史内部代号，保留是为了兼容旧数据；产品名与界面统一为「麻薯」。
 
@@ -408,20 +424,26 @@ HTML 字符串 → MarkdownPreview 注入 DOM
 | 新 Markdown 能力 | `src/lib/markdown.ts` | 通过 markdown-it 插件扩展；任何放宽 HTML/协议限制的改动必须先过安全评审 |
 | 新统计 / 图表 | `src/lib/insights.ts` | 新增纯函数并复用 `DaySummary`；UI 图表页读同一组数字 |
 | 新主题 / 视觉调整 | `src/styles/tokens.css` | 只改 token；深浅两套都要检查对比度与触控目标 |
-| 离线与安装（PWA） | `public/sw.js` + `src/main.tsx` + `manifest` | 调整预缓存/缓存策略时递增 `CACHE` 版本（当前 `mochi-v2`），同步 README 与隐私说明 |
+| 离线与安装（PWA） | `public/sw.js` + `src/main.tsx` + `manifest` + `index.html`（iOS meta / 启动图） | 调整预缓存/缓存策略时递增 `CACHE` 版本（当前 `mochi-v3`）；改 iOS 交付细节（安装卡片、提示、16px 表单、分享导出）时同步 README、PRIVACY 与手动测试矩阵 |
+| 可选 App Store 壳（Capacitor） | 新目录（例如 `ios/`）+ 复用现有 web 构建 | 仅作为 PWA 之外的额外分发方式，需要 Apple 开发者账号与审核；不改变现有静态站点/PWA 路径 |
+| iCloud / 「文件」备份体验 | `exportImport.ts` + `SettingsScreen` | 目前是 Web Share 手动导出/导入；改进时保持已导出的 JSON 格式兼容，不引入 iCloud API 依赖 |
 | 本地小模型（local LLM）适配器 | 新模块（例如 `agent-local-llm.ts`） | 默认关闭、完全在设备本地运行；必须保持离线与隐私边界，并明确 UI 提示 |
 | 云同步 | 新模块（例如 `sync.ts`）建立在 `db.ts` 之上 | 需要设计版本向量/冲突解决；在此之前保持「导出 → 导入」的显式同步方式 |
 
 ## 13. 已知限制
 
 - 助手是规则式本地助手，**不是大语言模型**；理解范围和措辞由规则决定，中文是主要解析目标。
-- Service Worker 只在生产构建 + 安全上下文（HTTPS / localhost）注册；通过 HTTP 局域网访问没有离线能力。缓存版本手工递增，没有「新版本可用」提示。
+- iOS PWA 的更新语义是「打开时拉取」：联网时重新打开主屏幕图标会加载新版本，没有应用内更新弹窗；离线时只能使用最近一次缓存的应用壳，缓存版本手工递增。
+- Service Worker 只在生产构建 + 安全上下文（HTTPS / localhost）注册；通过 HTTP 局域网访问没有离线能力，`npm run share` 只是开发者在线调试。
+- iOS 的浏览器存储受系统策略影响：清除 Safari / 网站数据可能删除记录；删除主屏幕图标通常只移除入口，但不应当作备份。备份必须手动导出 JSON。
+- 没有 iCloud 同步：导出到「文件」/ iCloud 云盘只是用户自选的文件存放位置；换手机需要导出再导入。
 - 没有同步与冲突解决：多设备靠导出/导入迁移；多标签页并发编辑后写覆盖。
 - 没有文件夹、附件、图片上传；正文里的图片只能引用外部 URL。
 - 导入只支持 JSON（Markdown 只是导出格式）；合并按标题覆盖，没有字段级合并。
 - 统计函数已就绪，但尚无独立图表页；CSV 导入、Markdown 合集导入在路线图中。
 - 图谱力导向布局与派生统计都在主线程；数万条记录时会有明显卡顿。
 - 浏览器清站点数据即删除记录；`localStorage` 回退模式容量约 5MB。
-- `npm run screenshots` / `npm run qr` 依赖本机 Chrome / Node 环境，属于发布工具。
+- 启动图覆盖当前列出的七种 iPhone 尺寸；新机型/新分辨率发布后需要更新 `npm run splash` 的尺寸表。
+- `npm run screenshots` / `npm run qr` / `npm run splash` 依赖本机 Chrome / Python 环境，属于发布工具。
 
 更多关于数据与隐私的细节见 [PRIVACY.md](PRIVACY.md)。

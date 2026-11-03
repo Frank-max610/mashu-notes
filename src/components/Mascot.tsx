@@ -10,8 +10,8 @@ export interface MascotProps extends Omit<SVGProps<SVGSVGElement>, 'children'> {
 }
 
 /**
- * Mochi the mascot: a squishy strawberry-milk dumpling with a tiny strawberry
- * hat. Pure inline SVG so it works offline and inherits the pastel palette.
+ * The 麻薯 mascot: a soft rice-cake figure with a tiny strawberry hat. Pure
+ * inline SVG, used as the default agent avatar.
  */
 export function Mascot({ variant = 'happy', size = 88, bob = false, className, ...rest }: MascotProps) {
   const id = `mochi-${variant}`;
@@ -119,9 +119,4 @@ export function Mascot({ variant = 'happy', size = 88, bob = false, className, .
       <path d="M95 66c3.6 1.4 5.4 4.4 4.6 7.4" stroke="#F3B7C8" strokeWidth="4.6" strokeLinecap="round" fill="none" />
     </svg>
   );
-}
-
-/** The small brand mark used in headers and the favicon-ish spots. */
-export function MochiMark({ size = 40 }: { size?: number }) {
-  return <Mascot variant="happy" size={size} bob={false} aria-hidden="true" />;
 }

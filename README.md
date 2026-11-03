@@ -2,10 +2,10 @@
 
 **把想法揉成一颗颗软乎乎的麻薯。**
 
-一个本地优先的**生活记录 + Markdown 笔记本**：饮食、健康、收支、日记和普通笔记放在同一个地方，彼此用链接连成一张可以自己动手编辑的图；内置助手完全离线，不需要账号，也不需要服务器。
+一个本地优先的 **iPhone 生活记录 + Markdown 笔记本**：饮食、健康、收支、日记和普通笔记放在同一个地方，用链接和生活图谱串起来；内置助手完全离线。**没有服务器，也没有账号**——装到主屏幕后，断网也能用。
 
-**在线试用**：<https://frank-max610.github.io/mashu-notes/>
-**仓库**：[github.com/Frank-max610/mashu-notes](https://github.com/Frank-max610/mashu-notes) · 版本 **v0.3.0**
+**在线试用（建议用 Safari 打开）**：<https://frank-max610.github.io/mashu-notes/>
+**仓库**：[github.com/Frank-max610/mashu-notes](https://github.com/Frank-max610/mashu-notes) · 版本 **v0.3.1**（iOS / PWA 交付版）
 
 [![Live demo](https://img.shields.io/badge/demo-live-6f9280.svg)](https://frank-max610.github.io/mashu-notes/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-6f9280.svg)](LICENSE)
@@ -14,6 +14,14 @@
 
 ---
 
+## 没有服务器，也没有账号
+
+- **整个应用就是一组静态文件。** 仓库推送到 `main` 后，GitHub Actions 会自动构建并发布到 GitHub Pages；GitHub 在这里只是**免费的静态托管**，维护者不做任何服务器运维（没有 VPS、没有数据库、没有后台进程）。
+- **装到主屏幕，就装到了手机上。** 用 Safari 打开演示链接 → 分享 → 「添加到主屏幕」。首次加载完成后，应用壳由 Service Worker 缓存，之后**断网也能打开和记录**。
+- **数据、助手、图谱都在设备本地。** 记录存在浏览器的 IndexedDB 里；助手是纯本地的规则计算，图谱布局也在手机上完成——不上传、不同步、不经过任何服务器。
+- **首次加载之后，运行时不需要网络。** 唯一的网络访问是加载应用自身的静态文件（首次或更新时）以及你主动写入笔记的外链/图片。
+- **普通用户永远不需要 npm、终端或服务器。** 开发者才需要本地环境，命令统一放在下面的「给开发者」小节。
+
 ## 为什么做这个项目
 
 - **生活记录不该散在五个 App 里。** 午饭在记账 App、睡眠在健康 App、想法在备忘录——一天结束时，谁也拼不回完整的一天。
@@ -21,6 +29,7 @@
 - **记录工具可以安静一点。** 不追求提醒你打卡的紧迫感，也不追求花哨的仪式感；打开、记一句、合上。
 - **记录和想法应该长在一起。** 一笔午饭、一次睡眠、一个灵感、一篇长笔记，都值得被 `[[链接]]` 和图谱连起来，而不是各过各的。
 - **助手应该透明。** 内置助手只做可解释的本地规则计算，不把你的生活数据发给任何模型或服务。
+- **最好不需要维护一台服务器。** 静态站点 + 主屏幕安装，就把「随时能用」和「零运维」同时做到了。
 
 ## 名字的由来
 
@@ -64,6 +73,17 @@
 | **添加与连线** | 工具栏切到「添加」，点空白处新建一条记录；切到「连线」，依次点两个节点建立手动连接。 |
 | **缩放与适配** | 双指/滚轮缩放、拖动画布、适应画布；图例会标出当前出现的类型和「未创建」的幽灵节点。 |
 
+### iPhone / PWA 交付
+
+| 功能 | 说明 |
+| --- | --- |
+| **主屏幕安装** | 「我的 → 装到 iPhone 上」有 Safari 三步安装指引和状态胶囊：在线 / 离线壳已就绪 / 无需服务器 / 数据不出设备；已安装时显示「已装到主屏幕」。首次在 iPhone 打开还会出现一行安装提示。 |
+| **启动图与 standalone** | `apple-mobile-web-app-*` meta、`apple-touch-startup-image` 七种 iPhone 尺寸启动图（`npm run splash` 生成）、`display: standalone`、安全区适配：从主屏幕打开时没有浏览器地址栏。 |
+| **离线 / 联网提示** | 断网或恢复网络时显示轻提示（「已离线 · 记录仍然只保存在这台手机上」/「网络已恢复」）；离线时记录、助手、图谱继续可用。 |
+| **iOS 表单细节** | 手机上的表单控件使用 16px 字号，避免 Safari 聚焦输入框时自动放大页面。 |
+| **分享面板导出** | 「我的 → 导出全部记录（JSON）「走 iOS 系统分享面板，可存到「文件」或 iCloud 云盘；不支持 Web Share 文件时自动回退为普通下载。 |
+| **更新方式** | 联网时重新打开主屏幕图标即可加载新版本（Service Worker 导航采用 network-first）；没有应用商店审核，也没有手动更新按钮。 |
+
 ### 笔记与通用能力
 
 | 功能 | 说明 |
@@ -73,7 +93,7 @@
 | **Markdown 编辑与预览** | 编辑 / 预览切换，支持标题、强调、删除线、引用、列表、任务清单、表格、代码块等常用语法；原始 HTML 不执行。 |
 | **本地优先存储** | IndexedDB 持久化，不可用时回退 localStorage；断网可读写，没有后端参与。 |
 | **导入与导出** | 导出 JSON（vault v2，无损、可再导入）或 Markdown 合集；导入支持 JSON 的合并 / 整库替换，并兼容 0.1.x / 0.2.x 的旧备份。 |
-| **PWA 与离线** | Web App Manifest + Service Worker：生产构建在 HTTPS / localhost 下缓存应用壳，可离线打开；支持添加到主屏幕。 |
+| **PWA 与离线** | Web App Manifest + Service Worker（缓存 `mochi-v3`）：生产构建在 HTTPS / localhost 下缓存应用壳，可离线打开；可通过 Safari 添加到主屏幕。 |
 | **浅色 / 深色主题** | 安静的「纸与墨」配色：浅色是暖纸色 + 鼠尾草绿点缀，深色是墨色夜间模式，也可跟随系统。 |
 | **移动优先的安静界面** | 底部胶囊导航「笔记 / 图谱 / ＋记录 / 助手 / 我的」，首页搜索图标进入搜索；40px 以上触控目标、安全区适配、克制动效并尊重「减少动态效果」系统设置、正文对比度达到 WCAG AA。 |
 
@@ -81,43 +101,50 @@
 
 > 整体是「纸与墨」的安静风格：暖纸色底、鼠尾草绿强调、按记录类型分配的柔和分类色，动效克制。以下截图由 `npm run screenshots` 驱动本机 Chrome 生成，视觉以实际运行效果为准。
 
-| 首页 · 今天概览 | 生活图谱 | 本地助手 |
+| 首页 · 今天概览 | 快速记录 | 生活图谱 |
 | :---: | :---: | :---: |
-| ![首页与今天卡片](docs/screenshots/mobile-notes.png) | ![生活图谱](docs/screenshots/graph.png) | ![本地助手](docs/screenshots/agent.png) |
+| ![首页与今天卡片](docs/screenshots/mobile-notes.png) | ![快速记录](docs/screenshots/capture.png) | ![生活图谱](docs/screenshots/graph.png) |
 
-| 快速记录 | 编辑器（预览） | 编辑器（编辑） |
+| 本地助手 | 编辑器（预览） | 编辑器（编辑） |
 | :---: | :---: | :---: |
-| ![快速记录](docs/screenshots/capture.png) | ![编辑器预览](docs/screenshots/editor.png) | ![编辑器编辑](docs/screenshots/editor-edit.png) |
+| ![本地助手](docs/screenshots/agent.png) | ![编辑器预览](docs/screenshots/editor.png) | ![编辑器编辑](docs/screenshots/editor-edit.png) |
 
-| 搜索 | 我的 · 助手人设 | 深色主题 |
+| 搜索 | 我的 · 助手人设 | 装到 iPhone 上 |
 | :---: | :---: | :---: |
-| ![搜索](docs/screenshots/search.png) | ![我的与助手人设](docs/screenshots/settings.png) | ![深色主题](docs/screenshots/dark-notes.png) |
+| ![搜索](docs/screenshots/search.png) | ![我的与助手人设](docs/screenshots/settings.png) | ![装到 iPhone 上](docs/screenshots/install.png) |
 
-| 空状态 |
-| :---: |
-| ![空状态](docs/screenshots/empty-notes.png) |
+| 深色主题 | 空状态 |
+| :---: | :---: |
+| ![深色主题](docs/screenshots/dark-notes.png) | ![空状态](docs/screenshots/empty-notes.png) |
 
-## 快速开始
+安装流程就是上面第三行的最后一张图：在 Safari 打开 HTTPS 链接 → 分享 → 添加到主屏幕。卡片里会同时显示「在线 / 离线壳已就绪 / 无需服务器 / 数据不出设备」四个状态，装好之后从主屏幕图标启动，断网也能记录。
 
-环境要求：**Node.js 22 LTS 或更新**。Vite 8 的最低要求是 Node 20.19，但测试运行器 Vitest 5 需要 Node 22.12+，CI 也使用 Node 22；建议直接用当前 LTS。
+## 在 iPhone 上使用（推荐）
+
+**普通用户不需要 npm、终端或服务器**，按下面三步即可：
+
+1. 用 **Safari** 打开 <https://frank-max610.github.io/mashu-notes/>（不要在微信或其他 App 的内置浏览器里打开）。
+2. 点 Safari 底部的「分享」按钮 → 选择「添加到主屏幕」→ 点「添加」。
+3. 首次加载完成后（状态会显示「离线壳已就绪」），以后从主屏幕图标打开即可，断网也能用。
+
+也可以用「我的 → 装到 iPhone 上」里的检查清单和状态胶囊随时确认。第一次在 iPhone 打开时，首页会出现一行「添加到主屏幕后，断网也能记」的提示；关掉后不再打扰。
+
+**数据与备份**：所有记录只保存在这台 iPhone 的浏览器存储里，不同步、不上传。换手机或重装前，请在「我的 → 导出全部记录（JSON）」里导出，系统分享面板里选择存到「文件」或 iCloud 云盘，再在新手机上导入。**清除 Safari 网站数据会删除记录**，建议定期导出备份。
+
+**更新方式**：联网时重新打开主屏幕图标，应用会加载新版本；也可以直接访问上面的演示链接查看最新版。没有 App Store 审核，也没有手动更新按钮。
+
+### 给开发者（可选）
+
+只有修改代码或本地调试时才需要这些。环境要求：**Node.js 22 LTS 或更新**（Vite 8 最低 Node 20.19，Vitest 5 需要 Node 22.12+；CI 使用 Node 22）。
 
 ```bash
-# 1. 获取代码
 git clone https://github.com/Frank-max610/mashu-notes.git
 cd mashu-notes
 npm install
-
-# 2. 启动开发服务器（http://localhost:5173）
-npm run dev
-
-# 3. 生产构建，产物在 dist/
-npm run build
-
-# 4. 预览生产构建（http://localhost:4173）
-npm run preview
+npm run dev        # http://localhost:5173
+npm run build      # 生产构建到 dist/
+npm run preview    # 预览构建（http://localhost:4173）
 ```
-
-不想装环境？直接打开[在线演示](https://frank-max610.github.io/mashu-notes/)就能用。
 
 首次打开会写入一组演示记录（生活记录 + 笔记，含链接、标签和示例数据），方便你马上看到今天概览、图谱和助手的效果。在「我的」里清空后不会再自动生成。
 
@@ -128,71 +155,35 @@ npm run preview
 | `npm run dev` | 开发服务器，默认 `http://localhost:5173`，同时监听局域网（`--host`） |
 | `npm run build` | 先跑 TypeScript 类型检查，再用 Vite 构建到 `dist/` |
 | `npm run preview` | 本地预览 `dist/`，默认 `http://localhost:4173` |
-| `npm run share` | 在局域网分享 `dist/`（默认 `0.0.0.0:4173`，可用 `-- --port 4174` 换端口），打印访问地址和二维码 |
+| `npm run share` | **仅开发者调试用**：在局域网分享 `dist/`（默认 `0.0.0.0:4173`，可用 `-- --port 4174` 换端口），打印地址和二维码 |
 | `npm run typecheck` | 只做 TypeScript 类型检查 |
 | `npm test` | 运行 Vitest 单元测试（纯逻辑层） |
 | `npm run test:watch` | 以 watch 模式运行测试 |
 | `npm run icons` | 重新生成 `public/icons/` 下的 PWA 图标（需要 Python 3 + Pillow） |
-| `npm run qr` | 生成局域网访问地址的二维码 PNG（`docs/screenshots/lan-qr.png`） |
+| `npm run splash` | 生成 `public/splash/` 下的 iPhone 启动图（需要 Python 3 + Pillow） |
+| `npm run qr` | 生成局域网地址的二维码 PNG（`docs/screenshots/lan-qr.png`） |
 | `npm run screenshots` | 用本机 Chrome 无头模式重新截取 README 截图（需要 Chrome） |
 
-## 在手机上试用（局域网）
+## 局域网调试（仅开发者）
 
-不用部署、不用装 App：把构建产物放到局域网里，手机扫终端二维码就能打开。
+这一节**不是普通用户需要的**。用户路径是上面的「在 iPhone 上使用」：主屏幕应用 + 离线缓存。只有开发者在电脑上调试真机时才需要这台局域网静态服务器：
 
 ```bash
 npm run build
 npm run share
 ```
 
-`npm run share` 会在 `0.0.0.0:4173` 上托管 `dist/`，并在终端打印本机地址、**局域网 URL 和二维码**（端口被占用时可以 `npm run share -- --port 4174`）。手机和电脑连同一个 Wi-Fi，用相机扫码（或手动输入局域网地址）即可打开。它只提供静态文件，不接触你的记录。
-
-Windows / Linux 上同样可用；如果只需要一张可分享的二维码图片，构建并托管后运行 `npm run qr` 会生成 `docs/screenshots/lan-qr.png`。
-
-终端输出形如：
-
-```text
-  麻薯 已启动
-
-  本机访问    http://localhost:4173
-  手机访问    http://192.168.1.23:4173   （手机与电脑需连接同一 Wi-Fi）
-
-  用手机扫描二维码打开：
-  ██▀▄…（二维码）…
-  按 Ctrl+C 停止服务。
-```
-
-> **HTTP-on-LAN 注意事项**
->
-> 生产构建会注册 Service Worker（`public/sw.js`）缓存应用壳，但浏览器只在 `https://` 或 `localhost` 等安全上下文允许注册。通过 `http://192.168.x.x:4173` 访问时可以正常使用（在线模式），断网后无法重新打开；**记录仍然保存在手机浏览器自己的 IndexedDB 里，不会上传到电脑或任何服务器**。部署到 HTTPS 后即可获得完整离线体验。
-
-### 添加到主屏幕
-
-**iOS（Safari）**
-
-1. 用 Safari 打开麻薯（局域网地址或部署后的 HTTPS 地址）。
-2. 点底部工具栏的「分享」按钮。
-3. 选择「添加到主屏幕」。
-4. 确认名称后点「添加」，之后从主屏幕图标启动。
-
-**Android（Chrome / Edge）**
-
-1. 用浏览器打开麻薯。
-2. 点右上角菜单（⋮）。
-3. 选择「添加到主屏幕」（部分浏览器显示为「安装应用」）。
-4. 确认后从主屏幕启动。
-
-添加到主屏幕后，应用会以 `standalone` 模式启动，看不到浏览器地址栏；在 HTTPS / localhost 下配合 Service Worker 还能离线打开。通过局域网 HTTP 添加的只是快捷入口。不同设备的记录库互相独立：手机上的记录只存在手机浏览器里。
+`npm run share` 会在 `0.0.0.0:4173` 上托管 `dist/`，打印本机地址、局域网 URL 和二维码。手机和电脑连同一个 Wi-Fi，用相机扫码即可打开开发版。它只提供静态文件，不接触你的记录；通过 `http://192.168.x.x:4173` 访问时 Service Worker 不会注册（浏览器要求安全上下文），所以这是**在线调试模式**，不能验证离线安装。要验证离线，请用 HTTPS 演示地址并安装到主屏幕。需要单独的二维码图片时运行 `npm run qr`，会生成 `docs/screenshots/lan-qr.png`。
 
 ## 数据与隐私
 
 - **助手完全本地。** `src/lib/agent.ts` 与 `src/lib/insights.ts` 是纯函数：输入你的记录和当前时间，输出解析结果或小结。不联网、不调用模型、不上传任何内容。
-- **没有后端、没有账号、没有遥测。** 应用不依赖服务端接口，也不会发起统计或 API 请求；运行时的网络访问只来自加载应用自身的静态文件，以及你在笔记里主动写入的外链/图片。
-- **所有记录保存在浏览器本地。** 默认 IndexedDB（schema v2），不可用时回退 localStorage；旧版本的本地数据会自动迁移。首次加载会请求持久化存储权限，降低被自动清理的概率。
-- **每个设备、每个地址都是独立的库。** `localhost`、`127.0.0.1`、局域网 IP、部署域名在浏览器看来是不同的 origin，数据互不相通；固定使用同一个地址访问。
-- **应用壳缓存不含记录。** Service Worker 只缓存 HTML/CSS/JS 等静态资源，IndexedDB / localStorage 中的生活记录不会被写入缓存。
+- **没有后端、没有账号、没有遥测。** 应用不依赖服务端接口；静态文件由 GitHub Pages 托管，GitHub 只是静态托管方。运行时的网络访问只来自加载应用自身的静态文件和你在笔记里主动写入的外链/图片。
+- **记录保存在 iPhone 本地。** 默认 IndexedDB（schema v2），不可用时回退 localStorage；iOS 上数据属于该网站/主屏幕应用的浏览器存储。首次加载会请求持久化存储权限，降低被自动清理的概率。
+- **每台设备、每个地址都是独立的库。** 浏览器按 origin 隔离数据；不同手机、Safari 页面与主屏幕应用之间的数据关系以 iOS 实际行为为准，**不要假定它们会自动同步**。固定用同一个地址访问。
+- **应用壳缓存不含记录。** Service Worker 只缓存 HTML/CSS/JS 等静态资源（缓存 `mochi-v3`），IndexedDB / localStorage 中的生活记录不会被写入缓存。
 - **生活数据比较敏感。** 收支、体重、睡眠都是私人信息；浏览器存储不是端到端加密的，请像保护任何本地文件一样保护设备，并定期导出备份。
-- **备份靠导出。** 「我的」页可随时导出 JSON（无损、可再导入）或 Markdown 合集；清除浏览器站点数据会删除记录。
+- **备份要手动做。** 「我的」页可随时导出 JSON（无损、可再导入）或 Markdown 合集；iOS 上会打开系统分享面板，可存到「文件」或 iCloud 云盘。导出的文件是明文，iCloud 只是你选择的存放位置，应用本身不做 iCloud 同步。**清除 Safari 网站数据会删除记录**，删除主屏幕图标通常只是移除入口，但不要把它当作备份。
 - **局域网分享只暴露应用文件。** `npm run share` 提供的是静态构建产物，记录数据始终留在各自设备的浏览器里。
 
 更完整的说明见 [docs/PRIVACY.md](docs/PRIVACY.md)。
@@ -203,22 +194,24 @@ Windows / Linux 上同样可用；如果只需要一张可分享的二维码图�
 mashu-notes/
 ├── .github/workflows/
 │   ├── ci.yml                    # GitHub Actions：typecheck + test + build
-│   └── deploy-pages.yml          # 构建并发布到 GitHub Pages
+│   └── deploy-pages.yml          # 推 main 自动构建并发布到 GitHub Pages（无需服务器）
 ├── docs/
 │   ├── ARCHITECTURE.md           # 架构、数据流与扩展点
 │   ├── PRIVACY.md                # 隐私说明
 │   └── screenshots/              # 应用截图（npm run screenshots / npm run qr 生成）
 ├── public/
 │   ├── icons/                    # PWA 图标（npm run icons 生成）
+│   ├── splash/                   # iPhone 启动图（npm run splash 生成）
 │   ├── manifest.webmanifest      # PWA 清单
-│   └── sw.js                     # Service Worker：应用壳离线缓存
+│   └── sw.js                     # Service Worker：应用壳离线缓存（mochi-v3）
 ├── scripts/
 │   ├── make_icons.py             # 生成 PWA 图标（Python + Pillow）
+│   ├── make_splash.py            # 生成 iPhone 启动图（Python + Pillow）
 │   ├── qr.mjs                    # 生成局域网访问二维码 PNG
 │   ├── screenshots.mjs           # 用本机 Chrome 截取 README 截图
-│   └── serve.mjs                 # 局域网托管 dist/ + 二维码
+│   └── serve.mjs                 # 局域网托管 dist/ + 二维码（仅开发者调试）
 ├── src/
-│   ├── components/               # 可复用 UI（TabBar、NoteCard、GraphView、CaptureSheet、AgentPanel、NodeEditorSheet…）
+│   ├── components/               # 可复用 UI（TabBar、GraphView、CaptureSheet、AgentPanel、IosInstallCard…）
 │   ├── screens/                  # 页面级组件（笔记/首页、编辑器、我的）
 │   ├── lib/                      # 核心逻辑（纯函数 + 浏览器适配层）
 │   │   ├── types.ts              # 数据模型（Note / NoteMeta / NoteKind / AgentPersona…）
@@ -231,19 +224,19 @@ mashu-notes/
 │   │   ├── graph.ts              # 生活图谱构建与力导向布局（纯函数）
 │   │   ├── db.ts                 # IndexedDB / localStorage 持久化（schema v2）
 │   │   ├── store.ts              # useNotes() 单一状态源
-│   │   ├── prefs.ts              # 主题、引导标记、助手人设、Note 工厂
+│   │   ├── prefs.ts              # 主题、引导标记、助手人设、安装提示、Note 工厂
 │   │   ├── seed.ts               # 首次运行的演示记录
-│   │   ├── exportImport.ts       # JSON（vault v2）/ Markdown 导入导出
+│   │   ├── exportImport.ts       # JSON（vault v2）/ Markdown 导入导出；Web Share 文件分享
 │   │   ├── format.ts             # 时间 / 字节 / 数字格式化
 │   │   └── useRoute.ts           # 轻量 hash 路由
 │   ├── styles/
 │   │   ├── tokens.css            # 纸与墨色板、类型色、间距、圆角、动效、安全区
-│   │   ├── base.css              # reset 与共享基础样式
+│   │   ├── base.css              # reset、共享基础样式、iOS 16px 表单规则
 │   │   └── app.css               # 应用外壳与页面样式
-│   ├── App.tsx                   # 应用外壳：路由、主题、快速记录、图谱编辑、助手
+│   ├── App.tsx                   # 应用外壳：路由、主题、快速记录、图谱编辑、助手、离线提示
 │   └── main.tsx                  # React 挂载入口 + Service Worker 注册
 ├── tests/                        # Vitest 单元测试
-├── index.html                    # HTML 入口与 PWA meta
+├── index.html                    # HTML 入口、iOS meta、apple-touch-startup-image
 ├── package.json
 ├── tsconfig.json
 ├── vite.config.ts
@@ -265,19 +258,40 @@ mashu-notes/
 | 视觉 | **手写 CSS + 设计变量** | 「纸与墨」两套色板和类型色集中在 `tokens.css`；不引入 UI 框架 |
 | 图谱 | **Canvas 2D + 确定性力导向布局** | 纯函数布局，支持拖动、添加、连线与位置持久化 |
 | 助手 | **纯 TypeScript 规则引擎** | 完全本地、可测试、可解释；不依赖模型或网络 |
+| iOS 交付 | **PWA + apple-touch-startup-image + Web Share** | 主屏幕安装、离线、启动图、系统分享面板导出；无需上架审核 |
 | 测试 | **Vitest（node 环境）** | 解析、统计、图谱布局等纯逻辑可直接测 |
-| 局域网分享 | **静态文件服务脚本 + qrcode-terminal** | 手机扫码即可试用，无需部署 |
-| 部署 | **GitHub Actions → GitHub Pages** | 推送到 `main` 自动构建发布 |
+| 托管 | **GitHub Actions → GitHub Pages** | 免费静态托管，推 `main` 自动发布；维护者零服务器运维 |
 
 运行时依赖只有 `react`、`react-dom`、`markdown-it` 三个；没有路由库、状态库、UI 框架和后端。
 
-## 部署
+## 部署（维护者视角）
 
-- **GitHub Pages（推荐）**：仓库自带 `.github/workflows/deploy-pages.yml`，推送到 `main` 或手动 `workflow_dispatch` 后自动构建并发布，线上地址为 <https://frank-max610.github.io/mashu-notes/>。`base: './'` 让产物在子路径下也能正常加载。
-- **任意静态托管**：`npm run build` 后把 `dist/` 上传即可（Vercel、Netlify、Cloudflare Pages 等），不需要服务端环境变量。
-- **本机 / 局域网**：见上文 `npm run share`。
+- **GitHub Pages（唯一必需）**：仓库自带 `.github/workflows/deploy-pages.yml`，推送到 `main` 或手动 `workflow_dispatch` 后自动构建并发布，线上地址为 <https://frank-max610.github.io/mashu-notes/>。`base: './'` 保证子路径正常加载，hash 路由不需要服务端 rewrite。
+- **GitHub 只是免费的静态托管。** 没有服务器要维护、没有数据库要备份、没有环境变量或密钥；维护者做的事就是推代码。用户从演示链接安装到主屏幕，之后的数据都在各自手机上。
+- **可选的其他静态托管**：`npm run build` 后把 `dist/` 上传到任意静态托管（Vercel、Netlify、Cloudflare Pages 等）也可以，仍然不需要服务器。
+- **本机 / 局域网**：仅用于开发调试，见上文。
 
 ## FAQ
+
+### 需要服务器吗？
+
+不需要。整个应用是静态 HTML/CSS/JS，由 GitHub Actions 自动发布到 GitHub Pages；GitHub 提供免费静态托管，维护者不做任何服务器运维。用户用 Safari 打开 HTTPS 链接并「添加到主屏幕」即可，之后连网络都不需要。
+
+### 可以离线用吗？
+
+安装到主屏幕并完成首次加载后可以。Service Worker 会缓存应用壳（缓存 `mochi-v3`），断网时记录、助手、图谱都能继续工作；联网时重新打开会自动加载新版本。首次加载本身需要网络。
+
+### 换手机 / 同步怎么办？
+
+没有云同步。在旧手机「我的 → 导出全部记录（JSON）」，分享面板里存到「文件」或 iCloud 云盘，再在新手机「我的 → 导入记录」里导入（合并或替换）。这是手动备份/迁移，不是实时同步；iCloud 只作为你选择的文件存放位置，应用本身不接 iCloud。
+
+### 苹果能用吗？
+
+能，而且这就是为 iPhone / iPad 做的：Safari 安装到主屏幕、启动图、standalone 无地址栏、安全区适配、16px 表单避免聚焦缩放、Web Share 导出到「文件」/iCloud 都已处理。其他浏览器可以打开网页版，但支持与测试范围只覆盖 iPhone / iPad 的 Safari 与主屏幕模式。
+
+### 为什么不用 App Store？
+
+PWA 不需要 Apple 开发者账号、签名和审核，更新也更直接：推代码 → Pages 自动发布 → 用户联网打开即更新。代价是没有 App Store 的发现渠道，且受 Safari 的 PWA 能力限制。路线图中保留可选的 Capacitor 壳作为以后上架 App Store 的选项，但目前不存在。
 
 ### 助手会联网吗？会不会把我的记录发给大模型？
 
@@ -303,17 +317,13 @@ mashu-notes/
 - **连线**：工具栏点「连线」，依次点两个节点，建立一条手动连线（与 `[[wiki 链接]]`、同日记录边并存）。
 - **缩放**：双指 / 滚轮缩放，拖动画布平移，或用工具栏的放大、缩小、适应画布。
 
-### 如何同步到其他设备？
-
-当前没有云同步。在「我的」里导出 JSON → 用 AirDrop、网盘或聊天工具传到另一台设备 → 在「我的」里导入（合并或替换）。局域网手机打开的是手机自己的独立记录库，不会和电脑同步。同步 / WebDAV / Git 备份在路线图中。
-
 ### 会不会丢数据？
 
-记录存在浏览器存储里，正常使用不会丢。风险主要来自手动清除站点数据、隐私/无痕模式、存储空间不足。应用会请求持久化存储权限，并在保存失败时提示导出备份。最稳妥的习惯仍然是**定期导出 JSON 备份**。升级版本时，旧数据库会就地迁移，旧备份也能导入。
+记录存在浏览器存储里，正常使用不会丢。风险主要来自手动清除 Safari / 网站数据、隐私/无痕模式、存储空间不足。应用会请求持久化存储权限，并在保存失败时提示导出备份。最稳妥的习惯仍然是**定期导出 JSON 备份**（存到「文件」或 iCloud 云盘）。升级版本时，旧数据库会就地迁移，旧备份也能导入。
 
 ### 和 Obsidian 有什么区别？
 
-Obsidian 是通用 Markdown 知识库，插件生态成熟，文件存在本地文件夹里；麻薯更小、更安静，面向「生活记录 + 轻笔记」：饮食、健康、收支、日记有结构化字段和统计，图谱可以直接编辑，助手完全离线。它没有插件生态、没有本地文件夹 vault、没有内置同步。需要文件级 Markdown、插件和多端同步时，Obsidian 仍然更合适。
+Obsidian 是通用 Markdown 知识库，插件生态成熟，文件存在本地文件夹里；麻薯更小、更安静，iPhone-first，面向「生活记录 + 轻笔记」：饮食、健康、收支、日记有结构化字段和统计，图谱可以直接编辑，助手完全离线。它没有插件生态、没有本地文件夹 vault、没有内置同步。需要文件级 Markdown、插件和多端同步时，Obsidian 仍然更合适。
 
 ### 支持哪些 Markdown 语法？
 
@@ -321,17 +331,27 @@ Obsidian 是通用 Markdown 知识库，插件生态成熟，文件存在本地�
 
 ### 需要联网吗？
 
-不需要后端。麻薯没有服务端调用，运行时逻辑都在浏览器里；开发时的 `npm run dev` 只是本机静态服务器，构建后的 `dist/` 可部署到任意静态托管。生产构建会注册 Service Worker，在 HTTPS / localhost 下首次加载后可离线打开；通过局域网 HTTP 访问时是在线模式，但记录始终保存在本地。
+首次加载和更新需要网络；安装到主屏幕并缓存后不需要。应用没有服务端调用，运行逻辑都在浏览器里；断网时记录、助手、图谱继续工作，联网后重新打开会获取新版本。
 
 ### 我的记录会被上传吗？
 
-不会。仓库里没有遥测、分析、广告或崩溃上报代码，也没有写死的第三方接口。只有你在笔记里主动写入的外链或网络图片，才会在预览时由浏览器去加载。
+不会。仓库里没有遥测、分析、广告或崩溃上报代码，也没有写死的第三方接口。只有你在笔记里主动写入的外链或网络图片，才会在预览时由浏览器去加载；导出时也是你主动通过系统分享面板选择存放位置。
 
 ### 如何删除所有数据？
 
-「我的」页提供「清空全部记录」；也可以在浏览器设置里清除该站点数据。删除前请先导出 JSON 备份，操作不可恢复。
+「我的」页提供「清空全部记录」；也可以在 iOS 设置/Safari 里清除该网站的数据。删除前请先导出 JSON 备份，操作不可恢复。
 
 ## 路线图
+
+已完成（0.3.1 · iOS / PWA 交付）：
+
+- [x] `apple-touch-startup-image` 七种 iPhone 尺寸启动图（`npm run splash` 生成）
+- [x] 「我的 → 装到 iPhone 上」安装卡片：Safari 步骤 + 在线 / 离线壳已就绪 / 无需服务器 / 数据不出设备状态
+- [x] iPhone 首次打开时的安装提示（可关闭，仅显示一次）
+- [x] 手机表单 16px 字号，避免 Safari 聚焦自动缩放
+- [x] JSON / Markdown 导出走 iOS 系统分享面板（可存「文件」/ iCloud 云盘），回退普通下载
+- [x] 离线 / 联网 toast 提示
+- [x] Service Worker 缓存升级到 `mochi-v3`，静态站点由 GitHub Pages 自动部署（无需服务器）
 
 已完成（0.3.0）：
 
@@ -349,6 +369,8 @@ Obsidian 是通用 Markdown 知识库，插件生态成熟，文件存在本地�
 计划中：
 
 - [ ] 可选的本地小模型（local LLM）适配器：仍在设备本地运行、默认关闭
+- [ ] iCloud / 「文件」备份的导入导出体验改进（目前是手动分享 JSON）
+- [ ] 可选的 App Store 壳（Capacitor），不改变现有 PWA 路径
 - [ ] 云同步 / WebDAV / Git 备份
 - [ ] CSV 导入（记账 / 健康数据）
 - [ ] 图表页：支出结构、体重 / 睡眠趋势
@@ -376,13 +398,13 @@ npm run typecheck && npm test && npm run build
 
 ## English
 
-**Mashu (麻薯)** is a local-first life journal and Markdown notebook. Meals, health, spending, diaries and free-form notes live together, connected by `[[wiki links]]` and a hand-editable life graph — with a fully offline, rule-based assistant built in.
+**Mashu (麻薯)** is an iPhone-first, local-first life journal and Markdown notebook. Meals, health, spending, diaries and free-form notes live together, connected by `[[wiki links]]` and a hand-editable life graph — with a fully offline, rule-based assistant built in.
 
-- Five record kinds — diary, food, health, finance and plain notes — with structured metadata (meal, calories, amount, metric/value/unit, mood, occurrence time).
-- One-line quick capture ("lunch beef noodles, ¥32, 620 kcal") parsed locally; a "Today" card on the home screen; records grouped by day.
-- The built-in agent runs entirely on-device heuristics: capture parsing, today/week summaries, advice and prompt chips. No network, no model API, no telemetry. It is deliberately rule-based and explainable, not an LLM.
+- **No server, no account.** The whole app is a static site auto-deployed by GitHub Actions to GitHub Pages (free static hosting; the maintainer runs zero server operations). Install it from Safari via Share → Add to Home Screen; after the first load it works offline.
+- Everything lives on the device: records in IndexedDB, agent replies from local heuristics, graph layout on the phone. The assistant never calls a model API, and there is no telemetry.
+- Five record kinds — diary, food, health, finance and plain notes — with structured metadata; one-line quick capture; a "Today" card; records grouped by day.
 - An editable life graph: kind-coloured nodes, wiki + manual + same-day edges, draggable nodes with saved positions, add/connect modes and a node editor sheet.
-- Notes keep the Markdown editor, backlinks, tags, full-text search and PWA/offline support; storage upgrades in place to schema v2 and imports vault v2 (older backups are welcome).
+- iOS delivery: `apple-touch-startup-image` splash screens, Home Screen install card and first-open hint, 16px form fields (no Safari focus zoom), Web Share file export to Files / iCloud, and offline/online toasts. Service worker cache `mochi-v3`.
 - Calm "paper & ink" design with light/dark themes, a sage accent and restrained motion.
 
-Try the [live demo](https://frank-max610.github.io/mashu-notes/) or run it on a phone over your LAN: `npm run build && npm run share`, then scan the QR code on the same Wi-Fi. MIT licensed — read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the design and [CONTRIBUTING.md](CONTRIBUTING.md) to get involved.
+Open the [live demo](https://frank-max610.github.io/mashu-notes/) in Safari and add it to your Home Screen — that is the intended install path; npm and a local server are only for development. MIT licensed — read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the design and [CONTRIBUTING.md](CONTRIBUTING.md) to get involved.

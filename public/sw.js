@@ -1,4 +1,4 @@
-/* Mochi service worker: app-shell offline support.
+/* 麻薯 service worker: app-shell offline support.
  * Only registers in secure contexts (https / localhost); on plain http LAN the
  * app runs without it. Navigation is network-first, assets cache-first. */
 const CACHE = 'mochi-v3';

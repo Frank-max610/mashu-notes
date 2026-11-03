@@ -17,7 +17,7 @@ import { Icon, type IconName } from '../components/Icon';
 import { AgentAvatar } from '../components/AgentAvatar';
 import { IosInstallCard } from '../components/IosInstallCard';
 
-const APP_VERSION = '0.3.0';
+const APP_VERSION = '0.3.1';
 
 export interface SettingsScreenProps {
   notes: Note[];

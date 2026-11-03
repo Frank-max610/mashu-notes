@@ -8,13 +8,23 @@
 - **内部代码标识和存储键沿用历史代号 `mochi`**（例如 IndexedDB 数据库名、localStorage 键、`mochi.agent.v1`）。这是为了兼容 0.2.x 及更早版本的数据，**不要**新增 `mashu.*` 之类的存储键；用户看不到这些标识，也不要在面向用户的文案里出现。
 - 仓库计划更名为 `mashu-notes`；引用仓库地址时使用 <https://github.com/Frank-max610/mashu-notes>，等改名完成后确认链接可访问。
 
+## iOS / PWA 交付（零服务器）
+
+最终交付形态是**静态站点**，不是服务器应用：
+
+- `npm run build` 产出 `dist/`，推送到 `main` 后由 `.github/workflows/deploy-pages.yml` 自动发布到 GitHub Pages。GitHub 只是免费的静态托管：维护者不需要 VPS、数据库、后台进程或密钥，也不做任何服务器运维。
+- 用户路径是 Safari 打开 HTTPS 地址 → 分享 → 添加到主屏幕；首次加载后 Service Worker（`public/sw.js`，缓存名 `mochi-v3`）让应用离线可用。联网时重新打开主屏幕图标会拿到新版本（导航请求 network-first），没有更新弹窗或应用商店审核。
+- iOS 细节要与代码保持一致：`apple-mobile-web-app-*` meta、`apple-touch-startup-image` 启动图（`npm run splash` 生成到 `public/splash/`）、`display: standalone`、安全区、手机表单 16px（避免 Safari 聚焦缩放）、JSON/Markdown 导出优先走 Web Share 文件分享（可存「文件」/ iCloud，回退普通下载）、离线/联网 toast、首次打开的安装提示。
+- `npm run share` 和 `npm run qr` 只是开发者真机调试工具，**不是用户路径**；不要因为调试方便就引入服务器、账号、云函数或任何运行时网络请求。
+- 手动测试矩阵：iPhone SE（小屏/安全区）、iPhone 15 尺寸各一遍；Safari 标签页与「添加到主屏幕」后的 standalone 各一遍。至少验证：离线重载、安装卡片状态、16px 输入框不被放大、导出到「文件」、断网/恢复提示。
+
 ## 开发环境
 
 - **Node.js 22 LTS 或更新**（Vitest 5 需要 Node 22.12+；Vite 8 最低支持 Node 20.19，CI 固定使用 Node 22）
 - npm 10+
-- 可选：Python 3 + Pillow（只有重新生成 PWA 图标时需要，`npm run icons`）
+- 可选：Python 3 + Pillow（只有重新生成 PWA 图标 / iPhone 启动图时需要，`npm run icons` / `npm run splash`）
 - 可选：本机 Chrome / Chromium（只有重新生成 README 截图时需要，`npm run screenshots`；可用 `CHROME_PATH` 指定路径）
-- 任意现代浏览器；调试移动端体验时推荐用真机 + 局域网访问（见下文）
+- 任意现代浏览器用于开发；主要目标是 **iPhone / iPad Safari**（包括「添加到主屏幕」后的 standalone 模式），调试真机时推荐用 HTTPS 演示地址或局域网 + 真机。
 
 ```bash
 # fork 并 clone 之后
@@ -24,7 +34,7 @@ npm run dev        # http://localhost:5173
 
 `npm run dev` 默认带 `--host`，同一 Wi-Fi 下的手机可以通过 `http://<电脑局域网 IP>:5173` 打开开发版，方便调试真机上的触控和键盘行为。
 
-`npm run share` 托管的是 `dist/`，所以要先跑一次 `npm run build`；端口被占用时可以 `npm run share -- --port 4174`。注意通过 HTTP 局域网地址访问时 Service Worker 不会注册（浏览器要求安全上下文），离线能力需要在 HTTPS 或 localhost 下验证。
+`npm run share` 托管的是 `dist/`，所以要先跑一次 `npm run build`；端口被占用时可以 `npm run share -- --port 4174`。它**仅用于开发者真机调试**，不是用户路径；通过 HTTP 局域网地址访问时 Service Worker 不会注册（浏览器要求安全上下文），离线能力需要在 HTTPS 或 localhost 下验证。
 
 常用脚本：
 
@@ -33,11 +43,12 @@ npm run dev        # http://localhost:5173
 | `npm run dev` | 启动 Vite 开发服务器（HMR） |
 | `npm run build` | 类型检查 + 生产构建到 `dist/` |
 | `npm run preview` | 预览 `dist/`（http://localhost:4173） |
-| `npm run share` | 构建后局域网托管 `dist/`，打印地址与二维码，便于手机实机测试 |
+| `npm run share` | **仅开发者调试**：构建后局域网托管 `dist/`，打印地址与二维码；不是用户路径 |
 | `npm run typecheck` | 只跑 `tsc --noEmit` |
 | `npm test` | 运行一次 Vitest（当前 154 个用例） |
 | `npm run test:watch` | Vitest watch 模式 |
 | `npm run icons` | 重新生成 `public/icons/` 下的 PWA 图标（需要 Python 3 + Pillow） |
+| `npm run splash` | 重新生成 `public/splash/` 下的 iPhone 启动图（需要 Python 3 + Pillow） |
 | `npm run qr` | 生成局域网访问地址的二维码 PNG（`docs/screenshots/lan-qr.png` + `lan-url.txt`） |
 | `npm run screenshots` | 驱动本机 Chrome 无头模式重新截取 README 截图（需要 Chrome；产物在 `docs/screenshots/`） |
 
@@ -97,18 +108,18 @@ npm run typecheck && npm test && npm run build
 | `src/lib/graph.ts` | 生活图谱构建（wiki / 手动 / 同日边、幽灵节点）与力导向布局 | 纯函数，布局需确定性（不依赖随机）；保存位置要归一化 0..1 |
 | `src/lib/db.ts` | IndexedDB（数据库 `mochi`，schema v2）/ localStorage 适配、旧版本迁移 | 改数据结构时升级 `DB_VERSION`，并在 upgrade 里就地补字段；旧备份必须仍能导入 |
 | `src/lib/store.ts` | `useNotes()` 单一状态源：笔记 CRUD、图谱位置、手动连线、flush | 写入路径、防抖、`settleWrites` 与删除级联要谨慎 |
-| `src/lib/prefs.ts` | 主题、引导标记、助手人设（`mochi.agent.v1`）、`normalizeNote` / `makeNote` 工厂 | 只碰 localStorage，失败要静默降级；`normalizeNote` 是导入与迁移的安全边界 |
+| `src/lib/prefs.ts` | 主题、引导标记、助手人设（`mochi.agent.v1`）、安装提示（`mochi.installHint.v1`）、`normalizeNote` / `makeNote` 工厂 | 只碰 localStorage，失败要静默降级；`normalizeNote` 是导入与迁移的安全边界 |
 | `src/lib/seed.ts` | 首次运行的演示记录（生活记录 + 笔记） | 保持小而精，不要伪装成真实数据 |
-| `src/lib/exportImport.ts` | JSON（vault v2，`app: 'mochi'`）/ Markdown 导出、JSON 导入（含旧备份兼容）、合并 / 替换 | 改格式时同步升 `VAULT_VERSION`，并保证旧版本仍可导入 |
+| `src/lib/exportImport.ts` | JSON（vault v2，`app: 'mochi'`）/ Markdown 导出、JSON 导入（含旧备份兼容）、合并 / 替换、`shareOrDownload`（Web Share 文件分享 + 普通下载回退） | 改格式时同步升 `VAULT_VERSION`，并保证旧版本仍可导入 |
 | `src/lib/format.ts` | 相对时间、日期、字节数等展示格式化 | 纯函数 |
 | `src/lib/useRoute.ts` | 轻量 hash 路由（`#/notes`、`#/note/:id`、`#/graph`、`#/agent`、`#/search`、`#/settings`） | 导航统一用 `navigate` / `replaceRoute`，不要手写 `location.hash`；底部标签文案在 `TabBar.tsx` |
-| `src/components/` | 可复用 UI：TabBar、NoteCard、GraphView、CaptureSheet、AgentPanel、AgentAvatar、NodeEditorSheet 等 | 通过 props / callback 拿数据，不直接访问 `db.ts`；图谱触点较多，改交互要测触摸与鼠标 |
-| `src/screens/` | 页面级组件：NotesScreen（首页/今天概览/按天列表）、EditorScreen、SettingsScreen（我的） | 负责布局与交互，数据由上层注入，不直接访问 `db.ts` |
-| `src/styles/` | `tokens.css` 设计变量、`base.css` 基础样式、`app.css` 应用外壳样式 | 新颜色/圆角/动效先加 token；不要在这里写组件私有样式 |
+| `src/components/` | 可复用 UI：TabBar、NoteCard、GraphView、CaptureSheet、AgentPanel、AgentAvatar、NodeEditorSheet、IosInstallCard（主屏幕安装卡片）等 | 通过 props / callback 拿数据，不直接访问 `db.ts`；图谱触点较多，改交互要测触摸与鼠标；iOS 安装相关改动要看真机 |
+| `src/screens/` | 页面级组件：NotesScreen（首页/今天概览/按天列表/首次安装提示）、EditorScreen、SettingsScreen（我的/装到 iPhone 上） | 负责布局与交互，数据由上层注入，不直接访问 `db.ts` |
+| `src/styles/` | `tokens.css` 设计变量、`base.css` 基础样式（含 iOS 16px 表单规则）、`app.css` 应用外壳样式 | 新颜色/圆角/动效先加 token；不要在这里写组件私有样式 |
 | `tests/` | Vitest 单元测试（当前 154 个用例，覆盖 agent / insights / graph / links / markdown / search / exportImport） | 文件命名为 `*.test.ts`，不要提交调试用的临时测试文件（CI 会执行 `tests/` 下所有测试） |
-| `scripts/` | Node/Python 工具脚本（图标、局域网托管、截图、二维码） | 不参与前端构建，不引入浏览器运行时依赖 |
-| `public/` | 静态资源、PWA manifest 与图标、`sw.js` | manifest 需与 `index.html` 保持一致；改离线壳资源时同步更新 `sw.js` 的 `PRECACHE` 与 `CACHE` 版本（当前 `mochi-v2`） |
-| `.github/workflows/` | `ci.yml`（typecheck + test + build）、`deploy-pages.yml`（推 main 自动发布 GitHub Pages） | 改构建命令时两个 workflow 都要同步 |
+| `scripts/` | Node/Python 工具脚本（图标、启动图、局域网托管、截图、二维码） | 不参与前端构建，不引入浏览器运行时依赖 |
+| `public/` | 静态资源、PWA manifest 与图标、iPhone 启动图（`splash/`）、`sw.js` | manifest 需与 `index.html` 保持一致；改离线壳资源时同步更新 `sw.js` 的 `PRECACHE` 与 `CACHE` 版本（当前 `mochi-v3`） |
+| `.github/workflows/` | `ci.yml`（typecheck + test + build）、`deploy-pages.yml`（推 main 自动发布 GitHub Pages，维护者无需服务器） | 改构建命令时两个 workflow 都要同步 |
 
 如果你要改的是公共 API（`types.ts` 的接口、组件 props、存储格式），请同时在 PR 描述里说明影响范围与迁移方式。
 
@@ -188,7 +199,8 @@ ci: cache npm downloads in the workflow
 - [ ] `npm run build` 通过
 - [ ] 没有提交 `node_modules/`、`dist/`、`.npm-cache/`、`.npm-logs/`、`.chrome-profile/` 等生成物
 - [ ] 没有新增未讨论的运行时依赖
-- [ ] 没有引入任何遥测、分析、运行时网络请求或云端模型调用
+- [ ] 没有引入任何遥测、分析、运行时网络请求或云端模型调用，也没有引入服务器/账号/云函数（零服务器交付约束）
+- [ ] iOS/PWA 改动验证过：Safari 标签页 + 添加到主屏幕、断网重载、安装卡片与首次提示、16px 输入框不被放大、导出到「文件」
 - [ ] UI 改动在 375px 宽度下检查过，并在浅色 / 深色两种主题下检查过
 - [ ] 交互改动在手机（或 DevTools 移动模拟 + 真机局域网）上验证过，且尊重 `prefers-reduced-motion`
 - [ ] 涉及存储格式的改动：版本号、迁移、旧备份导入与 `normalizeNote` 都已覆盖
