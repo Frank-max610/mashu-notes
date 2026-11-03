@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import type { Note } from '../lib/types';
 import { allTags } from '../lib/links';
-import { formatRelativeTime } from '../lib/format';
 import { searchNotes } from '../lib/search';
 import { Icon } from './Icon';
+import { RecordRow } from './RecordRow';
 import './SearchScreen.css';
 
 export interface SearchScreenProps {
@@ -101,31 +101,20 @@ export function SearchScreen({ notes, onOpenNote, onClose }: SearchScreenProps) 
 
   return (
     <div className="screen search-screen" onKeyDown={handleKeyDown}>
-      <header className="screen-header search-screen__header">
-        <div className="search-screen__title-row">
-          <div className="search-screen__title-block">
-            <h1 className="page-title display search-screen__title">搜索</h1>
-            <p className="brand-date mono">SEARCH · {notes.length} ENTRIES</p>
-          </div>
-          {!idle ? (
-            <span className="search-screen__count-pill mono" aria-live="polite">
-              {hits.length} RESULTS
-            </span>
-          ) : null}
+      <header className="search-header">
+        <div className="search-title-row">
+          <h1 className="page-title">搜索</h1>
           {onClose ? (
-            <button type="button" className="icon-btn search-screen__close" aria-label="关闭搜索" onClick={onClose}>
-              <Icon name="close" size={19} />
+            <button type="button" className="icon-btn" aria-label="关闭搜索" onClick={onClose}>
+              <Icon name="close" size={20} />
             </button>
           ) : null}
         </div>
-
-        <div className="search-screen__searchbar">
-          <span className="search-screen__search-badge" aria-hidden="true">
-            <Icon name="search" size={17} />
-          </span>
+        <div className="search-bar">
+          <Icon name="search" size={18} />
           <input
             ref={inputRef}
-            className="search-screen__input"
+            className="search-input"
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
@@ -139,32 +128,21 @@ export function SearchScreen({ notes, onOpenNote, onClose }: SearchScreenProps) 
             enterKeyHint="search"
           />
           {query.length > 0 ? (
-            <button
-              type="button"
-              className="search-screen__clear"
-              aria-label="清除搜索"
-              onClick={handleClear}
-            >
+            <button type="button" className="search-clear" aria-label="清除搜索" onClick={handleClear}>
               <Icon name="close" size={17} />
             </button>
           ) : null}
         </div>
-
         {tags.length > 0 ? (
-          <div className="search-screen__tags" role="group" aria-label="按标签筛选">
+          <div className="search-tags" role="group" aria-label="按标签筛选">
             {tags.map((tag) => (
               <button
                 key={tag.tag}
                 type="button"
-                className={`chip search-screen__tag${activeTags.has(tag.tag) ? ' is-active' : ''}`}
-                onClick={() => {
-                  // Filter in place: jumping to the notes list here would make
-                  // the active-chip state below unreachable.
-                  setQuery(`#${tag.label}`);
-                }}
+                className={`chip search-tag${activeTags.has(tag.tag) ? ' is-active' : ''}`}
+                onClick={() => setQuery(`#${tag.label}`)}
               >
-                <Icon name="hash" size={11} />
-                <span>{tag.label}</span>
+                #{tag.label}
                 <span className="chip-count">{tag.count}</span>
               </button>
             ))}
@@ -172,60 +150,44 @@ export function SearchScreen({ notes, onOpenNote, onClose }: SearchScreenProps) 
         ) : null}
       </header>
 
-      <div ref={resultsRef} className="search-screen__results scroll-area">
-        {idle ? <div className="section-label search-screen__section-label">最近编辑 / RECENT</div> : null}
+      <div ref={resultsRef} className="screen-body search-results">
+        {idle ? (
+          <h2 className="records-group-title">最近编辑</h2>
+        ) : (
+          <p className="search-count">{hits.length} 条结果</p>
+        )}
 
         {hits.length === 0 ? (
-          <div className="empty search-screen__empty">
-
-            <p className="empty-title">{idle ? '还没有内容' : '没有找到相关内容'}</p>
+          <div className="empty">
+            <Icon name="search" size={24} />
+            <p className="empty-title">{idle ? '还没有内容' : '未找到相关记录'}</p>
             <p className="empty-text">
-              {idle
-                ? '先记一条，再回来搜索吧。'
-                : '换个关键词试试，或者用 #标签 筛选。'}
+              {idle ? '先记一条，再回来搜索。' : '换个关键词试试，或者清除筛选。'}
             </p>
+            {!idle ? (
+              <button type="button" className="btn btn-ghost btn-small" onClick={handleClear}>
+                清除筛选
+              </button>
+            ) : null}
           </div>
         ) : (
-          <ul className="search-screen__list" aria-label="搜索结果">
+          <div className="record-list">
             {hits.map((hit) => {
               const note = noteById.get(hit.id);
-              const noteTags = note ? note.tags.slice(0, 2) : [];
+              if (!note) return null;
               return (
-                <li key={hit.id} className="search-screen__list-item">
-                  <button
-                    type="button"
-                    className="search-screen__item"
-                    aria-label={`打开笔记：${hit.title || '未命名笔记'}`}
-                    onClick={() => onOpenNote(hit.id)}
-                  >
-                    <span className="search-screen__item-top">
-                      <span className="search-screen__item-title">
-                        {hit.title.trim() || '未命名笔记'}
-                      </span>
-                      <span className="search-screen__item-time">
-                        <Icon name="clock" size={11} />
-                        {note ? formatRelativeTime(note.updatedAt) : ''}
-                      </span>
-                    </span>
-                    {hit.snippet ? (
-                      <span className="search-screen__snippet">
-                        {highlight(hit.snippet, marks)}
-                      </span>
-                    ) : null}
-                    {noteTags.length > 0 ? (
-                      <span className="search-screen__item-tags">
-                        {noteTags.map((tag) => (
-                          <span key={tag} className="search-screen__tag-pill">
-                            #{tag}
-                          </span>
-                        ))}
-                      </span>
-                    ) : null}
-                  </button>
-                </li>
+                <RecordRow
+                  key={hit.id}
+                  note={note}
+                  onOpen={onOpenNote}
+                  onMenu={() => undefined}
+                  hideMenu
+                  showDate
+                  snippet={!idle && hit.snippet ? highlight(hit.snippet, marks) : undefined}
+                />
               );
             })}
-          </ul>
+          </div>
         )}
       </div>
     </div>

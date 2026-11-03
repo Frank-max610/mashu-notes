@@ -2180,3 +2180,169 @@ button.settings-row:active {
   font-size: var(--text-xs);
   font-weight: 500;
 }
+
+
+/* ---------- v0.9 records timeline (design doc §07) ---------- */
+
+.records-title-block {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.records-count {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.records-body {
+  padding-top: 0;
+}
+
+.records-group-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 18px 0 2px;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.record-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.record-row {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 13px 0;
+  min-height: 64px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  text-align: left;
+}
+
+.record-row:last-child {
+  border-bottom: 0;
+}
+
+.record-row:active {
+  background: var(--surface-2);
+}
+
+.record-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  margin-top: 8px;
+  border-radius: 50%;
+  background: var(--kind-accent, var(--accent));
+}
+
+.record-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.record-title {
+  font-size: var(--text-base);
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.record-meta {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.record-snippet {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.record-snippet mark {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.record-side {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-top: -6px;
+  margin-right: -8px;
+}
+
+.record-time {
+  font-size: var(--text-xs);
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.record-more {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-s);
+  color: var(--text-faint);
+}
+
+.record-more:active {
+  background: var(--surface-2);
+}
+
+.pinned-list {
+  padding: 0 12px;
+  margin-bottom: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  background: var(--surface);
+}
+
+.pinned-list .record-row {
+  min-height: 52px;
+  padding: 10px 0;
+}
+
+.records-header .filter-bar {
+  padding-top: 6px;
+}
+
+.filter-bar .chip {
+  min-height: 30px;
+  padding: 3px 11px;
+  font-size: var(--text-xs);
+}
+
+.filter-bar {
+  padding: 6px 16px 10px;
+}
+
+/* horizontal filter/tag rows: fade the edge instead of slicing a chip */
+.filter-bar,
+.search-tags {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 26px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 26px), transparent);
+  padding-right: 26px;
+}

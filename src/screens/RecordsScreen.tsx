@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import type { Note, NoteKind } from '../lib/types';
 import { KIND_INFO, NOTE_KINDS } from '../lib/kinds';
 import { dayKeyOf, noteDayKey } from '../lib/insights';
-import { NoteCard } from '../components/NoteCard';
+import { RecordRow } from '../components/RecordRow';
 import { Icon } from '../components/Icon';
 
 export type KindFilter = NoteKind | 'all';
@@ -26,12 +26,12 @@ function dayLabel(dayKey: string, now = new Date()): string {
   if (dayKey === todayKey) return '今天';
   const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
   if (dayKey === dayKeyOf(yesterday)) return '昨天';
-  const [year, month, day] = dayKey.split('-').map(Number);
-  const date = new Date(year, month - 1, day);
+  const [, month, day] = dayKey.split('-').map(Number);
+  const date = new Date(Number(dayKey.slice(0, 4)), month - 1, day);
   return `${month}月${day}日 · 周${WEEKDAYS[date.getDay()]}`;
 }
 
-/** All records: filters, day groups and the full vault list. */
+/** 记录 — a scannable timeline of life records (design doc §07). */
 export function RecordsScreen({
   notes,
   loading,
@@ -65,15 +65,13 @@ export function RecordsScreen({
   return (
     <div className="screen records-screen">
       <header className="screen-header records-header">
-        <div className="brand-row">
-          <div className="brand-copy">
-            <h1 className="page-title display">记录</h1>
-            <p className="brand-date mono">{notes.length} ENTRIES</p>
-          </div>
+        <div className="records-title-block">
+          <h1 className="page-title">记录</h1>
+          <p className="records-count">{notes.length} 条</p>
         </div>
         <div className="header-actions">
           <button type="button" className="icon-btn" aria-label="搜索" onClick={onOpenSearch}>
-            <Icon name="search" size={19} />
+            <Icon name="search" size={20} />
           </button>
           <button type="button" className="icon-btn" aria-label="记一笔" onClick={() => onQuickCapture()}>
             <Icon name="plus" size={20} />
@@ -105,10 +103,6 @@ export function RecordsScreen({
             role="tab"
             aria-selected={kindFilter === kind}
             className={`chip${kindFilter === kind ? ' is-active' : ''}`}
-            style={{
-              ['--kind-accent' as string]: `var(${KIND_INFO[kind].accentVar})`,
-              ['--kind-soft' as string]: `var(${KIND_INFO[kind].accentSoftVar})`,
-            }}
             onClick={() => onKindFilter(kind)}
           >
             {KIND_INFO[kind].label}
@@ -116,7 +110,7 @@ export function RecordsScreen({
         ))}
       </div>
 
-      <div className="screen-body">
+      <div className="screen-body records-body">
         {loading && notes.length === 0 ? (
           <div className="empty">
             <div className="spinner" />
@@ -124,9 +118,9 @@ export function RecordsScreen({
           </div>
         ) : filtered.length === 0 ? (
           <div className="empty">
-            <Icon name="notes" size={26} />
+            <Icon name={kindFilter === 'all' ? 'notes' : 'search'} size={24} />
             <p className="empty-title">{kindFilter === 'all' ? '还没有记录' : '这个类型还没有内容'}</p>
-            <p className="empty-text">用一句话记下今天，或者直接手动填写。</p>
+            <p className="empty-text">用一句话记下今天，或者手动填写。</p>
             <button type="button" className="btn btn-primary" onClick={() => onQuickCapture()}>
               记一笔
             </button>
@@ -135,10 +129,12 @@ export function RecordsScreen({
           <>
             {pinned.length > 0 ? (
               <section aria-label="置顶">
-                <div className="section-label">置顶 / PINNED</div>
-                <div className="notes-list">
+                <h2 className="records-group-title">
+                  <Icon name="pin" size={13} /> 置顶
+                </h2>
+                <div className="pinned-list">
                   {pinned.map((note) => (
-                    <NoteCard key={note.id} note={note} onOpen={onOpenNote} onMenu={onNoteMenu} />
+                    <RecordRow key={note.id} note={note} onOpen={onOpenNote} onMenu={onNoteMenu} pinnedRow />
                   ))}
                 </div>
               </section>
@@ -146,10 +142,10 @@ export function RecordsScreen({
 
             {groups.map(([dayKey, dayNotes]) => (
               <section key={dayKey} aria-label={dayLabel(dayKey)}>
-                <div className="section-label">{dayLabel(dayKey)}</div>
-                <div className="notes-list">
+                <h2 className="records-group-title">{dayLabel(dayKey)}</h2>
+                <div className="record-list">
                   {dayNotes.map((note) => (
-                    <NoteCard key={note.id} note={note} onOpen={onOpenNote} onMenu={onNoteMenu} />
+                    <RecordRow key={note.id} note={note} onOpen={onOpenNote} onMenu={onNoteMenu} />
                   ))}
                 </div>
               </section>
