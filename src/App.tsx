@@ -18,7 +18,6 @@ import { CaptureSheet } from './components/CaptureSheet';
 import { NodeEditorSheet, type NodeEditorValues } from './components/NodeEditorSheet';
 import { TabBar } from './components/TabBar';
 import { ActionSheet, type ActionSheetItem } from './components/ActionSheet';
-import { Icon } from './components/Icon';
 import { SearchScreen } from './components/SearchScreen';
 
 const APP_TITLE = '麻薯';
@@ -45,6 +44,8 @@ export default function App() {
   const [noteMenu, setNoteMenu] = useState<Note | null>(null);
   const [editorMenuOpen, setEditorMenuOpen] = useState(false);
   const [editorMode, setEditorMode] = useState<EditorMode>('preview');
+  const [graphSelectedId, setGraphSelectedId] = useState<string | null>(null);
+  const [graphFullscreen, setGraphFullscreen] = useState(false);
   const [captureOpen, setCaptureOpen] = useState(false);
   const [captureKind, setCaptureKind] = useState<NoteKind | undefined>(undefined);
   const [nodeEditor, setNodeEditor] = useState<{ open: boolean; noteId: string | null; position?: NotePosition }>({
@@ -383,35 +384,31 @@ export default function App() {
         );
       case 'graph':
         return (
-          <div className="screen graph-screen">
-            <header className="screen-header graph-header">
-              <div>
-                <h1 className="page-title display">生活图谱</h1>
-                <p className="brand-date mono">
-                  {api.notes.length} NODES · {range.length} DAYS
-                </p>
-              </div>
-              <button type="button" className="icon-btn" aria-label="回到今日" onClick={() => navigate({ name: 'today' })}>
-                <Icon name="sun" size={19} />
-              </button>
-            </header>
+          <div className={`screen graph-screen${graphFullscreen ? ' is-fullscreen' : ''}`}>
             <div className="graph-host">
               <GraphView
                 notes={api.notes}
                 activeNoteId={null}
-                selectedNoteId={nodeEditor.open && nodeEditor.noteId ? nodeEditor.noteId : null}
-                onSelectNote={(id) => setNodeEditor({ open: id !== null, noteId: id })}
+                selectedNoteId={graphSelectedId}
+                onSelectNote={setGraphSelectedId}
                 onOpenNote={openNote}
                 onMoveNote={(id, position) => api.setNodePosition(id, position)}
                 onCreateNoteAt={(position) => setNodeEditor({ open: true, noteId: null, position })}
+                onDeleteNote={(id) => {
+                  void api.deleteNote(id);
+                  setGraphSelectedId(null);
+                }}
                 onLinkNotes={(sourceId, targetId) => {
                   api.addManualLink(sourceId, targetId);
                   notify('已连线');
                 }}
                 onRequestResetLayout={() => {
                   api.resetNodePositions();
+                  setGraphSelectedId(null);
                   notify('已恢复自动布局');
                 }}
+                fullscreen={graphFullscreen}
+                onToggleFullscreen={() => setGraphFullscreen((value) => !value)}
               />
             </div>
           </div>
@@ -491,8 +488,12 @@ export default function App() {
         />
       ) : (
         <>
-          <main className="app-main">{renderTabScreen()}</main>
-          <TabBar active={activeTab} onChange={(tab) => navigate({ name: tab })} />
+          <main className={`app-main${graphFullscreen && route.name === 'graph' ? ' is-immersive' : ''}`}>
+            {renderTabScreen()}
+          </main>
+          {graphFullscreen && route.name === 'graph' ? null : (
+            <TabBar active={activeTab} onChange={(tab) => navigate({ name: tab })} />
+          )}
         </>
       )}
 
