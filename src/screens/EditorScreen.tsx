@@ -15,6 +15,8 @@ export interface EditorScreenProps {
   onMenu: () => void;
   onOpenNote: (id: string) => void;
   onCreateNote: (title: string) => void;
+  /** Surfaced when the debounced write failed (e.g. storage full). */
+  storageWarning?: string | null;
 }
 
 type Mode = 'edit' | 'preview';
@@ -35,6 +37,7 @@ export function EditorScreen({
   onMenu,
   onOpenNote,
   onCreateNote,
+  storageWarning,
 }: EditorScreenProps) {
   const [mode, setMode] = useState<Mode>(() => (note.content.trim() ? 'preview' : 'edit'));
   const [saveLabel, setSaveLabel] = useState('已保存');
@@ -226,7 +229,9 @@ export function EditorScreen({
           <Icon name="back" size={22} />
         </button>
         <div className="editor-header-meta">
-          <span className="editor-status">{saveLabel}</span>
+          <span className={`editor-status${storageWarning ? ' is-error' : ''}`}>
+            {storageWarning ? '未保存到本地' : saveLabel}
+          </span>
           <span className="editor-dot" aria-hidden="true">
             ·
           </span>

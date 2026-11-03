@@ -91,7 +91,7 @@ npm run typecheck && npm test && npm run build
 | `src/components/` | 可复用 UI 组件 | 通过 props / callback 拿数据，不直接访问 `db.ts` |
 | `src/screens/` | 页面级组件（笔记列表、编辑器、设置） | 负责布局与交互，数据由上层注入，不直接访问 `db.ts` |
 | `src/styles/` | `tokens.css` 设计变量、`base.css` 基础样式、`app.css` 应用外壳样式 | 不要在这里写组件私有样式 |
-| `tests/` | Vitest 单元测试 | 文件命名为 `*.test.ts`，不要提交调试用的临时测试文件（CI 会执行 `tests/` 下所有测试；当前 87 个用例） |
+| `tests/` | Vitest 单元测试 | 文件命名为 `*.test.ts`，不要提交调试用的临时测试文件（CI 会执行 `tests/` 下所有测试；当前 95 个用例） |
 | `scripts/` | Node/Python 工具脚本（图标生成、局域网托管、截图、二维码） | 不参与前端构建，不引入浏览器运行时依赖 |
 | `public/` | 静态资源、PWA manifest 与图标、`sw.js` | manifest 需与 `index.html` 保持一致；改动离线壳资源时同步更新 `sw.js` 的 `PRECACHE` 与 `CACHE` 版本 |
 

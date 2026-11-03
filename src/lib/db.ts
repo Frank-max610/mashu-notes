@@ -31,8 +31,16 @@ function openDatabase(): Promise<IDBDatabase> {
       }
     };
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error ?? new Error('IndexedDB open failed'));
-    request.onblocked = () => reject(new Error('IndexedDB blocked'));
+    // Do not cache a failed open: a transient error (blocked upgrade, another
+    // tab holding a transaction) must not degrade the whole session.
+    request.onerror = () => {
+      dbPromise = null;
+      reject(request.error ?? new Error('IndexedDB open failed'));
+    };
+    request.onblocked = () => {
+      dbPromise = null;
+      reject(new Error('IndexedDB blocked'));
+    };
   });
   return dbPromise;
 }
@@ -77,11 +85,39 @@ export async function loadNotes(): Promise<Note[]> {
     });
     await txDone(tx);
     mode = 'indexeddb';
-    return notes;
+    return recoverLocalFallback(notes);
   } catch {
     mode = 'localstorage';
     return readLocal();
   }
+}
+
+/**
+ * If a previous session fell back to localStorage (private mode, transient
+ * IndexedDB failure), fold those notes into IndexedDB so they are not hidden by
+ * a later successful open. The localStorage copy is only removed once the
+ * merge has been written.
+ */
+async function recoverLocalFallback(notes: Note[]): Promise<Note[]> {
+  const legacy = readLocal();
+  if (legacy.length === 0) return notes;
+  const byId = new Map(notes.map((note) => [note.id, note]));
+  let changed = false;
+  for (const note of legacy) {
+    const current = byId.get(note.id);
+    if (!current || note.updatedAt > current.updatedAt) {
+      byId.set(note.id, note);
+      changed = true;
+    }
+  }
+  const merged = changed ? [...byId.values()] : notes;
+  if (changed) await saveNotes(merged);
+  try {
+    localStorage.removeItem(LS_KEY);
+  } catch {
+    /* ignore quota/security errors */
+  }
+  return merged;
 }
 
 /** Insert or update notes in one transaction. */

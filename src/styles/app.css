@@ -387,6 +387,11 @@
   color: var(--accent);
 }
 
+.editor-status.is-error {
+  color: var(--danger);
+  font-weight: 600;
+}
+
 .icon-btn.is-on {
   color: var(--accent);
 }

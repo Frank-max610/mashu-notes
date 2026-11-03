@@ -113,14 +113,14 @@ src/main.tsx ──挂载（StrictMode）──▶ src/App.tsx（应用外壳：
 | `types.ts` | 数据契约：`Note`、`NoteSummary`、`WikiLink`、`ResolvedLink`、`Backlink`、`TagCount`、`NotePatch`、`ThemeMode` | 无 |
 | `links.ts` | 从 Markdown 派生关系：`maskCode`、`extractWikiLinks`、`extractTags`、`normalizeTitle`、`buildTitleIndex`、`resolveLink`、`outgoingLinks`、`backlinksFor`、`backlinkCounts`、`allTags`、`noteMatches` | `types.ts` |
 | `markdown.ts` | markdown-it 实例、wiki 链接预处理与渲染、任务清单规则、`plainText` / `excerpt` / `countWords` | `markdown-it`、`types.ts` |
-| `search.ts` | 全文搜索：多关键词 AND、`#tag` 过滤、评分排序、命中片段；标题补全 | `types.ts`、`links.ts` |
+| `search.ts` | 全文搜索：多关键词 AND、`#tag` 过滤、评分排序、命中片段；标题补全 | `types.ts`、`links.ts`、`markdown.ts`（复用 `plainText` / `excerpt`） |
 | `graph.ts` | 由笔记构建节点/边（含幽灵节点）、确定性初始布局、力导向 `tick` / `layoutSync` | `types.ts`、`links.ts` |
 | `db.ts` | 持久化适配：`loadNotes`、`saveNotes`、`deleteNoteFromDb`、`replaceAllNotes`、`clearAllNotes`、`storageEstimate`、`requestPersistentStorage`、`getStorageMode` | 浏览器 IndexedDB / localStorage |
 | `store.ts` | React 状态源 `useNotes()`：内存缓存、乐观更新、防抖写入、生命周期 flush、`sortNotes` | React、`db.ts`、`links.ts`、`prefs.ts`、`seed.ts` |
 | `prefs.ts` | 主题与引导标记的 localStorage 读写；`makeId()` / `makeNote()` 工厂 | `types.ts`、`links.ts` |
 | `seed.ts` | 首次运行的演示笔记（展示链接、标签、任务、幽灵节点） | `types.ts`、`prefs.ts` |
 | `exportImport.ts` | `VaultFile` JSON 导出/解析、Markdown 合集、下载与文件选择、文件名时间戳 | `types.ts`、`links.ts`、`prefs.ts` |
-| `format.ts` | 相对时间、日期、字节数、数字缩写的展示格式化 | 无 |
+| `format.ts` | 相对时间与字节数的展示格式化 | 无 |
 | `useRoute.ts` | 轻量 hash 路由：`parseRoute` / `routeToHash` / `navigate` / `replaceRoute` / `useRoute` | React |
 
 依赖方向是单向的：**UI → store → db / 纯函数核心**，纯函数之间只允许 `types.ts` 和 `links.ts` 这类底层模块被更上层引用，绝不反向依赖 `db.ts` / `store.ts`。
@@ -205,7 +205,8 @@ const STORE = 'notes';        // keyPath: 'id'，索引：updatedAt
 
 - `openDatabase()` 惰性打开并缓存 Promise；`onupgradeneeded` 时创建对象仓库与 `updatedAt` 索引。
 - 读写都包在单个事务里：`saveNotes` 对一批笔记执行 `put`，`replaceAllNotes` 先 `clear()` 再批量 `put`，`clearAllNotes` 即 `replaceAllNotes([])`。
-- 任何一步抛错（隐私模式、被禁用、配额不足、版本冲突）都回退到 localStorage：先读出旧数组，按 id 合并/过滤后整体写回。
+- 任何一步抛错（隐私模式、被禁用、配额不足、版本冲突）都回退到 localStorage：`saveNotes` 在回退路径里按 id 合并后整体写回；`replaceAllNotes` / `clearAllNotes` 直接写入传入的数组。下一次 IndexedDB 可用时，`loadNotes` 会把 localStorage 里的笔记合并进 IndexedDB 并清除回退键。
+- `openDatabase()` 打开失败时不会缓存失败的 Promise，后续调用会重试。
 
 ### localStorage
 
@@ -254,7 +255,7 @@ HTML 字符串 → `MarkdownPreview` 注入 DOM
 - 渲染结果的 `class`/属性均由代码生成，不拼接用户可控的任意 HTML。
 - 残余风险：用户在笔记里写的远程图片 URL 仍会被浏览器加载（这是用户主动内容），隐私说明中已注明。
 
-除块级渲染 `renderMarkdown()` 外，还有 `renderInline()`（标题/短文本）、`plainText()`（去语法后的可读文本）、`excerpt()`（列表卡片摘要，默认 120 字）、`countWords()`（CJK 按字、拉丁按词计数）。
+除块级渲染 `renderMarkdown()` 外，还有 `plainText()`（去语法后的可读文本，摘要与搜索片段共用）、`excerpt()`（列表卡片摘要，默认 120 字）、`countWords()`（CJK 按字、拉丁按词计数）。
 
 ## 8. 状态管理（`useNotes`）
 

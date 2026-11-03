@@ -28,7 +28,7 @@ export function toVaultJson(notes: Note[]): string {
   return JSON.stringify(file, null, 2);
 }
 
-function coerceNote(raw: unknown): Note | null {
+function coerceNote(raw: unknown, seenIds: Set<string>): Note | null {
   if (!raw || typeof raw !== 'object') return null;
   const value = raw as Record<string, unknown>;
   const content = typeof value.content === 'string' ? value.content : '';
@@ -36,8 +36,13 @@ function coerceNote(raw: unknown): Note | null {
   const now = Date.now();
   const createdAt = typeof value.createdAt === 'number' ? value.createdAt : now;
   const updatedAt = typeof value.updatedAt === 'number' ? value.updatedAt : createdAt;
+  let id = typeof value.id === 'string' && value.id ? value.id : makeId();
+  // Duplicate ids in a hand-edited backup would overwrite each other in the
+  // keyPath store, so give later copies a fresh id instead of losing notes.
+  if (seenIds.has(id)) id = makeId();
+  seenIds.add(id);
   return {
-    id: typeof value.id === 'string' && value.id ? value.id : makeId(),
+    id,
     title,
     content,
     tags: extractTags(content),
@@ -66,9 +71,56 @@ export function parseVaultJson(text: string): Note[] {
   } else {
     throw new Error('文件里没有找到笔记数据（缺少 notes 数组）。');
   }
-  const notes = (list as unknown[]).map(coerceNote).filter((note): note is Note => note !== null);
+  const seenIds = new Set<string>();
+  const notes = (list as unknown[])
+    .map((raw) => coerceNote(raw, seenIds))
+    .filter((note): note is Note => note !== null);
   if (notes.length === 0) throw new Error('文件里没有可导入的笔记。');
   return notes;
+}
+
+export interface MergeResult {
+  notes: Note[];
+  /** Notes appended because no title match existed. */
+  added: number;
+  /** Existing notes replaced by a newer version from the file. */
+  updated: number;
+}
+
+/**
+ * Merge an imported backup into the current vault.
+ *
+ * Local notes are never dropped: an incoming note only replaces the first
+ * existing note with the same title when it is newer; everything else is
+ * appended. (Rebuilding the vault through a title-keyed map would silently
+ * collapse pre-existing notes that happen to share a title, e.g. two
+ * "未命名笔记".)
+ */
+export function mergeVaultNotes(existing: Note[], incoming: Note[]): MergeResult {
+  const keyOf = (note: Note) => note.title.trim().toLowerCase() || note.id;
+  const notes = [...existing];
+  const indexByTitle = new Map<string, number>();
+  notes.forEach((note, index) => {
+    const key = keyOf(note);
+    if (!indexByTitle.has(key)) indexByTitle.set(key, index);
+  });
+
+  let added = 0;
+  let updated = 0;
+  for (const note of incoming) {
+    const key = keyOf(note);
+    const index = indexByTitle.get(key);
+    if (index === undefined) {
+      indexByTitle.set(key, notes.length);
+      notes.push(note);
+      added += 1;
+    } else if (note.updatedAt > notes[index].updatedAt) {
+      notes[index] = note;
+      updated += 1;
+    }
+  }
+
+  return { notes, added, updated };
 }
 
 /** Human readable Markdown bundle of the whole vault. */

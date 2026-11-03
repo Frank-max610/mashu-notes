@@ -31,6 +31,11 @@ describe('renderMarkdown', () => {
     expect(html).not.toContain('data-wiki-target');
   });
 
+  it('does not convert wiki links inside an unclosed code fence', () => {
+    const html = renderMarkdown('```js\nconst a = "[[not-a-link]]";\n// still typing');
+    expect(html).not.toContain('data-wiki-target');
+  });
+
   it('escapes raw html', () => {
     const html = renderMarkdown('<script>alert(1)</script>');
     expect(html).not.toContain('<script>');

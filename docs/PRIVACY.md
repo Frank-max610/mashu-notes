@@ -60,8 +60,8 @@ Inkstone 没有后端，因此**不存在**以下行为：
 ### 导出备份（推荐定期做）
 
 1. 打开 Inkstone 的**设置**页。
-2. 选择「导出 JSON」：得到包含全部笔记的 `.json` 文件，可再次导入，格式见 `src/lib/exportImport.ts` 的 `VaultFile`。
-3. 或选择「导出 Markdown」：得到一份便于阅读/迁移到其他工具的 Markdown 合集（注意：该格式目前不能导回 Inkstone）。
+2. 选择「导出全部笔记（JSON）」：得到包含全部笔记的 `.json` 文件，可再次导入，格式见 `src/lib/exportImport.ts` 的 `VaultFile`。
+3. 或选择「导出 Markdown 合集」：得到一份便于阅读/迁移到其他工具的 Markdown 合集（注意：该格式目前不能导回 Inkstone）。
 4. 把文件保存到你信任的位置（本地磁盘、加密网盘等）。
 
 导出的文件包含明文笔记，请像对待任何私人文档一样妥善保管。
@@ -72,7 +72,7 @@ Inkstone 没有后端，因此**不存在**以下行为：
 
 ### 删除全部数据
 
-1. 设置页 →「清空所有笔记」——会移除 IndexedDB 与 localStorage 中的全部笔记（`inkstone.theme.v1` / `inkstone.onboarded.v1` 偏好可能保留，可一并清除站点数据）。
+1. 设置页 →「清空全部笔记」——会移除 IndexedDB 与 localStorage 中的全部笔记（`inkstone.theme.v1` / `inkstone.onboarded.v1` 偏好可能保留，可一并清除站点数据）。
 2. 或在浏览器设置中清除该站点的数据（「网站设置 → 存储 → 清除数据」）。这会一并删除笔记与偏好，且不可恢复。
 3. 卸载「添加到主屏幕」的图标本身**不会**删除数据；需要在浏览器里清除站点数据才能彻底删除。
 

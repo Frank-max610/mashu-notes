@@ -13,6 +13,10 @@ import type { Backlink, Note, NoteSummary, ResolvedLink, TagCount, WikiLink } fr
 export function maskCode(content: string): string {
   const fence = /(^|\n)(\s*)(```|~~~)[^\n]*\n[\s\S]*?\n\s*\3[^\n]*(\n|$)/g;
   let masked = content.replace(fence, (match) => match.replace(/[^\n]/g, ' '));
+  // An unclosed fence swallows the rest of the document while the user types.
+  masked = masked.replace(/(^|\n)([ \t]*)(```|~~~)[^\n]*\n[\s\S]*$/g, (match) =>
+    match.replace(/[^\n]/g, ' '),
+  );
   masked = masked.replace(/`[^`\n]*`/g, (match) => ' '.repeat(match.length));
   return masked;
 }
@@ -32,7 +36,9 @@ export function normalizeTitle(title: string): string {
   return title.trim().replace(/\s+/g, ' ').toLowerCase();
 }
 
-const WIKI_LINK_RE = /\[\[([^[\]\n]+?)(?:\|([^[\]\n]+?))?\]\]/g;
+// Target may not contain `|`; the alias part is optional and may be empty,
+// so `[[note|]]` still links to "note".
+const WIKI_LINK_RE = /\[\[([^[\]|\n]+?)(?:\|([^[\]\n]*))?\]\]/g;
 
 /** Parse all `[[target]]` / `[[target|alias]]` occurrences. */
 export function extractWikiLinks(content: string): WikiLink[] {

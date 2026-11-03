@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   fileStamp,
+  mergeVaultNotes,
   parseVaultJson,
   toMarkdownBundle,
   toVaultJson,
@@ -75,5 +76,65 @@ describe('fileStamp', () => {
   it('is filename safe and sortable', () => {
     const stamp = fileStamp(new Date(2026, 10, 3, 19, 3));
     expect(stamp).toBe('20261103-1903');
+  });
+});
+
+describe('mergeVaultNotes', () => {
+  const existing = (id: string, title: string, updatedAt: number): Note => ({
+    id,
+    title,
+    content: '',
+    tags: [],
+    createdAt: updatedAt,
+    updatedAt,
+    pinned: false,
+  });
+
+  it('never drops local notes that share a title', () => {
+    const local = [existing('a', '未命名笔记', 1), existing('b', '未命名笔记', 2), existing('c', '其他', 3)];
+    const incoming = [existing('x', '导入的新笔记', 4)];
+    const result = mergeVaultNotes(local, incoming);
+    expect(result.notes).toHaveLength(4);
+    expect(result.added).toBe(1);
+    expect(result.notes.filter((note) => note.title === '未命名笔记')).toHaveLength(2);
+  });
+
+  it('appends unmatched notes and keeps their ids', () => {
+    const local = [existing('a', 'A', 1)];
+    const incoming = [existing('n1', 'B', 2), existing('n2', 'C', 3)];
+    const result = mergeVaultNotes(local, incoming);
+    expect(result.added).toBe(2);
+    expect(result.notes.map((note) => note.id)).toEqual(['a', 'n1', 'n2']);
+  });
+
+  it('updates the first title match only when the incoming copy is newer', () => {
+    const local = [existing('a', 'A', 10)];
+    const newer = mergeVaultNotes(local, [existing('a2', 'A', 20)]);
+    expect(newer.updated).toBe(1);
+    expect(newer.notes).toHaveLength(1);
+    expect(newer.notes[0].id).toBe('a2');
+
+    const older = mergeVaultNotes(local, [existing('a3', 'A', 5)]);
+    expect(older.updated).toBe(0);
+    expect(older.notes[0].id).toBe('a');
+  });
+
+  it('matches titles case-insensitively and trims whitespace', () => {
+    const local = [existing('a', 'My Note', 1)];
+    const result = mergeVaultNotes(local, [existing('b', '  my note ', 9)]);
+    expect(result.notes).toHaveLength(1);
+    expect(result.notes[0].id).toBe('b');
+  });
+});
+
+describe('duplicate ids in an imported file', () => {
+  it('regenerates colliding ids instead of losing notes', () => {
+    const raw = JSON.stringify([
+      { id: 'dup', title: '第一条', content: 'a' },
+      { id: 'dup', title: '第二条', content: 'b' },
+    ]);
+    const notes = parseVaultJson(raw);
+    expect(notes).toHaveLength(2);
+    expect(new Set(notes.map((note) => note.id)).size).toBe(2);
   });
 });

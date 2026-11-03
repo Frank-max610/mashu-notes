@@ -26,7 +26,7 @@ const md = new MarkdownIt({
   typographer: true,
 });
 
-const WIKI_LINK_INLINE_RE = /\[\[([^[\]\n]+?)(?:\|([^[\]\n]+?))?\]\]/g;
+const WIKI_LINK_INLINE_RE = /\[\[([^[\]|\n]+?)(?:\|([^[\]\n]*))?\]\]/g;
 
 function escapeHtml(value: string): string {
   return value
@@ -49,6 +49,11 @@ function preprocessWikiLinks(content: string): string {
 
   let masked = content.replace(
     /(^|\n)([ \t]*)(`{3,}|~{3,})[^\n]*\n[\s\S]*?\n[ \t]*\3[^\n]*(\n|$)/g,
+    (match) => stash(match),
+  );
+  // Unterminated fences (common while typing) must not leak links either.
+  masked = masked.replace(
+    /(^|\n)([ \t]*)(`{3,}|~{3,})[^\n]*\n[\s\S]*$/g,
     (match) => stash(match),
   );
   masked = masked.replace(/`[^`\n]*`/g, (match) => stash(match));
@@ -112,11 +117,6 @@ md.core.ruler.after('inline', 'task-list-checkboxes', (state) => {
 /** Render Markdown to HTML, resolving wiki links against known notes. */
 export function renderMarkdown(content: string, ctx: RenderContext = {}): string {
   return md.render(preprocessWikiLinks(content), ctx);
-}
-
-/** Render inline Markdown (no block wrapper), e.g. for titles. */
-export function renderInline(content: string, ctx: RenderContext = {}): string {
-  return md.renderInline(preprocessWikiLinks(content), ctx);
 }
 
 /** Strip Markdown syntax down to readable plain text (used for excerpts). */

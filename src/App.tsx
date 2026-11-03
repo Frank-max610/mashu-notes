@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNotes } from './lib/store';
-import { navigate, replaceRoute, useRoute, type TabName } from './lib/useRoute';
+import { navigate, parseRoute, replaceRoute, routeToHash, useRoute, type TabName } from './lib/useRoute';
 import { getStoredTheme, setStoredTheme } from './lib/prefs';
 import { downloadText } from './lib/exportImport';
 import type { Note, ThemeMode } from './lib/types';
@@ -50,10 +50,12 @@ export default function App() {
     [],
   );
 
-  // Ensure the URL always describes a real route.
+  // Keep the URL canonical: empty hashes and unknown routes fall back to the
+  // notes list instead of rendering a stray screen with a bogus hash.
   useEffect(() => {
-    if (!window.location.hash) replaceRoute({ name: 'notes' });
-  }, []);
+    const parsed = parseRoute(window.location.hash);
+    if (routeToHash(parsed) !== window.location.hash) replaceRoute(parsed);
+  }, [route]);
 
   // Resolve the active theme (including the `system` preference).
   useEffect(() => {
@@ -97,7 +99,10 @@ export default function App() {
 
   const openNote = useCallback(
     (id: string) => {
-      if (route.name !== 'note') returnToRef.current = route.name;
+      if (route.name !== 'note') {
+        returnToRef.current = route.name;
+        openedFromAppRef.current = true;
+      }
       navigate({ name: 'note', id });
     },
     [route],
@@ -105,7 +110,10 @@ export default function App() {
 
   const createNote = useCallback(
     async (input: { title?: string; content?: string } = {}) => {
-      if (route.name !== 'note') returnToRef.current = route.name;
+      if (route.name !== 'note') {
+        returnToRef.current = route.name;
+        openedFromAppRef.current = true;
+      }
       const note = await api.createNote(input);
       navigate({ name: 'note', id: note.id });
     },
@@ -114,7 +122,10 @@ export default function App() {
 
   const openOrCreateByTitle = useCallback(
     async (title: string) => {
-      if (route.name !== 'note') returnToRef.current = route.name;
+      if (route.name !== 'note') {
+        returnToRef.current = route.name;
+        openedFromAppRef.current = true;
+      }
       const note = await api.ensureNote(title);
       notify(`已打开「${note.title}」`);
       navigate({ name: 'note', id: note.id });
@@ -122,7 +133,17 @@ export default function App() {
     [api.ensureNote, notify, route],
   );
 
+  /** True when the current editor entry was pushed from inside the app. */
+  const openedFromAppRef = useRef(false);
+
   const goBack = useCallback(() => {
+    // Pop the history entry we pushed, so the phone's back gesture does not
+    // immediately reopen the editor. Deep links fall back to the notes list.
+    if (openedFromAppRef.current && window.history.length > 1) {
+      openedFromAppRef.current = false;
+      window.history.back();
+      return;
+    }
     navigate({ name: returnToRef.current });
   }, []);
 
@@ -130,7 +151,11 @@ export default function App() {
     async (note: Note) => {
       const label = note.title || '未命名笔记';
       if (!window.confirm(`删除「${label}」？此操作不可撤销。`)) return;
-      await api.deleteNote(note.id);
+      const removed = await api.deleteNote(note.id);
+      if (!removed) {
+        notify('删除失败，笔记可能仍在存储中，请重试或先导出备份');
+        return;
+      }
       notify('已删除笔记');
       if (route.name === 'note') navigate({ name: returnToRef.current });
     },
@@ -242,14 +267,7 @@ export default function App() {
         );
       case 'search':
         return (
-          <SearchScreen
-            notes={api.sortedNotes}
-            onOpenNote={openNote}
-            onOpenTag={(tag) => {
-              setTagFilter(tag);
-              navigate({ name: 'notes' });
-            }}
-          />
+          <SearchScreen notes={api.sortedNotes} onOpenNote={openNote} />
         );
       case 'settings':
         return (
@@ -296,6 +314,7 @@ export default function App() {
           onMenu={() => setEditorMenuOpen(true)}
           onOpenNote={openNote}
           onCreateNote={(title) => void openOrCreateByTitle(title)}
+          storageWarning={api.storageWarning}
         />
       ) : (
         <>

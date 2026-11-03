@@ -31,7 +31,7 @@ export interface NotesApi {
   storageWarning: string | null;
   createNote(input?: { title?: string; content?: string }): Promise<Note>;
   updateNote(id: string, patch: NotePatch): void;
-  deleteNote(id: string): Promise<void>;
+  deleteNote(id: string): Promise<boolean>;
   togglePin(id: string): void;
   replaceAll(notes: Note[]): Promise<void>;
   clearAll(): Promise<void>;
@@ -42,6 +42,35 @@ export interface NotesApi {
 }
 
 const FLUSH_DELAY_MS = 350;
+
+/**
+ * Load (and on first run seed) the vault exactly once per page load.
+ *
+ * React StrictMode mounts effects twice in development: the first run is
+ * cancelled by its cleanup, so the work must live in a shared promise and the
+ * commit/ready step must run for whichever effect is still alive. Caching the
+ * promise also guarantees seeding can never happen twice.
+ */
+let vaultInitPromise: Promise<Note[]> | null = null;
+
+function initializeVault(): Promise<Note[]> {
+  if (!vaultInitPromise) {
+    vaultInitPromise = (async () => {
+      let stored = await loadNotes();
+      if (stored.length === 0 && !hasOnboarded()) {
+        stored = createSeedNotes();
+        await saveNotes(stored);
+        markOnboarded();
+      }
+      return stored;
+    })();
+    // Allow a retry after a failed boot instead of caching the rejection.
+    vaultInitPromise.catch(() => {
+      vaultInitPromise = null;
+    });
+  }
+  return vaultInitPromise;
+}
 
 /**
  * The single source of truth for the vault. Edits are applied optimistically in
@@ -56,12 +85,13 @@ export function useNotes(): NotesApi {
   const notesRef = useRef<Note[]>([]);
   const dirtyRef = useRef(new Map<string, Note>());
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const initRef = useRef(false);
 
   const commit = useCallback((next: Note[]) => {
     notesRef.current = next;
     setNotes(next);
   }, []);
+
+  const inFlightRef = useRef<Promise<void> | null>(null);
 
   const flush = useCallback(async () => {
     if (timerRef.current) {
@@ -71,12 +101,45 @@ export function useNotes(): NotesApi {
     if (dirtyRef.current.size === 0) return;
     const pending = [...dirtyRef.current.values()];
     dirtyRef.current.clear();
+    const task = (async () => {
+      try {
+        await saveNotes(pending);
+      } catch {
+        // Keep the batch: retry on the next edit/pagehide instead of dropping
+        // the only copy of the text that was just typed.
+        const live = new Set(notesRef.current.map((note) => note.id));
+        for (const note of pending) {
+          if (live.has(note.id) && !dirtyRef.current.has(note.id)) {
+            dirtyRef.current.set(note.id, note);
+          }
+        }
+        setStorageMode(getStorageMode());
+        setStorageWarning('保存失败，请检查浏览器存储空间，并立即导出备份。');
+      }
+    })();
+    inFlightRef.current = task;
     try {
-      await saveNotes(pending);
-    } catch {
-      setStorageWarning('保存失败，请检查浏览器存储空间，并立即导出备份。');
+      await task;
+    } finally {
+      if (inFlightRef.current === task) inFlightRef.current = null;
     }
   }, []);
+
+  /**
+   * Wait for any write that is already in progress. Destructive operations use
+   * this so a late debounced save can never resurrect deleted or replaced notes.
+   */
+  const settleWrites = useCallback(async () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    // Persist any unrelated pending edit first, otherwise clearing the timer
+    // below would postpone it until the next edit or page hide.
+    if (dirtyRef.current.size > 0) await flush();
+    const pendingWrite = inFlightRef.current;
+    if (pendingWrite) await pendingWrite;
+  }, [flush]);
 
   const scheduleFlush = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -86,27 +149,22 @@ export function useNotes(): NotesApi {
   }, [flush]);
 
   useEffect(() => {
-    if (initRef.current) return;
-    initRef.current = true;
     let cancelled = false;
-    void (async () => {
-      try {
-        let stored = await loadNotes();
-        if (stored.length === 0 && !hasOnboarded()) {
-          stored = createSeedNotes();
-          await saveNotes(stored);
-          markOnboarded();
-        }
+    initializeVault()
+      .then((stored) => {
         if (cancelled) return;
         commit(sortNotes(stored));
         setStorageMode(getStorageMode());
         void requestPersistentStorage();
-      } catch {
+      })
+      .catch(() => {
+        if (cancelled) return;
         setStorageWarning('读取本地数据失败，当前改动可能不会被保存。');
-      } finally {
-        if (!cancelled) setReady(true);
-      }
-    })();
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setReady(true);
+      });
     return () => {
       cancelled = true;
     };
@@ -137,6 +195,7 @@ export function useNotes(): NotesApi {
       try {
         await saveNotes([note]);
       } catch {
+        setStorageMode(getStorageMode());
         setStorageWarning('保存失败，请检查浏览器存储空间。');
       }
       return note;
@@ -172,16 +231,21 @@ export function useNotes(): NotesApi {
   );
 
   const deleteNote = useCallback(
-    async (id: string) => {
+    async (id: string): Promise<boolean> => {
       dirtyRef.current.delete(id);
       commit(notesRef.current.filter((note) => note.id !== id));
       try {
+        await settleWrites();
         await deleteNoteFromDb(id);
+        setStorageMode(getStorageMode());
+        return true;
       } catch {
+        setStorageMode(getStorageMode());
         setStorageWarning('删除失败，请稍后重试。');
+        return false;
       }
     },
-    [commit],
+    [commit, settleWrites],
   );
 
   const togglePin = useCallback(
@@ -199,19 +263,21 @@ export function useNotes(): NotesApi {
   const replaceAll = useCallback(
     async (incoming: Note[]) => {
       dirtyRef.current.clear();
+      await settleWrites();
       await replaceAllNotes(incoming);
       markOnboarded();
       commit(sortNotes(incoming));
     },
-    [commit],
+    [commit, settleWrites],
   );
 
   const clearAll = useCallback(async () => {
     dirtyRef.current.clear();
+    await settleWrites();
     await clearAllNotes();
     markOnboarded();
     commit([]);
-  }, [commit]);
+  }, [commit, settleWrites]);
 
   const findByTitle = useCallback((title: string) => {
     const key = normalizeTitle(title);

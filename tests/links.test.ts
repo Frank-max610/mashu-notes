@@ -62,6 +62,15 @@ describe('extractWikiLinks', () => {
     expect(extractWikiLinks('[[  Alpha  ]]')).toEqual([{ target: 'Alpha', alias: null }]);
     expect(extractWikiLinks('[[]]')).toEqual([]);
   });
+
+  it('treats an empty alias as no alias and never keeps the pipe in the target', () => {
+    expect(extractWikiLinks('[[Alpha|]]')).toEqual([{ target: 'Alpha', alias: null }]);
+    expect(extractWikiLinks('[[Alpha|甲]]')).toEqual([{ target: 'Alpha', alias: '甲' }]);
+  });
+
+  it('ignores wiki links inside an unclosed fence while typing', () => {
+    expect(extractWikiLinks('```md\n[[nope]]\n#nope')).toEqual([]);
+  });
 });
 
 describe('extractTags', () => {

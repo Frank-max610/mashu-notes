@@ -5,6 +5,7 @@ import { storageEstimate } from '../lib/db';
 import {
   downloadText,
   fileStamp,
+  mergeVaultNotes,
   parseVaultJson,
   pickTextFile,
   toMarkdownBundle,
@@ -114,20 +115,11 @@ export function SettingsScreen({
         await onReplaceAll(imported);
         notify(`已替换为 ${imported.length} 条笔记`);
       } else {
-        const keyOf = (note: Note) => note.title.trim().toLowerCase() || note.id;
-        const merged = new Map(notes.map((note) => [keyOf(note), note] as const));
-        let added = 0;
-        for (const incoming of imported) {
-          const current = merged.get(keyOf(incoming));
-          if (!current) {
-            merged.set(keyOf(incoming), incoming);
-            added += 1;
-          } else if (incoming.updatedAt > current.updatedAt) {
-            merged.set(keyOf(incoming), incoming);
-          }
-        }
-        await onReplaceAll([...merged.values()]);
-        notify(`导入完成：新增 ${added} 条，共 ${merged.size} 条`);
+        // Never rebuild the vault through a title-keyed map: local notes that
+        // share a title must survive an import untouched.
+        const { notes: merged, added, updated } = mergeVaultNotes(notes, imported);
+        await onReplaceAll(merged);
+        notify(`导入完成：新增 ${added} 条，更新 ${updated} 条，共 ${merged.length} 条`);
       }
       refreshUsage();
     } catch (error) {
@@ -142,8 +134,12 @@ export function SettingsScreen({
     if (!first) return;
     const second = window.confirm('此操作不可撤销。再次确认删除全部笔记？');
     if (!second) return;
-    await onClearAll();
-    notify('已清空笔记库');
+    try {
+      await onClearAll();
+      notify('已清空笔记库');
+    } catch {
+      notify('清空失败，请重试');
+    }
     refreshUsage();
   };
 

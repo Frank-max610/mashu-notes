@@ -9,7 +9,6 @@ import './SearchScreen.css';
 export interface SearchScreenProps {
   notes: Note[];
   onOpenNote: (id: string) => void;
-  onOpenTag: (tag: string) => void;
 }
 
 /** Query tokens eligible for <mark> highlighting (tag filters excluded). */
@@ -50,7 +49,7 @@ function highlight(text: string, tokens: string[]): ReactNode {
 }
 
 /** Full-text search screen: query box, tag chips, ranked result cards. */
-export function SearchScreen({ notes, onOpenNote, onOpenTag }: SearchScreenProps) {
+export function SearchScreen({ notes, onOpenNote }: SearchScreenProps) {
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
@@ -147,8 +146,9 @@ export function SearchScreen({ notes, onOpenNote, onOpenTag }: SearchScreenProps
                 type="button"
                 className={`chip search-screen__tag${activeTags.has(tag.tag) ? ' is-active' : ''}`}
                 onClick={() => {
+                  // Filter in place: jumping to the notes list here would make
+                  // the active-chip state below unreachable.
                   setQuery(`#${tag.label}`);
-                  onOpenTag(tag.label);
                 }}
               >
                 <Icon name="hash" size={12} />
