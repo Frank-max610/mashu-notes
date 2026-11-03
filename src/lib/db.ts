@@ -112,10 +112,15 @@ async function recoverLocalFallback(notes: Note[]): Promise<Note[]> {
   }
   const merged = changed ? [...byId.values()] : notes;
   if (changed) await saveNotes(merged);
-  try {
-    localStorage.removeItem(LS_KEY);
-  } catch {
-    /* ignore quota/security errors */
+  // Only clear the fallback copy once the merge really landed in IndexedDB:
+  // saveNotes falls back to localStorage when the write itself fails, and
+  // deleting the only copy in that window would lose notes.
+  if (getStorageMode() === 'indexeddb') {
+    try {
+      localStorage.removeItem(LS_KEY);
+    } catch {
+      /* ignore quota/security errors */
+    }
   }
   return merged;
 }
