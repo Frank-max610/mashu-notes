@@ -1,4 +1,4 @@
-/* 麻薯 design tokens v0.6 — soft pastel "strawberry milk", toned down.
+/* 麻薯 design tokens v0.7 — soft pastel with a warm apricot primary.
    The cute language returns (rounded corners, puffy shadows, blush tints) with
    a little less pink: cream paper, muted rose accent, lavender/mint/butter
    secondaries. Dark theme is a soft "taro night". */
@@ -19,95 +19,95 @@
   --text-3xl: 34px;
 
   /* warm cream + blush */
-  --bg: #fdf8f6;
-  --bg-subtle: #fbf1f2;
-  --surface: #ffffff;
-  --surface-2: #fdf1f4;
-  --surface-3: #f8e3ea;
-  --glass: rgba(255, 255, 255, 0.8);
-  --border: rgba(205, 138, 158, 0.18);
-  --border-strong: rgba(205, 138, 158, 0.32);
-  --text: #4a3a42;
-  --text-muted: #7a626e;
-  --text-faint: #7d6673;
+  --bg: #faf6f0;
+  --bg-subtle: #f5ede3;
+  --surface: #fffdfa;
+  --surface-2: #f7efe5;
+  --surface-3: #efe2d2;
+  --glass: rgba(255, 253, 250, 0.82);
+  --border: rgba(160, 120, 85, 0.18);
+  --border-strong: rgba(160, 120, 85, 0.32);
+  --text: #43392f;
+  --text-muted: #7a6857;
+  --text-faint: #7e6c5b;
 
   /* muted rose (less saturated than the original candy pink) */
-  --sunset: #e88fa8;
-  --sunset-soft: rgba(232, 143, 168, 0.18);
-  --magenta: #d96a92;
-  --dusk: #a98bd6;
-  --dusk-soft: rgba(169, 139, 214, 0.18);
-  --twilight: #c4b0ea;
-  --breeze: #a9c6e8;
-  --lime: #8fd4b6;
-  --grad-brand: linear-gradient(120deg, #f2a9bd 0%, #e88fa8 45%, #b9a0e0 100%);
-  --grad-soft: linear-gradient(120deg, rgba(242, 169, 189, 0.24), rgba(169, 139, 214, 0.18));
-  --grad-aurora: radial-gradient(52% 62% at 12% 6%, rgba(255, 190, 206, 0.5), transparent 62%),
-    radial-gradient(50% 64% at 88% 2%, rgba(196, 176, 234, 0.42), transparent 66%),
-    radial-gradient(54% 54% at 55% 100%, rgba(255, 231, 178, 0.32), transparent 72%);
+  --sunset: #e3a06a;
+  --sunset-soft: rgba(227, 160, 106, 0.18);
+  --magenta: #cf8452;
+  --dusk: #b98a4e;
+  --dusk-soft: rgba(185, 138, 78, 0.18);
+  --twilight: #e2c9a4;
+  --breeze: #a9bfc9;
+  --lime: #a8bb87;
+  --grad-brand: linear-gradient(120deg, #f3bf8f 0%, #e3a06a 48%, #c98a52 100%);
+  --grad-soft: linear-gradient(120deg, rgba(243, 191, 143, 0.24), rgba(201, 138, 82, 0.16));
+  --grad-aurora: radial-gradient(52% 62% at 12% 6%, rgba(255, 214, 173, 0.55), transparent 62%),
+    radial-gradient(50% 64% at 88% 2%, rgba(240, 205, 160, 0.45), transparent 66%),
+    radial-gradient(54% 54% at 55% 100%, rgba(255, 236, 196, 0.34), transparent 72%);
 
-  --accent: #ea8fa8;
-  --accent-strong: #d9557f;
-  --accent-ink: #b83a5e;
-  --accent-soft: rgba(234, 143, 168, 0.16);
+  --accent: #e3a06a;
+  --accent-strong: #c9773c;
+  --accent-ink: #a85b28;
+  --accent-soft: rgba(227, 160, 106, 0.18);
   --accent-contrast: #ffffff;
 
-  --taro: #a98bd6;
-  --taro-strong: #8f6ed3;
-  --taro-ink: #7750c4;
-  --taro-soft: rgba(169, 139, 214, 0.18);
+  --taro: #a8895a;
+  --taro-strong: #8a6a3c;
+  --taro-ink: #7d5c2e;
+  --taro-soft: rgba(168, 137, 90, 0.16);
   --butter: #d9a84e;
   --butter-soft: rgba(244, 201, 122, 0.24);
-  --mint: #6fae92;
-  --mint-soft: rgba(143, 212, 182, 0.2);
+  --mint: #6f8452;
+  --mint-soft: rgba(168, 187, 135, 0.2);
 
-  --danger: #d97a8e;
-  --danger-ink: #b03d55;
-  --danger-soft: rgba(217, 122, 142, 0.12);
-  --success: #46b98c;
-  --warning: #c28a2c;
+  --danger: #c96f56;
+  --danger-ink: #a5452c;
+  --danger-soft: rgba(201, 111, 86, 0.12);
+  --success: #6f8a4f;
+  --warning: #a87a2e;
 
   /* life-record accents (pastel, desaturated) */
-  --kind-diary: #7857b8;
-  --kind-diary-soft: rgba(169, 139, 214, 0.16);
-  --kind-food: #a55136;
-  --kind-food-soft: rgba(242, 173, 143, 0.2);
-  --kind-health: #3d7d5f;
-  --kind-health-soft: rgba(143, 212, 182, 0.2);
+  --kind-diary: #5c6f80;
+  --kind-diary-soft: rgba(150, 165, 178, 0.18);
+  --kind-food: #a9522b;
+  --kind-food-soft: rgba(227, 160, 106, 0.2);
+  --kind-health: #5d753f;
+  --kind-health-soft: rgba(168, 187, 135, 0.2);
   --kind-finance: #8a6417;
-  --kind-finance-soft: rgba(244, 201, 122, 0.24);
-  --kind-note: #7c5665;
-  --kind-note-soft: rgba(205, 160, 175, 0.18);
+  --kind-finance-soft: rgba(240, 207, 143, 0.24);
+  --kind-note: #7e6c5b;
+  --kind-note-soft: rgba(176, 155, 132, 0.18);
 
-  --btn-a: #d9557f;
-  --btn-b: #c23e6a;
+  --btn-a: #c9773c;
+  --btn-b: #a85b28;
 
-  --tabbar-bg: rgba(255, 255, 255, 0.82);
+  --tabbar-bg: rgba(255, 253, 250, 0.85);
   --overlay: rgba(74, 58, 66, 0.26);
-  --shadow-1: 0 4px 14px rgba(226, 130, 155, 0.14);
-  --shadow-2: 0 16px 40px rgba(226, 130, 155, 0.22);
-  --shadow-pop: 0 8px 22px rgba(226, 130, 155, 0.28);
-  --shadow-glow: 0 10px 34px rgba(232, 143, 168, 0.18);
-  --glow-a: rgba(255, 175, 196, 0.5);
-  --glow-b: rgba(196, 180, 245, 0.4);
-  --glow-c: rgba(255, 230, 160, 0.34);
-  --dot: rgba(214, 138, 158, 0.16);
+  --shadow-1: 0 4px 14px rgba(176, 122, 78, 0.12);
+  --shadow-2: 0 16px 40px rgba(176, 122, 78, 0.18);
+  --shadow-pop: 0 8px 22px rgba(201, 119, 60, 0.26);
+  --shadow-glow: 0 10px 34px rgba(227, 160, 106, 0.2);
+  --glow-a: rgba(255, 208, 164, 0.5);
+  --glow-b: rgba(240, 205, 160, 0.38);
+  --glow-c: rgba(255, 236, 196, 0.34);
+  --dot: rgba(176, 138, 98, 0.16);
 
   /* life graph — soft pastel canvas */
-  --graph-panel: #fff5f8;
-  --graph-panel-2: #ffedf3;
-  --graph-grid: rgba(205, 138, 158, 0.2);
-  --graph-node-1: #b79ced;
-  --graph-node-2: #ea9ab4;
-  --graph-node-3: #8fd4b6;
-  --graph-node-4: #f0bf6a;
-  --graph-node-5: #a9c6e8;
-  --graph-node: #ea9ab4;
-  --graph-node-2: #b79ced;
-  --graph-node-ghost: #d9c8d1;
-  --graph-edge: rgba(232, 143, 168, 0.42);
-  --graph-text: #6b4a59;
-  --graph-text-dim: #7a5a6b;
+  --graph-panel: #fdf7f0;
+  --graph-panel-2: #f8efe3;
+  --graph-grid: rgba(176, 138, 98, 0.2);
+  --graph-node-1: #9db0a8;
+  --graph-node-2: #d69a6a;
+  --graph-node-3: #a8bb87;
+  --graph-node-4: #e8c07a;
+  --graph-node-5: #9db8c4;
+  --graph-node: #d69a6a;
+  --graph-node-2: #9db0a8;
+  --graph-node-ghost: #d9c9b6;
+  --graph-edge: rgba(214, 154, 106, 0.42);
+  --graph-text: #6b5a4a;
+  --graph-text-dim: #7a6757;
 
   --radius-xs: 12px;
   --radius-s: 16px;
@@ -133,92 +133,92 @@
   color-scheme: dark;
 
   /* taro night (soft, not pure black) */
-  --bg: #201a27;
-  --bg-subtle: #26202f;
-  --surface: #2b2436;
-  --surface-2: #352c42;
-  --surface-3: #42354e;
-  --glass: rgba(43, 36, 54, 0.8);
-  --border: rgba(255, 235, 245, 0.1);
-  --border-strong: rgba(255, 235, 245, 0.2);
-  --text: #f7edf3;
-  --text-muted: #c3aebf;
-  --text-faint: #a48ea2;
+  --bg: #241d18;
+  --bg-subtle: #2b241d;
+  --surface: #2e2620;
+  --surface-2: #3a3029;
+  --surface-3: #463a31;
+  --glass: rgba(46, 38, 32, 0.82);
+  --border: rgba(255, 241, 226, 0.1);
+  --border-strong: rgba(255, 241, 226, 0.2);
+  --text: #f7efe7;
+  --text-muted: #cbb7a5;
+  --text-faint: #a8927e;
 
-  --sunset: #f2a2bc;
-  --sunset-soft: rgba(242, 162, 188, 0.18);
-  --magenta: #ff9dbb;
-  --dusk: #c9b2f5;
-  --dusk-soft: rgba(201, 178, 245, 0.18);
-  --twilight: #d8c8f8;
-  --breeze: #b8d0ee;
-  --lime: #a8e6cb;
-  --grad-brand: linear-gradient(120deg, #f7b2c6 0%, #f08fb0 45%, #c9b2f5 100%);
-  --grad-soft: linear-gradient(120deg, rgba(247, 178, 198, 0.2), rgba(201, 178, 245, 0.18));
-  --grad-aurora: radial-gradient(52% 62% at 12% 6%, rgba(247, 178, 198, 0.16), transparent 64%),
-    radial-gradient(50% 64% at 88% 2%, rgba(201, 178, 245, 0.16), transparent 66%),
-    radial-gradient(54% 54% at 55% 100%, rgba(255, 220, 160, 0.08), transparent 72%);
+  --sunset: #f0b07a;
+  --sunset-soft: rgba(240, 176, 122, 0.18);
+  --magenta: #f2c08e;
+  --dusk: #d9b07a;
+  --dusk-soft: rgba(217, 176, 122, 0.18);
+  --twilight: #e8d2ad;
+  --breeze: #b7c9d2;
+  --lime: #c2d3a3;
+  --grad-brand: linear-gradient(120deg, #f7c99e 0%, #f0b07a 48%, #d9b07a 100%);
+  --grad-soft: linear-gradient(120deg, rgba(247, 201, 158, 0.2), rgba(217, 176, 122, 0.16));
+  --grad-aurora: radial-gradient(52% 62% at 12% 6%, rgba(247, 201, 158, 0.16), transparent 64%),
+    radial-gradient(50% 64% at 88% 2%, rgba(217, 176, 122, 0.14), transparent 66%),
+    radial-gradient(54% 54% at 55% 100%, rgba(255, 236, 196, 0.1), transparent 72%);
 
-  --accent: #f2a2bc;
-  --accent-strong: #f7b2c6;
-  --accent-ink: #ffc0d2;
-  --accent-soft: rgba(242, 162, 188, 0.16);
-  --accent-contrast: #3a1626;
+  --accent: #f0b07a;
+  --accent-strong: #f7c99e;
+  --accent-ink: #ffc99a;
+  --accent-soft: rgba(240, 176, 122, 0.16);
+  --accent-contrast: #2a1a10;
 
-  --taro: #c9b2f5;
-  --taro-strong: #a98bea;
-  --taro-ink: #d3c2fa;
-  --taro-soft: rgba(201, 178, 245, 0.16);
-  --butter: #f4c97a;
-  --butter-soft: rgba(244, 201, 122, 0.16);
-  --mint: #a8e6cb;
-  --mint-soft: rgba(168, 230, 203, 0.16);
+  --taro: #d9b07a;
+  --taro-strong: #c99a62;
+  --taro-ink: #e8c9a0;
+  --taro-soft: rgba(217, 176, 122, 0.16);
+  --butter: #f0d39a;
+  --butter-soft: rgba(240, 211, 154, 0.16);
+  --mint: #c2d3a3;
+  --mint-soft: rgba(194, 211, 163, 0.16);
 
-  --danger: #f08fa6;
-  --danger-ink: #ffb3c4;
-  --danger-soft: rgba(240, 143, 166, 0.16);
-  --success: #8fd4b6;
+  --danger: #e8a06a;
+  --danger-ink: #ffc99a;
+  --danger-soft: rgba(232, 160, 106, 0.16);
+  --success: #c2d3a3;
   --warning: #f4c97a;
 
-  --kind-diary: #c9b2f5;
-  --kind-diary-soft: rgba(201, 178, 245, 0.16);
-  --kind-food: #f2ad8f;
-  --kind-food-soft: rgba(242, 173, 143, 0.16);
-  --kind-health: #a8e6cb;
-  --kind-health-soft: rgba(168, 230, 203, 0.16);
-  --kind-finance: #f4c97a;
-  --kind-finance-soft: rgba(244, 201, 122, 0.16);
-  --kind-note: #e3c2cf;
-  --kind-note-soft: rgba(227, 194, 207, 0.14);
+  --kind-diary: #a9c0cc;
+  --kind-diary-soft: rgba(169, 192, 204, 0.16);
+  --kind-food: #f0b07a;
+  --kind-food-soft: rgba(240, 176, 122, 0.16);
+  --kind-health: #c2d3a3;
+  --kind-health-soft: rgba(194, 211, 163, 0.16);
+  --kind-finance: #f0d39a;
+  --kind-finance-soft: rgba(240, 211, 154, 0.16);
+  --kind-note: #e0cdb8;
+  --kind-note-soft: rgba(224, 205, 184, 0.14);
 
-  --btn-a: #f7b2c6;
-  --btn-b: #f08fb0;
+  --btn-a: #f7c99e;
+  --btn-b: #f0b07a;
 
-  --tabbar-bg: rgba(43, 36, 54, 0.82);
+  --tabbar-bg: rgba(46, 38, 32, 0.85);
   --overlay: rgba(20, 14, 24, 0.55);
   --shadow-1: 0 4px 14px rgba(0, 0, 0, 0.3);
   --shadow-2: 0 16px 40px rgba(0, 0, 0, 0.4);
-  --shadow-pop: 0 8px 22px rgba(242, 162, 188, 0.2);
-  --shadow-glow: 0 10px 30px rgba(201, 178, 245, 0.16);
-  --glow-a: rgba(247, 178, 198, 0.12);
-  --glow-b: rgba(201, 178, 245, 0.14);
-  --glow-c: rgba(255, 220, 160, 0.08);
-  --dot: rgba(255, 235, 245, 0.08);
+  --shadow-pop: 0 8px 22px rgba(240, 176, 122, 0.2);
+  --shadow-glow: 0 10px 30px rgba(217, 176, 122, 0.16);
+  --glow-a: rgba(247, 201, 158, 0.12);
+  --glow-b: rgba(217, 176, 122, 0.12);
+  --glow-c: rgba(255, 236, 196, 0.1);
+  --dot: rgba(255, 241, 226, 0.08);
 
-  --graph-panel: #241d2b;
-  --graph-panel-2: #2b2334;
-  --graph-grid: rgba(255, 235, 245, 0.1);
-  --graph-node-1: #c9b2f5;
-  --graph-node-2: #f7b2c6;
-  --graph-node-3: #a8e6cb;
-  --graph-node-4: #f4c97a;
-  --graph-node-5: #b8d0ee;
-  --graph-node: #f7b2c6;
-  --graph-node-2: #c9b2f5;
-  --graph-node-ghost: #6c5a75;
-  --graph-edge: rgba(247, 178, 198, 0.36);
-  --graph-text: #ead7e4;
-  --graph-text-dim: #a48ea2;
+  --graph-panel: #241c15;
+  --graph-panel-2: #2e251c;
+  --graph-grid: rgba(255, 241, 226, 0.1);
+  --graph-node-1: #b7c9d2;
+  --graph-node-2: #f0b07a;
+  --graph-node-3: #c2d3a3;
+  --graph-node-4: #f0d39a;
+  --graph-node-5: #b7c9d2;
+  --graph-node: #f0b07a;
+  --graph-node-2: #b7c9d2;
+  --graph-node-ghost: #6c5a4a;
+  --graph-edge: rgba(240, 176, 122, 0.36);
+  --graph-text: #eadccb;
+  --graph-text-dim: #a8927e;
 }
 
 @media (prefers-reduced-motion: reduce) {

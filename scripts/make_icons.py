@@ -12,16 +12,16 @@ from PIL import Image, ImageDraw
 OUT = Path(__file__).resolve().parent.parent / "public" / "icons"
 OUT.mkdir(parents=True, exist_ok=True)
 
-BACKGROUND_TOP = (255, 241, 245, 255)
-BACKGROUND_BOTTOM = (255, 209, 224, 255)
-BODY_LIGHT = (255, 246, 249, 255)
-BODY_MID = (255, 224, 235, 255)
-BODY_SHADE = (255, 199, 215, 255)
-INK = (90, 59, 70, 255)
-BLUSH = (255, 166, 188, 255)
-BERRY = (232, 85, 123, 255)
-BERRY_DARK = (206, 63, 102, 255)
-LEAF = (127, 203, 154, 255)
+BACKGROUND_TOP = (250, 246, 240, 255)
+BACKGROUND_BOTTOM = (245, 225, 202, 255)
+BODY_LIGHT = (255, 250, 242, 255)
+BODY_MID = (255, 233, 210, 255)
+BODY_SHADE = (245, 207, 170, 255)
+INK = (91, 70, 54, 255)
+BLUSH = (232, 185, 140, 255)
+BERRY = (232, 155, 84, 255)
+BERRY_DARK = (201, 122, 60, 255)
+LEAF = (168, 187, 135, 255)
 HIGHLIGHT = (255, 255, 255, 235)
 
 
@@ -49,7 +49,7 @@ def draw_mochi(draw, size, scale=1.0):
     # soft shadow puddle
     draw.ellipse(
         (cx - body_w * 0.46, cy + body_h * 0.46, cx + body_w * 0.46, cy + body_h * 0.56),
-        fill=(232, 85, 123, 26),
+        fill=(232, 155, 84, 26),
     )
 
     # squishy body (round + slightly flat bottom)
@@ -119,7 +119,7 @@ def draw_mochi(draw, size, scale=1.0):
     for sx, sy in ((-0.45, 0.05), (0.0, -0.25), (0.45, 0.1), (-0.2, 0.35), (0.25, 0.4)):
         px = berry_cx + berry_rx * sx
         py = berry_cy + berry_ry * sy
-        draw.ellipse((px - seed_r, py - seed_r * 1.5, px + seed_r, py + seed_r * 1.5), fill=(255, 230, 238, 220))
+        draw.ellipse((px - seed_r, py - seed_r * 1.5, px + seed_r, py + seed_r * 1.5), fill=(247, 216, 180, 220))
     # leaf
     draw.polygon(
         [
@@ -161,38 +161,38 @@ def render_icon(size, maskable=False):
 SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="麻薯">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#fff1f5"/>
-      <stop offset="100%" stop-color="#ffd1e0"/>
+      <stop offset="0%" stop-color="#fff6ec"/>
+      <stop offset="100%" stop-color="#fbe3c8"/>
     </linearGradient>
     <radialGradient id="glow" cx="50%" cy="52%" r="52%">
       <stop offset="0%" stop-color="#ffffff" stop-opacity=".95"/>
       <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
     </radialGradient>
     <linearGradient id="body" x1="30%" y1="10%" x2="70%" y2="100%">
-      <stop offset="0%" stop-color="#fff6f9"/>
-      <stop offset="62%" stop-color="#ffe0eb"/>
-      <stop offset="100%" stop-color="#ffc7d7"/>
+      <stop offset="0%" stop-color="#fffaf3"/>
+      <stop offset="62%" stop-color="#ffe9d5"/>
+      <stop offset="100%" stop-color="#f5cfaa"/>
     </linearGradient>
     <linearGradient id="berry" x1="20%" y1="0%" x2="80%" y2="100%">
-      <stop offset="0%" stop-color="#ff8fab"/>
-      <stop offset="100%" stop-color="#e8557b"/>
+      <stop offset="0%" stop-color="#e89b54"/>
+      <stop offset="100%" stop-color="#c97a3c"/>
     </linearGradient>
   </defs>
   <rect width="512" height="512" rx="112" fill="url(#bg)"/>
   <ellipse cx="256" cy="300" rx="230" ry="196" fill="url(#glow)"/>
   <ellipse cx="256" cy="292" rx="150" ry="132" fill="url(#body)"/>
-  <ellipse cx="250" cy="266" rx="112" ry="70" fill="#fff6f9" opacity=".9"/>
-  <ellipse cx="256" cy="310" rx="122" ry="86" fill="#ffc7d7" opacity=".35"/>
-  <circle cx="196" cy="292" r="7" fill="#5a3b46"/>
-  <circle cx="316" cy="292" r="7" fill="#5a3b46"/>
+  <ellipse cx="250" cy="266" rx="112" ry="70" fill="#fffaf3" opacity=".9"/>
+  <ellipse cx="256" cy="310" rx="122" ry="86" fill="#f5cfaa" opacity=".35"/>
+  <circle cx="196" cy="292" r="7" fill="#5b4636"/>
+  <circle cx="316" cy="292" r="7" fill="#5b4636"/>
   <circle cx="198" cy="289" r="2.4" fill="#ffffff"/>
   <circle cx="318" cy="289" r="2.4" fill="#ffffff"/>
-  <ellipse cx="176" cy="314" rx="20" ry="12" fill="#ffa6bc" opacity=".7"/>
-  <ellipse cx="336" cy="314" rx="20" ry="12" fill="#ffa6bc" opacity=".7"/>
-  <path d="M236 322c6 9 24 9 30 0" stroke="#5a3b46" stroke-width="6" stroke-linecap="round" fill="none"/>
-  <path d="M330 196c-18-6-34-4-44 4 10 20 32 30 52 22 18-8 22-24 18-34-6 4-16 9-26 8Z" fill="#7fcb9a"/>
+  <ellipse cx="176" cy="314" rx="20" ry="12" fill="#e8b98c" opacity=".7"/>
+  <ellipse cx="336" cy="314" rx="20" ry="12" fill="#e8b98c" opacity=".7"/>
+  <path d="M236 322c6 9 24 9 30 0" stroke="#5b4636" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <path d="M330 196c-18-6-34-4-44 4 10 20 32 30 52 22 18-8 22-24 18-34-6 4-16 9-26 8Z" fill="#a8bb87"/>
   <ellipse cx="348" cy="222" rx="30" ry="26" fill="url(#berry)"/>
-  <path d="M348 248c-4 16-2 26 2 34 6-10 6-22 2-34Z" fill="#ce3f66"/>
+  <path d="M348 248c-4 16-2 26 2 34 6-10 6-22 2-34Z" fill="#b8642d"/>
   <circle cx="340" cy="216" r="2.6" fill="#ffe6ee"/>
   <circle cx="356" cy="220" r="2.2" fill="#ffe6ee"/>
   <circle cx="346" cy="232" r="2.2" fill="#ffe6ee"/>

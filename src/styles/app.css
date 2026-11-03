@@ -214,7 +214,7 @@
   height: 7px;
   border-radius: 50%;
   background: var(--grad-brand);
-  box-shadow: 0 0 10px rgba(232, 143, 168, 0.7);
+  box-shadow: 0 0 10px rgba(227, 160, 106, 0.7);
 }
 
 .ask-bar {
@@ -277,9 +277,9 @@
   padding: 1px;
   background: linear-gradient(
     135deg,
-    rgba(232, 143, 168, 0.55),
-    rgba(217, 106, 146, 0.35) 45%,
-    rgba(169, 139, 214, 0.55)
+    rgba(227, 160, 106, 0.55),
+    rgba(201, 119, 60, 0.35) 45%,
+    rgba(185, 138, 78, 0.55)
   );
   box-shadow: var(--shadow-glow);
 }
@@ -295,7 +295,7 @@
   position: absolute;
   inset: auto -20% -60% -20%;
   height: 120px;
-  background: radial-gradient(50% 100% at 50% 0%, rgba(169, 139, 214, 0.2), transparent 70%);
+  background: radial-gradient(50% 100% at 50% 0%, rgba(185, 138, 78, 0.2), transparent 70%);
   pointer-events: none;
 }
 
@@ -418,16 +418,16 @@
 }
 
 .metric-card.kind-finance {
-  background: linear-gradient(160deg, rgba(244, 201, 122, 0.2), var(--surface) 60%);
+  background: linear-gradient(160deg, rgba(232, 192, 122, 0.2), var(--surface) 60%);
 }
 .metric-card.kind-food {
-  background: linear-gradient(160deg, rgba(242, 173, 143, 0.22), var(--surface) 60%);
+  background: linear-gradient(160deg, rgba(227, 160, 106, 0.22), var(--surface) 60%);
 }
 .metric-card.kind-health {
-  background: linear-gradient(160deg, rgba(143, 212, 182, 0.22), var(--surface) 60%);
+  background: linear-gradient(160deg, rgba(168, 187, 135, 0.22), var(--surface) 60%);
 }
 .metric-card.kind-diary {
-  background: linear-gradient(160deg, rgba(169, 198, 232, 0.2), var(--surface) 60%);
+  background: linear-gradient(160deg, rgba(157, 184, 196, 0.2), var(--surface) 60%);
 }
 
 .metric-label {

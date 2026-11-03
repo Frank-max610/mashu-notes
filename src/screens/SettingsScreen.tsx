@@ -18,7 +18,7 @@ import { AgentAvatar } from '../components/AgentAvatar';
 import { MashuMark } from '../components/Mascot';
 import { IosInstallCard } from '../components/IosInstallCard';
 
-const APP_VERSION = '0.6.0';
+const APP_VERSION = '0.7.0';
 
 export interface SettingsScreenProps {
   notes: Note[];

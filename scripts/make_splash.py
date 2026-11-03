@@ -23,8 +23,8 @@ SIZES = [
     (750, 1334, "iphone-se"),
 ]
 
-TOP = (255, 249, 247)
-BOTTOM = (255, 238, 244)
+TOP = (250, 246, 240)
+BOTTOM = (245, 233, 216)
 INK = (74, 58, 66)
 MUTED = (138, 106, 121)
 
@@ -69,48 +69,48 @@ def draw_mascot(image, cx, cy, size):
     body_w, body_h = size * 0.82, size * 0.74
     # body + top highlight
     draw.ellipse((cx - body_w / 2, cy - body_h / 2 + size * 0.08, cx + body_w / 2, cy + body_h / 2 + size * 0.08),
-                 fill=(255, 228, 238, 255))
+                 fill=(255, 231, 210, 255))
     draw.ellipse((cx - body_w * 0.34, cy - body_h * 0.16, cx + body_w * 0.34, cy + body_h * 0.2),
-                 fill=(255, 245, 249, 235))
+                 fill=(255, 250, 242, 235))
     # ears / blush
     for side in (-1, 1):
         draw.ellipse((cx + side * body_w * 0.33 - size * 0.05, cy + size * 0.04,
                       cx + side * body_w * 0.33 + size * 0.05, cy + size * 0.13),
-                     fill=(255, 166, 188, 180))
+                     fill=(232, 185, 140, 180))
     # eyes
     eye = size * 0.026
     for side in (-1, 1):
         ex = cx + side * size * 0.16
         ey = cy - size * 0.03
-        draw.ellipse((ex - eye, ey - eye, ex + eye, ey + eye), fill=(90, 59, 70, 255))
+        draw.ellipse((ex - eye, ey - eye, ex + eye, ey + eye), fill=(91, 70, 54, 255))
         draw.ellipse((ex - eye * 0.35, ey - eye * 0.65, ex + eye * 0.2, ey - eye * 0.05), fill=(255, 255, 255, 230))
     # smile
-    draw.arc((cx - size * 0.07, cy + size * 0.02, cx + size * 0.07, cy + size * 0.12), 15, 165, fill=(150, 90, 105, 255), width=max(2, int(size * 0.012)))
+    draw.arc((cx - size * 0.07, cy + size * 0.02, cx + size * 0.07, cy + size * 0.12), 15, 165, fill=(154, 107, 74, 255), width=max(2, int(size * 0.012)))
     # strawberry hat
     berry_r = size * 0.155
     bx, by = cx + size * 0.17, cy - size * 0.34
-    draw.ellipse((bx - berry_r, by - berry_r * 0.85, bx + berry_r, by + berry_r * 0.9), fill=(255, 143, 171, 255))
-    draw.ellipse((bx - berry_r * 0.7, by - berry_r * 0.55, bx + berry_r * 0.1, by - berry_r * 0.15), fill=(255, 190, 205, 220))
+    draw.ellipse((bx - berry_r, by - berry_r * 0.85, bx + berry_r, by + berry_r * 0.9), fill=(232, 155, 84, 255))
+    draw.ellipse((bx - berry_r * 0.7, by - berry_r * 0.55, bx + berry_r * 0.1, by - berry_r * 0.15), fill=(247, 210, 170, 220))
     # leaf
     leaf = size * 0.09
     draw.polygon(
         [(bx - leaf * 0.9, by - berry_r * 0.7), (bx - leaf * 0.2, by - berry_r * 0.45),
          (bx - leaf * 0.35, by - berry_r * 0.15), (bx - leaf * 1.15, by - berry_r * 0.4)],
-        fill=(143, 220, 189, 255),
+        fill=(168, 187, 135, 255),
     )
     draw.polygon(
         [(bx + leaf * 0.9, by - berry_r * 0.7), (bx + leaf * 0.2, by - berry_r * 0.45),
          (bx + leaf * 0.35, by - berry_r * 0.15), (bx + leaf * 1.15, by - berry_r * 0.4)],
-        fill=(121, 208, 174, 255),
+        fill=(143, 163, 110, 255),
     )
 
 
 def render(width, height):
     image = Image.new("RGB", (width, height), TOP)
     vertical_gradient(image, TOP, BOTTOM)
-    image = soft_glow(image, (width * 0.12, height * 0.1), width * 0.55, (255, 190, 210, 80), blur=int(width * 0.09))
-    image = soft_glow(image, (width * 0.9, height * 0.12), width * 0.5, (196, 176, 234, 70), blur=int(width * 0.09))
-    image = soft_glow(image, (width * 0.55, height * 0.96), width * 0.7, (255, 231, 178, 40), blur=int(width * 0.1))
+    image = soft_glow(image, (width * 0.12, height * 0.1), width * 0.55, (255, 214, 173, 80), blur=int(width * 0.09))
+    image = soft_glow(image, (width * 0.9, height * 0.12), width * 0.5, (217, 176, 122, 70), blur=int(width * 0.09))
+    image = soft_glow(image, (width * 0.55, height * 0.96), width * 0.7, (255, 236, 196, 40), blur=int(width * 0.1))
 
     draw = ImageDraw.Draw(image)
     cx, cy = width / 2, height * 0.44
