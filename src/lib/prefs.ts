@@ -112,6 +112,17 @@ function normalizeMeta(raw: unknown): NoteMeta {
   if (typeof value.category === 'string') meta.category = value.category;
   if (value.direction === 'expense' || value.direction === 'income') meta.direction = value.direction;
   if (typeof value.detail === 'string') meta.detail = value.detail;
+  if (value.plan && typeof value.plan === 'object') {
+    const plan = value.plan as Record<string, unknown>;
+    const status = plan.status;
+    if (status === 'todo' || status === 'doing' || status === 'done') {
+      meta.plan = {
+        status,
+        dueAt: finiteNumber(plan.dueAt),
+      };
+      if (meta.plan.dueAt === undefined) delete meta.plan.dueAt;
+    }
+  }
   return meta;
 }
 
@@ -148,6 +159,7 @@ export function normalizeNote(raw: unknown, seenIds?: Set<string>): Note | null 
     meta: normalizeMeta(value.meta),
     manualLinks,
     position: normalizePosition(value.position),
+    archivedAt: finiteNumber(value.archivedAt),
   };
 }
 

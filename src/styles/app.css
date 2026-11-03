@@ -2450,3 +2450,100 @@ button.settings-row:active {
 .app-main.is-immersive {
   padding-bottom: 0;
 }
+
+/* ---------- LifeOS modules (v1.0) ---------- */
+
+.more-body { display: flex; flex-direction: column; gap: 26px; }
+
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.module-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-height: 108px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+  text-align: left;
+}
+
+.module-card:active { background: var(--surface-2); }
+
+.module-icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin-bottom: 4px;
+  border-radius: var(--radius-s);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.module-name { font-size: var(--text-base); font-weight: 600; }
+.module-desc { font-size: var(--text-xs); color: var(--text-muted); line-height: 1.4; }
+
+.module-toggle { cursor: pointer; }
+.module-toggle input { width: 22px; height: 22px; accent-color: var(--accent); }
+
+.plan-add { display: flex; gap: 8px; margin-bottom: 4px; }
+.plan-add .field-input { flex: 1; }
+.plan-filter { padding-left: 0; padding-right: 0; }
+
+.plan-list { display: flex; flex-direction: column; }
+.plan-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 64px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.plan-row.is-done .plan-title { text-decoration: line-through; color: var(--text-muted); }
+.plan-check {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 50%;
+  color: var(--accent-ink);
+}
+.plan-row.is-done .plan-check { background: var(--accent); border-color: var(--accent); color: #fffaf3; }
+.plan-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; text-align: left; }
+.plan-title { font-size: var(--text-base); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plan-meta { font-size: var(--text-xs); color: var(--text-muted); }
+.plan-status { flex: none; font-size: var(--text-xs); color: var(--text-faint); }
+.plan-status.is-doing { color: var(--accent-ink); }
+
+.module-screen .screen-body { display: flex; flex-direction: column; gap: 24px; }
+.profile-hero { padding: 4px 0 0; }
+.profile-line { font-size: var(--text-lg); line-height: 1.6; }
+.profile-line strong { color: var(--accent-ink); font-weight: 600; }
+.profile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.profile-stat {
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 14px; border: 1px solid var(--border); border-radius: var(--radius-l); background: var(--surface);
+}
+.profile-stat span { font-size: var(--text-xs); color: var(--text-muted); }
+.profile-stat strong { font-size: var(--text-xl); font-weight: 600; }
+.profile-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.health-stat svg { margin-top: 4px; }
+.module-row { display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px 0; border-bottom: 1px solid var(--border); text-align: left; }
+.module-row:last-child { border-bottom: 0; }
+.module-row .record-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.finance-bars { display: flex; flex-direction: column; gap: 10px; }
+.finance-bar-row { display: grid; grid-template-columns: 64px 1fr 72px; align-items: center; gap: 10px; font-size: var(--text-sm); }
+.finance-bar { height: 6px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.finance-bar i { display: block; height: 100%; border-radius: 999px; background: var(--kind-finance); }
+.template-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.template-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; text-align: left; }
+.archive-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; text-align: left; }

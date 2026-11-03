@@ -44,6 +44,16 @@ export interface NoteMeta {
   direction?: FinanceDirection;
   /** Free-form extra note from the agent parser. */
   detail?: string;
+  /** Plan fields (used by the 计划 module). */
+  plan?: NotePlan;
+}
+
+export type PlanStatus = 'todo' | 'doing' | 'done';
+
+export interface NotePlan {
+  status: PlanStatus;
+  /** Optional due date, epoch ms. */
+  dueAt?: number;
 }
 
 /** Saved graph position, normalised to 0..1 so it survives resizing. */
@@ -75,6 +85,8 @@ export interface Note {
   manualLinks: string[];
   /** Optional saved graph position (normalised 0..1). */
   position?: NotePosition;
+  /** Set when the user archives the note; hidden from 经历库. */
+  archivedAt?: number;
 }
 
 /** Lightweight note projection used by lists, graphs and search results. */
@@ -120,7 +132,9 @@ export interface TagCount {
 }
 
 /** Editable fields of a note. */
-export type NotePatch = Partial<Pick<Note, 'title' | 'content' | 'pinned' | 'kind' | 'meta'>>;
+export type NotePatch = Partial<
+  Pick<Note, 'title' | 'content' | 'pinned' | 'kind' | 'meta' | 'archivedAt'>
+>;
 
 /** Input for creating a note (from the editor, quick capture or the agent). */
 export interface NoteInput {

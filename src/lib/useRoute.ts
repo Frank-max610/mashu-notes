@@ -5,15 +5,23 @@ import { useEffect, useState } from 'react';
  * (including a sub-path or file://) and makes the phone's back gesture work.
  */
 
-export type TabName = 'today' | 'records' | 'graph' | 'agent' | 'settings';
+export type TabName = 'today' | 'records' | 'plan' | 'agent' | 'more';
 
 export type Route =
   | { name: 'today' }
   | { name: 'records' }
+  | { name: 'plan' }
+  | { name: 'profile' }
+  | { name: 'health' }
+  | { name: 'finance' }
+  | { name: 'templates' }
+  | { name: 'archive' }
+  | { name: 'attachments' }
   | { name: 'graph' }
   | { name: 'agent' }
   | { name: 'search' }
   | { name: 'settings' }
+  | { name: 'more' }
   | { name: 'note'; id: string };
 
 export function parseRoute(hash: string): Route {
@@ -23,6 +31,22 @@ export function parseRoute(hash: string): Route {
   switch (head) {
     case 'note':
       return segments[1] ? { name: 'note', id: decodeURIComponent(segments[1]) } : { name: 'records' };
+    case 'plan':
+      return { name: 'plan' };
+    case 'profile':
+      return { name: 'profile' };
+    case 'health':
+      return { name: 'health' };
+    case 'finance':
+      return { name: 'finance' };
+    case 'templates':
+      return { name: 'templates' };
+    case 'archive':
+      return { name: 'archive' };
+    case 'attachments':
+      return { name: 'attachments' };
+    case 'more':
+      return { name: 'more' };
     case 'graph':
       return { name: 'graph' };
     case 'agent':
@@ -32,6 +56,7 @@ export function parseRoute(hash: string): Route {
     case 'settings':
       return { name: 'settings' };
     case 'records':
+    case 'experience':
     case 'notes':
       return { name: 'records' };
     default:

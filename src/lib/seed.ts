@@ -121,57 +121,46 @@ const NOTES: SeedSpec[] = [
   {
     id: 'seed-welcome',
     title: '欢迎来到麻薯',
-    minutesAgo: 3,
+    minutesAgo: 1,
     pinned: true,
-    content: `**麻薯**：一个把每天吃、睡、花、想，连成一张图的本地生活 App。
-
-打开先看**昨日复盘**和**今日建议**，不用翻笔记。
-
-- 一句话记一笔：吃了什么、睡了多久、花了多少
-- 所有记录长成一张[[生活图谱]]，随便拖、加、连
-- 有想问的，直接找[[助手说明]]
-- 数据只在这台手机上，不联网也能用
-
-#开始 #使用`,
+    content: `麻薯是你的本地 Life OS：记录发生在你身上的事，再把它们连成图。\n\n- 今日：一句话记录 + 昨日复盘\n- 经历库：所有记录的时间线\n- 计划 / 个人画像 / 健康数据 / 理财：自动汇总的模块\n- 图谱 / 助手：看见关系，问出答案\n\n#开始 #使用`,
   },
   {
-    id: 'seed-graph',
-    title: '生活图谱',
-    minutesAgo: 4 * 60,
-    content: `每条记录是一个节点：饮食、健康、收支、日记各有颜色，同一天自动连线。
-
-点节点可以编辑、删除、拖到喜欢的位置；也可以手动连线、重新布局。
-
-相关：[[欢迎来到麻薯]]
-
-#功能 #使用`,
+    id: 'seed-help-start',
+    title: '开始这里',
+    minutesAgo: 2,
+    pinned: false,
+    content: `欢迎来到麻薯 LifeOS。\n\n- 先点“今日”里的一句话记录条，记下今天发生的一件事\n- 计划模块用来放目标与待办\n- 个人画像、健康数据、理财会自动从记录里汇总\n- 所有模块都是模板，可以隐藏或删掉\n\n#使用手册`,
   },
   {
-    id: 'seed-agent',
-    title: '助手说明',
-    minutesAgo: 5 * 60,
-    content: `内置助手完全在本机运行：
-
-- 用一句话记一笔，确认后才会保存
-- 回答「今天花了多少」「本周睡眠怎么样」这类本机统计
-- 名字和头像都可以在「我的」里换
-
-它不是大语言模型，回答范围由本地规则决定，所以稳定、可解释、不联网。
-
-#功能 #智能体`,
+    id: 'seed-template-diary',
+    title: '模板 · 每日日记',
+    minutesAgo: 30,
+    content: `## 今天的三件事\n\n1. \n2. \n3. \n\n## 今天的感觉\n\n\n\n## 明天想试试\n\n\n\n#模板 #日记`,
   },
   {
-    id: 'seed-health-sync',
-    title: '连接 Apple 健康',
-    minutesAgo: 6 * 60,
-    content: `在「我的 → Apple 健康」里可以：
-
-- 导入 Apple 健康导出的 JSON / CSV
-- 用「快捷指令」把步数、睡眠、心率、体重发过来
-
-也可以查看原生壳（Xcode + HealthKit）的接入说明。
-
-#健康 #Apple健康`,
+    id: 'seed-template-review',
+    title: '模板 · 周复盘',
+    minutesAgo: 40,
+    content: `## 本周记录\n\n- 做了什么：\n- 学到什么：\n- 卡在哪里：\n\n## 下周调整\n\n- \n\n#模板 #复盘`,
+  },
+  {
+    id: 'seed-template-expense',
+    title: '模板 · 大额支出复盘',
+    minutesAgo: 45,
+    content: `金额：\n分类：\n为什么花：\n值不值：\n下次怎么选：\n\n#模板 #理财`,
+  },
+  {
+    id: 'seed-plan-reading',
+    title: '读《置身事内》',
+    minutesAgo: 50,
+    content: '本周读完前两章，做一页笔记。\n\n#计划',
+  },
+  {
+    id: 'seed-plan-walk',
+    title: '每天走 8000 步',
+    minutesAgo: 55,
+    content: '连续 5 天，晚饭后散步 20 分钟。\n\n#计划',
   },
 ];
 
@@ -191,6 +180,8 @@ export function createSeedNotes(): Note[] {
     note.createdAt = occurredAt;
     note.updatedAt = occurredAt;
     note.pinned = seed.pinned ?? false;
+    if (seed.id === 'seed-plan-reading') note.meta.plan = { status: 'doing', dueAt: occurredAt + 3 * 86_400_000 };
+    if (seed.id === 'seed-plan-walk') note.meta.plan = { status: 'todo', dueAt: occurredAt + 86_400_000 };
     return note;
   });
 }

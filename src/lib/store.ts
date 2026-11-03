@@ -39,6 +39,8 @@ export interface NotesApi {
   /** Clear every saved graph position so the auto layout takes over again. */
   resetNodePositions(): void;
   deleteNote(id: string): Promise<boolean>;
+  /** Archive or restore a note (hides it from 经历库). */
+  archiveNote(id: string, archived: boolean): void;
   togglePin(id: string): void;
   replaceAll(notes: Note[]): Promise<void>;
   clearAll(): Promise<void>;
@@ -242,6 +244,21 @@ export function useNotes(): NotesApi {
     [commit, scheduleFlush],
   );
 
+  const archiveNote = useCallback(
+    (id: string, archived: boolean) => {
+      const current = notesRef.current.find((note) => note.id === id);
+      if (!current) return;
+      const next: Note = {
+        ...current,
+        archivedAt: archived ? Date.now() : undefined,
+      };
+      dirtyRef.current.set(id, next);
+      commit(sortNotes(notesRef.current.map((note) => (note.id === id ? next : note))));
+      scheduleFlush();
+    },
+    [commit, scheduleFlush],
+  );
+
   const deleteNote = useCallback(
     async (id: string): Promise<boolean> => {
       dirtyRef.current.delete(id);
@@ -411,6 +428,7 @@ export function useNotes(): NotesApi {
     removeManualLink,
     resetNodePositions,
     deleteNote,
+    archiveNote,
     togglePin,
     replaceAll,
     clearAll,

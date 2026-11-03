@@ -8,10 +8,10 @@ export interface TabBarProps {
 
 const TABS: ReadonlyArray<{ name: TabName; label: string; icon: IconName; en: string }> = [
   { name: 'today', label: '今日', icon: 'sun', en: 'TODAY' },
-  { name: 'records', label: '记录', icon: 'notes', en: 'RECORDS' },
-  { name: 'graph', label: '图谱', icon: 'graph', en: 'GRAPH' },
+  { name: 'records', label: '经历', icon: 'notes', en: 'LIFE' },
+  { name: 'plan', label: '计划', icon: 'checkbox', en: 'PLAN' },
   { name: 'agent', label: '助手', icon: 'sparkles', en: 'AGENT' },
-  { name: 'settings', label: '设置', icon: 'settings', en: 'SETTINGS' },
+  { name: 'more', label: '更多', icon: 'more', en: 'MORE' },
 ];
 
 /** Flat, lean bottom navigation. */

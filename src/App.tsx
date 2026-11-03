@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNotes } from './lib/store';
-import { navigate, parseRoute, replaceRoute, routeToHash, useRoute, type TabName } from './lib/useRoute';
+import { navigate, parseRoute, replaceRoute, routeToHash, useRoute, type Route, type TabName } from './lib/useRoute';
 import { getAgentPersona, getStoredTheme, setAgentPersona, setStoredTheme } from './lib/prefs';
 import { downloadText } from './lib/exportImport';
 import { buildDailyBrief } from './lib/brief';
@@ -12,6 +12,10 @@ import { TodayScreen } from './screens/TodayScreen';
 import { RecordsScreen } from './screens/RecordsScreen';
 import { EditorScreen, type Mode as EditorMode } from './screens/EditorScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
+import { MoreScreen } from './screens/MoreScreen';
+import { PlanScreen } from './screens/PlanScreen';
+import { ProfileScreen, HealthScreen, FinanceScreen, TemplatesScreen, ArchiveScreen, AttachmentsScreen } from './screens/ModulesScreens';
+import { getHiddenModules, setModuleHidden, type ModuleId } from './lib/modules';
 import { GraphView } from './components/GraphView';
 import { AgentPanel } from './components/AgentPanel';
 import { CaptureSheet } from './components/CaptureSheet';
@@ -21,6 +25,20 @@ import { ActionSheet, type ActionSheetItem } from './components/ActionSheet';
 import { SearchScreen } from './components/SearchScreen';
 
 const APP_TITLE = '麻薯';
+
+function tabForRoute(route: Route): TabName {
+  switch (route.name) {
+    case 'today':
+    case 'plan':
+    case 'agent':
+    case 'more':
+      return route.name;
+    case 'records':
+      return 'records';
+    default:
+      return 'more';
+  }
+}
 
 function safeFileName(title: string): string {
   return (
@@ -46,6 +64,7 @@ export default function App() {
   const [editorMode, setEditorMode] = useState<EditorMode>('preview');
   const [graphSelectedId, setGraphSelectedId] = useState<string | null>(null);
   const [graphFullscreen, setGraphFullscreen] = useState(false);
+  const [hiddenModules, setHiddenModules] = useState<Set<ModuleId>>(() => getHiddenModules());
   const [captureOpen, setCaptureOpen] = useState(false);
   const [captureKind, setCaptureKind] = useState<NoteKind | undefined>(undefined);
   const [nodeEditor, setNodeEditor] = useState<{ open: boolean; noteId: string | null; position?: NotePosition }>({
@@ -135,7 +154,7 @@ export default function App() {
   const openNote = useCallback(
     (id: string) => {
       if (route.name !== 'note') {
-        returnToRef.current = route.name === 'search' ? 'records' : route.name;
+        returnToRef.current = tabForRoute(route);
         openedFromAppRef.current = true;
       }
       navigate({ name: 'note', id });
@@ -164,7 +183,7 @@ export default function App() {
   const openOrCreateByTitle = useCallback(
     async (title: string) => {
       if (route.name !== 'note') {
-        returnToRef.current = route.name === 'search' ? 'records' : route.name;
+        returnToRef.current = tabForRoute(route);
         openedFromAppRef.current = true;
       }
       const note = await api.ensureNote(title);
@@ -272,6 +291,42 @@ export default function App() {
     [api, nodeEditor.position, nodeEditorNote, notify],
   );
 
+  const createPlan = useCallback(
+    async (title: string) => {
+      await api.createNote({ title, content: '#计划', meta: { plan: { status: 'todo' } } });
+      notify('已添加计划');
+    },
+    [api.createNote, notify],
+  );
+
+  const togglePlanStatus = useCallback(
+    (note: Note) => {
+      const current = note.meta.plan?.status ?? 'todo';
+      const next = current === 'todo' ? 'doing' : current === 'doing' ? 'done' : 'todo';
+      api.updateNote(note.id, {
+        meta: { ...note.meta, plan: { ...note.meta.plan, status: next } },
+      });
+    },
+    [api.updateNote],
+  );
+
+  const useTemplate = useCallback(
+    async (note: Note) => {
+      const title = note.title.replace(/^模板\s*·\s*/, '').trim() || '新记录';
+      await api.createNote({
+        title,
+        content: note.content.replaceAll('#模板', '').trim(),
+        kind: 'note',
+      });
+      notify('已用模板新建');
+    },
+    [api.createNote, notify],
+  );
+
+  const toggleModule = useCallback((id: ModuleId, hidden: boolean) => {
+    setHiddenModules(setModuleHidden(id, hidden));
+  }, []);
+
   const handlePersonaChange = useCallback(
     (next: AgentPersona) => {
       setPersona(next);
@@ -364,14 +419,14 @@ export default function App() {
   const activeTab: TabName =
     route.name === 'note' || route.name === 'search'
       ? returnToRef.current
-      : route.name;
+      : tabForRoute(route);
 
   const renderTabScreen = () => {
     switch (route.name) {
       case 'records':
         return (
           <RecordsScreen
-            notes={api.sortedNotes}
+            notes={api.sortedNotes.filter((note) => !note.archivedAt && !note.meta.plan)}
             loading={false}
             kindFilter={kindFilter}
             onKindFilter={setKindFilter}
@@ -380,6 +435,45 @@ export default function App() {
             onOpenSearch={() => navigate({ name: 'search' })}
             onQuickCapture={openCapture}
             storageWarning={api.storageWarning}
+          />
+        );
+      case 'plan':
+        return (
+          <PlanScreen
+            notes={api.sortedNotes}
+            onCreate={(title) => void createPlan(title)}
+            onToggleStatus={togglePlanStatus}
+            onOpenNote={openNote}
+            onDelete={(note) => void removeNote(note)}
+          />
+        );
+      case 'profile':
+        return <ProfileScreen notes={api.sortedNotes} />;
+      case 'health':
+        return <HealthScreen notes={api.sortedNotes} onOpenNote={openNote} />;
+      case 'finance':
+        return <FinanceScreen notes={api.sortedNotes} onOpenNote={openNote} />;
+      case 'templates':
+        return <TemplatesScreen notes={api.sortedNotes} onUse={(note) => void useTemplate(note)} onOpen={openNote} />;
+      case 'archive':
+        return (
+          <ArchiveScreen
+            notes={api.sortedNotes}
+            onOpen={openNote}
+            onRestore={(note) => api.archiveNote(note.id, false)}
+            onDelete={(note) => void removeNote(note)}
+          />
+        );
+      case 'attachments':
+        return <AttachmentsScreen />;
+      case 'more':
+        return (
+          <MoreScreen
+            notes={api.sortedNotes}
+            hiddenModules={hiddenModules}
+            onToggleModule={toggleModule}
+            onOpenRoute={(target) => navigate(target)}
+            onOpenNote={openNote}
           />
         );
       case 'graph':
