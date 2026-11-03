@@ -1,0 +1,159 @@
+import type { Note } from './types';
+
+/**
+ * Persistence layer: IndexedDB with a localStorage fallback (private mode,
+ * blocked storage). Everything stays on the device — there is no server.
+ */
+
+const DB_NAME = 'inkstone';
+const DB_VERSION = 1;
+const STORE = 'notes';
+const LS_KEY = 'inkstone.notes.v1';
+
+export type StorageMode = 'indexeddb' | 'localstorage';
+
+let mode: StorageMode | null = null;
+let dbPromise: Promise<IDBDatabase> | null = null;
+
+function openDatabase(): Promise<IDBDatabase> {
+  if (dbPromise) return dbPromise;
+  dbPromise = new Promise((resolve, reject) => {
+    if (typeof indexedDB === 'undefined') {
+      reject(new Error('IndexedDB unavailable'));
+      return;
+    }
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(STORE)) {
+        const store = db.createObjectStore(STORE, { keyPath: 'id' });
+        store.createIndex('updatedAt', 'updatedAt');
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error ?? new Error('IndexedDB open failed'));
+    request.onblocked = () => reject(new Error('IndexedDB blocked'));
+  });
+  return dbPromise;
+}
+
+function txDone(tx: IDBTransaction): Promise<void> {
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error ?? new Error('IndexedDB transaction failed'));
+    tx.onabort = () => reject(tx.error ?? new Error('IndexedDB transaction aborted'));
+  });
+}
+
+function readLocal(): Note[] {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed) ? (parsed as Note[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeLocal(notes: Note[]): void {
+  localStorage.setItem(LS_KEY, JSON.stringify(notes));
+}
+
+/** Whether the vault is stored in IndexedDB or fell back to localStorage. */
+export function getStorageMode(): StorageMode {
+  return mode ?? (typeof indexedDB === 'undefined' ? 'localstorage' : 'indexeddb');
+}
+
+/** Load every note in the vault. */
+export async function loadNotes(): Promise<Note[]> {
+  try {
+    const db = await openDatabase();
+    const tx = db.transaction(STORE, 'readonly');
+    const request = tx.objectStore(STORE).getAll();
+    const notes = await new Promise<Note[]>((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result as Note[]);
+      request.onerror = () => reject(request.error);
+    });
+    await txDone(tx);
+    mode = 'indexeddb';
+    return notes;
+  } catch {
+    mode = 'localstorage';
+    return readLocal();
+  }
+}
+
+/** Insert or update notes in one transaction. */
+export async function saveNotes(notes: Note[]): Promise<void> {
+  if (notes.length === 0) return;
+  try {
+    const db = await openDatabase();
+    const tx = db.transaction(STORE, 'readwrite');
+    const store = tx.objectStore(STORE);
+    for (const note of notes) store.put(note);
+    await txDone(tx);
+    mode = 'indexeddb';
+  } catch {
+    mode = 'localstorage';
+    const byId = new Map(readLocal().map((n) => [n.id, n]));
+    for (const note of notes) byId.set(note.id, note);
+    writeLocal([...byId.values()]);
+  }
+}
+
+/** Delete a single note. */
+export async function deleteNoteFromDb(id: string): Promise<void> {
+  try {
+    const db = await openDatabase();
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).delete(id);
+    await txDone(tx);
+    mode = 'indexeddb';
+  } catch {
+    mode = 'localstorage';
+    writeLocal(readLocal().filter((n) => n.id !== id));
+  }
+}
+
+/** Replace the whole vault (used by import). */
+export async function replaceAllNotes(notes: Note[]): Promise<void> {
+  try {
+    const db = await openDatabase();
+    const tx = db.transaction(STORE, 'readwrite');
+    const store = tx.objectStore(STORE);
+    store.clear();
+    for (const note of notes) store.put(note);
+    await txDone(tx);
+    mode = 'indexeddb';
+  } catch {
+    mode = 'localstorage';
+    writeLocal(notes);
+  }
+}
+
+/** Wipe the vault. */
+export async function clearAllNotes(): Promise<void> {
+  await replaceAllNotes([]);
+}
+
+/** Approximate quota usage, when the browser reports it. */
+export async function storageEstimate(): Promise<{ usage: number; quota: number } | null> {
+  try {
+    if (typeof navigator === 'undefined' || !navigator.storage?.estimate) return null;
+    const estimate = await navigator.storage.estimate();
+    return { usage: estimate.usage ?? 0, quota: estimate.quota ?? 0 };
+  } catch {
+    return null;
+  }
+}
+
+/** Ask the browser to keep this origin's data out of automatic eviction. */
+export async function requestPersistentStorage(): Promise<boolean> {
+  try {
+    if (typeof navigator === 'undefined' || !navigator.storage?.persist) return false;
+    return await navigator.storage.persist();
+  } catch {
+    return false;
+  }
+}

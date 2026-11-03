@@ -1,0 +1,89 @@
+/* Graph view: full-bleed canvas with floating controls. Scoped to .graph-view. */
+
+.graph-view {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.graph-view .graph-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* The canvas owns the gesture: no browser scrolling / double-tap zoom. */
+  touch-action: none;
+  cursor: grab;
+  outline: none;
+}
+
+.graph-view .graph-canvas:active {
+  cursor: grabbing;
+}
+
+.graph-view .graph-toolbar {
+  position: absolute;
+  top: calc(var(--safe-top) + 12px);
+  right: calc(var(--safe-right) + 12px);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+}
+
+.graph-view .graph-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-s);
+}
+
+.graph-view .graph-legend {
+  position: absolute;
+  left: calc(var(--safe-left) + 12px);
+  bottom: calc(var(--safe-bottom) + 12px);
+  z-index: 2;
+  max-width: calc(100% - 96px);
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+  pointer-events: none;
+}
+
+.graph-view .graph-empty {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  padding: calc(var(--safe-top) + 32px) 24px calc(var(--safe-bottom) + 32px);
+  background: var(--bg);
+}
+
+.graph-view .graph-empty svg {
+  color: var(--text-faint);
+}
+
+@media (max-width: 380px) {
+  .graph-view .graph-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .graph-view .graph-toolbar {
+    top: calc(var(--safe-top) + 8px);
+    right: calc(var(--safe-right) + 8px);
+  }
+}

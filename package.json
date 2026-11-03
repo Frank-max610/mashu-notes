@@ -1,0 +1,48 @@
+{
+  "name": "inkstone",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Inkstone（砚）— a mobile-first, local-first open-source Markdown knowledge base, a lightweight Obsidian alternative.",
+  "license": "MIT",
+  "keywords": [
+    "markdown",
+    "notes",
+    "knowledge-base",
+    "pkm",
+    "obsidian-alternative",
+    "local-first",
+    "mobile"
+  ],
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "vite --host",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "share": "node scripts/serve.mjs",
+    "icons": "python3 scripts/make_icons.py",
+    "screenshots": "node scripts/screenshots.mjs",
+    "qr": "node scripts/qr.mjs"
+  },
+  "dependencies": {
+    "markdown-it": "15.0.3",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.2.1",
+    "qrcode": "^1.5.4",
+    "qrcode-terminal": "0.12.0",
+    "typescript": "5.9.3",
+    "vite": "8.3.5",
+    "vitest": "5.1.0"
+  }
+}

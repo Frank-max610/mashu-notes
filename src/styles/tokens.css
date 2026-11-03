@@ -1,0 +1,94 @@
+/* Design tokens. Dark is the default; light is opt-in via [data-theme='light']. */
+:root {
+  color-scheme: dark;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-base: 15px;
+  --text-lg: 17px;
+  --text-xl: 21px;
+  --text-2xl: 26px;
+
+  --bg: #0e0e12;
+  --bg-subtle: #121218;
+  --surface: #17171f;
+  --surface-2: #1e1e28;
+  --surface-3: #262632;
+  --border: rgba(255, 255, 255, 0.075);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --text: #ececf2;
+  --text-muted: #9b9baa;
+  --text-faint: #6b6b7b;
+  --accent: #a78bfa;
+  --accent-strong: #8b5cf6;
+  --accent-soft: rgba(167, 139, 250, 0.14);
+  --accent-contrast: #0e0e12;
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.12);
+  --success: #34d399;
+  --warning: #fbbf24;
+  --tabbar-bg: rgba(14, 14, 18, 0.86);
+  --overlay: rgba(8, 8, 12, 0.72);
+  --shadow-1: 0 2px 8px rgba(0, 0, 0, 0.28);
+  --shadow-2: 0 14px 40px rgba(0, 0, 0, 0.48);
+  --graph-edge: rgba(167, 139, 250, 0.28);
+  --graph-node: #a78bfa;
+  --graph-node-ghost: #5b5b6b;
+
+  --radius-xs: 8px;
+  --radius-s: 10px;
+  --radius-m: 14px;
+  --radius-l: 20px;
+  --radius-full: 999px;
+
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --tabbar-h: 60px;
+
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --dur-fast: 120ms;
+  --dur: 200ms;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --bg: #f6f6f8;
+  --bg-subtle: #eeeef2;
+  --surface: #ffffff;
+  --surface-2: #f3f3f6;
+  --surface-3: #e9e9ef;
+  --border: rgba(18, 18, 28, 0.09);
+  --border-strong: rgba(18, 18, 28, 0.16);
+  --text: #1b1b24;
+  --text-muted: #666674;
+  --text-faint: #9494a2;
+  --accent: #7c3aed;
+  --accent-strong: #6d28d9;
+  --accent-soft: rgba(124, 58, 237, 0.1);
+  --accent-contrast: #ffffff;
+  --danger: #dc2626;
+  --danger-soft: rgba(220, 38, 38, 0.08);
+  --success: #059669;
+  --warning: #b45309;
+  --tabbar-bg: rgba(255, 255, 255, 0.88);
+  --overlay: rgba(20, 20, 30, 0.35);
+  --shadow-1: 0 2px 8px rgba(20, 20, 40, 0.08);
+  --shadow-2: 0 16px 40px rgba(20, 20, 40, 0.16);
+  --graph-edge: rgba(124, 58, 237, 0.25);
+  --graph-node: #7c3aed;
+  --graph-node-ghost: #b3b3c2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur: 0ms;
+  }
+}
