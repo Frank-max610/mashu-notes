@@ -1,191 +1,223 @@
-/* 日新 design tokens — editorial ink & paper, vermilion accent, no candy.
-   Lean geometry: small radii, 1px rules, no glows. The life graph has its own
-   dark "instrument panel" palette (graph-* variables). */
+/* 麻薯 design tokens v0.5 — AI-native, youthful, dark-first.
+   Canvas: near-black; accents: sunset orange → magenta → dusk violet, breeze blue,
+   lime. Controls are pills; cards are large-radius glass surfaces; motion springs.
+   The life graph has its own always-dark instrument palette (graph-*). */
 :root {
-  color-scheme: light;
+  color-scheme: dark;
 
-  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'PingFang SC',
-    'Hiragino Sans GB', 'Microsoft YaHei', system-ui, sans-serif;
-  --font-display: 'Songti SC', 'Noto Serif SC', 'Source Han Serif SC', 'STSong', serif;
-  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
+    'PingFang SC', 'Hiragino Sans GB', 'Segoe UI', 'Microsoft YaHei', Inter, system-ui, sans-serif;
+  --font-display: var(--font-sans);
+  --font-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
 
   --text-xs: 11px;
   --text-sm: 13px;
   --text-base: 15px;
   --text-lg: 17px;
-  --text-xl: 21px;
-  --text-2xl: 26px;
+  --text-xl: 22px;
+  --text-2xl: 30px;
+  --text-3xl: 36px;
 
-  /* paper */
-  --bg: #f4f1ea;
-  --bg-subtle: #ece8df;
-  --surface: #ffffff;
-  --surface-2: #f0ece4;
-  --surface-3: #e3ddd2;
-  --border: rgba(22, 24, 28, 0.12);
-  --border-strong: rgba(22, 24, 28, 0.24);
-  --text: #16181c;
-  --text-muted: #5c6067;
-  --text-faint: #676b70;
+  /* canvas & surfaces */
+  --bg: #08090c;
+  --bg-subtle: #0d0f14;
+  --surface: #15171e;
+  --surface-2: #1c1f28;
+  --surface-3: #252a35;
+  --glass: rgba(21, 23, 30, 0.72);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --text: #f4f5f8;
+  --text-muted: #9aa1b0;
+  --text-faint: #737b8c;
 
-  /* vermilion (朱砂) */
-  --accent: #a63d33;
-  --accent-strong: #8e332b;
-  --accent-ink: #8e332b;
-  --accent-soft: rgba(166, 61, 51, 0.1);
-  --accent-contrast: #fff8f2;
+  /* brand gradients */
+  --sunset: #ff7a17;
+  --sunset-soft: rgba(255, 122, 23, 0.16);
+  --magenta: #ff4d8d;
+  --dusk: #8b5cf6;
+  --dusk-soft: rgba(139, 92, 246, 0.16);
+  --twilight: #c4b5fd;
+  --breeze: #a0c3ec;
+  --lime: #b6f09c;
+  --grad-brand: linear-gradient(120deg, #ff7a17 0%, #ff4d8d 48%, #8b5cf6 100%);
+  --grad-soft: linear-gradient(120deg, rgba(255, 122, 23, 0.16), rgba(139, 92, 246, 0.16));
+  --grad-aurora: radial-gradient(60% 80% at 15% 10%, rgba(255, 122, 23, 0.22), transparent 60%),
+    radial-gradient(50% 70% at 85% 0%, rgba(139, 92, 246, 0.25), transparent 65%),
+    radial-gradient(60% 60% at 60% 100%, rgba(160, 195, 236, 0.12), transparent 70%);
 
-  /* 靛 / 缃 / 青瓷 */
-  --taro: #2f4858;
-  --taro-strong: #253a47;
-  --taro-ink: #253a47;
-  --taro-soft: rgba(47, 72, 88, 0.1);
-  --butter: #9c7a3c;
-  --butter-soft: rgba(156, 122, 60, 0.12);
-  --mint: #5f7f6d;
-  --mint-soft: rgba(95, 127, 109, 0.12);
+  --accent: #ff7a17;
+  --accent-strong: #ff7a17;
+  --accent-ink: #ff9a4d;
+  --accent-soft: rgba(255, 122, 23, 0.16);
+  --accent-contrast: #1a0d04;
 
-  --danger: #a63d33;
-  --danger-ink: #8e332b;
-  --danger-soft: rgba(166, 61, 51, 0.08);
-  --success: #4f6f5a;
-  --warning: #8a6a2f;
+  --taro: #a0c3ec;
+  --taro-ink: #a0c3ec;
+  --taro-soft: rgba(160, 195, 236, 0.14);
+  --butter: #ffd166;
+  --butter-soft: rgba(255, 209, 102, 0.16);
+  --mint: #b6f09c;
+  --mint-soft: rgba(182, 240, 156, 0.14);
+
+  --danger: #ff6b81;
+  --danger-ink: #ff8fa0;
+  --danger-soft: rgba(255, 107, 129, 0.14);
+  --success: #b6f09c;
+  --warning: #ffd166;
 
   /* life-record accents */
-  --kind-diary: #3d5a73;
-  --kind-diary-soft: rgba(61, 90, 115, 0.1);
-  --kind-food: #96593d;
-  --kind-food-soft: rgba(166, 106, 78, 0.1);
-  --kind-health: #4f6f5d;
-  --kind-health-soft: rgba(95, 127, 109, 0.1);
-  --kind-finance: #7d6128;
-  --kind-finance-soft: rgba(156, 122, 60, 0.12);
-  --kind-note: #6a6f78;
-  --kind-note-soft: rgba(106, 111, 120, 0.1);
+  --kind-diary: #a0c3ec;
+  --kind-diary-soft: rgba(160, 195, 236, 0.14);
+  --kind-food: #ffb26b;
+  --kind-food-soft: rgba(255, 178, 107, 0.14);
+  --kind-health: #b6f09c;
+  --kind-health-soft: rgba(182, 240, 156, 0.14);
+  --kind-finance: #ffd166;
+  --kind-finance-soft: rgba(255, 209, 102, 0.14);
+  --kind-note: #c4b5fd;
+  --kind-note-soft: rgba(196, 181, 253, 0.14);
 
-  --btn-a: #8e332b;
-  --btn-b: #6f2620;
+  --btn-a: #ff7a17;
+  --btn-b: #8b5cf6;
 
-  --tabbar-bg: rgba(244, 241, 234, 0.96);
-  --overlay: rgba(22, 24, 28, 0.32);
-  --shadow-1: 0 1px 2px rgba(22, 24, 28, 0.05);
-  --shadow-2: 0 6px 18px rgba(22, 24, 28, 0.1);
-  --shadow-pop: 0 2px 6px rgba(142, 51, 43, 0.18);
+  --tabbar-bg: rgba(13, 15, 20, 0.78);
+  --overlay: rgba(4, 5, 8, 0.62);
+  --shadow-1: 0 2px 10px rgba(0, 0, 0, 0.35);
+  --shadow-2: 0 14px 40px rgba(0, 0, 0, 0.45);
+  --shadow-pop: 0 8px 30px rgba(255, 122, 23, 0.22);
+  --shadow-glow: 0 0 32px rgba(139, 92, 246, 0.18);
 
-  --glow-a: rgba(236, 232, 223, 0.5);
-  --glow-b: rgba(236, 232, 223, 0.4);
-  --glow-c: rgba(240, 236, 228, 0.3);
-  --dot: rgba(22, 24, 28, 0.07);
+  --glow-a: rgba(255, 122, 23, 0.16);
+  --glow-b: rgba(139, 92, 246, 0.18);
+  --glow-c: rgba(160, 195, 236, 0.1);
+  --dot: rgba(255, 255, 255, 0.07);
 
   /* graph instrument panel (always dark) */
-  --graph-panel: #0a0c10;
-  --graph-panel-2: #11151b;
-  --graph-grid: rgba(120, 160, 200, 0.1);
-  --graph-node-1: #38bdf8;
-  --graph-node-2: #a78bfa;
-  --graph-node-3: #2dd4bf;
-  --graph-node-4: #f59e0b;
-  --graph-node-5: #94a3b8;
-  --graph-node: #38bdf8;
-  --graph-node-2: #a78bfa;
+  --graph-panel: #07080b;
+  --graph-panel-2: #0d1016;
+  --graph-grid: rgba(160, 195, 236, 0.08);
+  --graph-node-1: #ff9a4d;
+  --graph-node-2: #c4b5fd;
+  --graph-node-3: #b6f09c;
+  --graph-node-4: #ffd166;
+  --graph-node-5: #a0c3ec;
+  --graph-node: #ff9a4d;
+  --graph-node-2: #c4b5fd;
   --graph-node-ghost: #475569;
-  --graph-edge: rgba(56, 189, 248, 0.32);
-  --graph-text: #cbd5e1;
-  --graph-text-dim: #7c8ba1;
+  --graph-edge: rgba(255, 154, 77, 0.34);
+  --graph-text: #d7dbe4;
+  --graph-text-dim: #8a93a6;
 
-  --radius-xs: 3px;
-  --radius-s: 4px;
-  --radius-m: 6px;
-  --radius-l: 8px;
-  --radius-xl: 10px;
+  --radius-xs: 6px;
+  --radius-s: 10px;
+  --radius-m: 14px;
+  --radius-l: 18px;
+  --radius-xl: 24px;
   --radius-full: 999px;
 
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
-  --tabbar-h: 58px;
+  --tabbar-h: 64px;
 
+  --spring: cubic-bezier(0.22, 1.35, 0.36, 1);
   --ease: cubic-bezier(0.25, 0.6, 0.35, 1);
-  --ease-bounce: cubic-bezier(0.3, 1.2, 0.5, 1);
+  --ease-bounce: var(--spring);
   --dur-fast: 120ms;
-  --dur: 180ms;
+  --dur: 200ms;
 }
 
-:root[data-theme='dark'] {
-  color-scheme: dark;
+:root[data-theme='light'] {
+  color-scheme: light;
 
-  --bg: #111316;
-  --bg-subtle: #16181c;
-  --surface: #1a1d22;
-  --surface-2: #20242a;
-  --surface-3: #282d34;
-  --border: rgba(240, 236, 228, 0.1);
-  --border-strong: rgba(240, 236, 228, 0.2);
-  --text: #e9e6df;
-  --text-muted: #a5a29a;
-  --text-faint: #8c8981;
+  --bg: #f7f6fa;
+  --bg-subtle: #efedf5;
+  --surface: #ffffff;
+  --surface-2: #f3f1f8;
+  --surface-3: #e8e5f0;
+  --glass: rgba(255, 255, 255, 0.78);
+  --border: rgba(20, 20, 32, 0.08);
+  --border-strong: rgba(20, 20, 32, 0.16);
+  --text: #111218;
+  --text-muted: #5d6170;
+  --text-faint: #767b8a;
 
-  --accent: #d0685c;
-  --accent-strong: #b95448;
-  --accent-ink: #e08b7f;
-  --accent-soft: rgba(208, 104, 92, 0.14);
-  --accent-contrast: #17110f;
+  --sunset: #e8590c;
+  --sunset-soft: rgba(232, 89, 12, 0.12);
+  --magenta: #d6246e;
+  --dusk: #6d28d9;
+  --dusk-soft: rgba(109, 40, 217, 0.1);
+  --twilight: #7c3aed;
+  --breeze: #2563a8;
+  --lime: #3f7d2e;
+  --grad-brand: linear-gradient(120deg, #ff7a17 0%, #ff4d8d 48%, #8b5cf6 100%);
+  --grad-soft: linear-gradient(120deg, rgba(255, 122, 23, 0.12), rgba(139, 92, 246, 0.12));
+  --grad-aurora: radial-gradient(60% 80% at 15% 10%, rgba(255, 122, 23, 0.1), transparent 60%),
+    radial-gradient(50% 70% at 85% 0%, rgba(139, 92, 246, 0.12), transparent 65%),
+    radial-gradient(60% 60% at 60% 100%, rgba(37, 99, 168, 0.06), transparent 70%);
 
-  --taro: #8fb3c9;
-  --taro-strong: #6f97b0;
-  --taro-ink: #a9c6d8;
-  --taro-soft: rgba(143, 179, 201, 0.12);
-  --butter: #d0a85a;
-  --butter-soft: rgba(208, 168, 90, 0.12);
-  --mint: #8fb8a3;
-  --mint-soft: rgba(143, 184, 163, 0.12);
+  --accent: #e8590c;
+  --accent-strong: #c2410c;
+  --accent-ink: #b8410a;
+  --accent-soft: rgba(232, 89, 12, 0.12);
+  --accent-contrast: #fff8f2;
 
-  --danger: #d0685c;
-  --danger-ink: #e08b7f;
-  --danger-soft: rgba(208, 104, 92, 0.14);
-  --success: #8fb8a3;
-  --warning: #d0a85a;
+  --taro: #2563a8;
+  --taro-ink: #1e4f86;
+  --taro-soft: rgba(37, 99, 168, 0.1);
+  --butter: #96660f;
+  --butter-soft: rgba(150, 102, 15, 0.14);
+  --mint: #3f7d2e;
+  --mint-soft: rgba(63, 125, 46, 0.12);
 
-  --kind-diary: #8fb3c9;
-  --kind-diary-soft: rgba(143, 179, 201, 0.12);
-  --kind-food: #d0957a;
-  --kind-food-soft: rgba(208, 149, 122, 0.12);
-  --kind-health: #8fb8a3;
-  --kind-health-soft: rgba(143, 184, 163, 0.12);
-  --kind-finance: #d0a85a;
-  --kind-finance-soft: rgba(208, 168, 90, 0.12);
-  --kind-note: #a8a59d;
-  --kind-note-soft: rgba(168, 165, 157, 0.1);
+  --danger: #c92a3c;
+  --danger-ink: #b02334;
+  --danger-soft: rgba(201, 42, 60, 0.1);
+  --success: #3f7d2e;
+  --warning: #96660f;
 
-  --btn-a: #d0685c;
-  --btn-b: #a94a40;
+  --kind-diary: #1e4f86;
+  --kind-diary-soft: rgba(37, 99, 168, 0.1);
+  --kind-food: #a34a14;
+  --kind-food-soft: rgba(163, 74, 20, 0.1);
+  --kind-health: #3f7d2e;
+  --kind-health-soft: rgba(63, 125, 46, 0.1);
+  --kind-finance: #8a5a00;
+  --kind-finance-soft: rgba(138, 90, 0, 0.12);
+  --kind-note: #6d28d9;
+  --kind-note-soft: rgba(109, 40, 217, 0.1);
 
-  --tabbar-bg: rgba(17, 19, 22, 0.96);
-  --overlay: rgba(4, 5, 7, 0.6);
-  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-2: 0 10px 24px rgba(0, 0, 0, 0.45);
-  --shadow-pop: 0 2px 8px rgba(208, 104, 92, 0.2);
+  --btn-a: #e8590c;
+  --btn-b: #c2410c;
 
-  --glow-a: rgba(32, 36, 42, 0.5);
-  --glow-b: rgba(28, 32, 38, 0.5);
-  --glow-c: rgba(30, 34, 40, 0.3);
-  --dot: rgba(240, 236, 228, 0.06);
+  --tabbar-bg: rgba(247, 246, 250, 0.82);
+  --overlay: rgba(17, 18, 24, 0.3);
+  --shadow-1: 0 2px 10px rgba(20, 20, 32, 0.08);
+  --shadow-2: 0 16px 40px rgba(20, 20, 32, 0.14);
+  --shadow-pop: 0 8px 26px rgba(232, 89, 12, 0.22);
+  --shadow-glow: 0 0 24px rgba(109, 40, 217, 0.12);
 
-  --graph-panel: #080a0d;
-  --graph-panel-2: #0e1218;
-  --graph-grid: rgba(148, 163, 184, 0.1);
-  --graph-node-1: #4cc9f0;
-  --graph-node-2: #b388ff;
-  --graph-node-3: #2dd4bf;
-  --graph-node-4: #fbbf24;
-  --graph-node-5: #94a3b8;
-  --graph-node: #4cc9f0;
-  --graph-node-2: #b388ff;
-  --graph-node-ghost: #475569;
-  --graph-edge: rgba(76, 201, 240, 0.34);
-  --graph-text: #cbd5e1;
-  --graph-text-dim: #7c8ba1;
+  --glow-a: rgba(255, 122, 23, 0.1);
+  --glow-b: rgba(139, 92, 246, 0.12);
+  --glow-c: rgba(160, 195, 236, 0.08);
+  --dot: rgba(20, 20, 32, 0.06);
+
+  --graph-panel: #0a0c11;
+  --graph-panel-2: #10141b;
+  --graph-grid: rgba(160, 195, 236, 0.1);
+  --graph-node-1: #ff9a4d;
+  --graph-node-2: #c4b5fd;
+  --graph-node-3: #b6f09c;
+  --graph-node-4: #ffd166;
+  --graph-node-5: #a0c3ec;
+  --graph-node: #ff9a4d;
+  --graph-node-2: #c4b5fd;
+  --graph-node-ghost: #64748b;
+  --graph-edge: rgba(255, 154, 77, 0.36);
+  --graph-text: #d7dbe4;
+  --graph-text-dim: #8a93a6;
 }
 
 @media (prefers-reduced-motion: reduce) {

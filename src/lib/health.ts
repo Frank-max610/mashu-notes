@@ -3,7 +3,7 @@ import { HEALTH_METRICS, HEALTH_UNITS, formatAmount } from './kinds';
 import { dayKeyOf, noteDayKey } from './insights';
 
 /**
- * Apple Health / Apple Watch import adapter for 日新 (Rixin).
+ * Apple Health / Apple Watch import adapter for 麻薯 (Mashu).
  *
  * The app is local-first and has no server, so there is no HealthKit bridge
  * here: this module only parses data the user exported or handed over through

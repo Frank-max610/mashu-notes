@@ -45,7 +45,7 @@ jobs:
         if: github.event_name == 'push'
         uses: actions/upload-artifact@v4
         with:
-          name: rixin-dist
+          name: mashu-dist
           path: dist
           if-no-files-found: error
           retention-days: 7

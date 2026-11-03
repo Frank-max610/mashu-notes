@@ -7,13 +7,13 @@ import { normalizeNote } from './prefs';
  */
 
 export interface VaultFile {
-  app: 'rixin';
+  app: 'mashu';
   version: 2;
   exportedAt: string;
   notes: Note[];
 }
 
-export const VAULT_APP = 'rixin' as const;
+export const VAULT_APP = 'mashu' as const;
 /** v2 adds life-record fields (kind/meta/manualLinks/position); v1 is accepted. */
 export const VAULT_VERSION = 2 as const;
 
@@ -103,7 +103,7 @@ export function mergeVaultNotes(existing: Note[], incoming: Note[]): MergeResult
 export function toMarkdownBundle(notes: Note[]): string {
   const exportedAt = new Date().toLocaleString('zh-CN', { hour12: false });
   const header = [
-    '# 日新 笔记导出',
+    '# 麻薯 笔记导出',
     '',
     `> 导出时间：${exportedAt}`,
     `> 笔记数量：${notes.length}`,

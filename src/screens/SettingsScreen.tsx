@@ -15,10 +15,10 @@ import { formatBytes } from '../lib/format';
 import { AGENT_AVATARS } from '../lib/prefs';
 import { Icon, type IconName } from '../components/Icon';
 import { AgentAvatar } from '../components/AgentAvatar';
-import { BrandSeal } from '../components/BrandSeal';
+import { BrandMark } from '../components/BrandMark';
 import { IosInstallCard } from '../components/IosInstallCard';
 
-const APP_VERSION = '0.4.0';
+const APP_VERSION = '0.5.0';
 
 export interface SettingsScreenProps {
   notes: Note[];
@@ -200,10 +200,10 @@ export function SettingsScreen({
     <div className="screen settings-screen">
       <header className="screen-header settings-header">
         <div className="brand-row">
-          <BrandSeal size={30} />
+          <BrandMark size={34} />
           <div className="brand-copy">
             <h1 className="page-title display">我的</h1>
-            <p className="brand-date mono">日新 v{APP_VERSION}</p>
+            <p className="brand-date mono">麻薯 v{APP_VERSION}</p>
           </div>
         </div>
       </header>
@@ -286,7 +286,7 @@ export function SettingsScreen({
               <span className="settings-row-text">
                 <span className="settings-row-label">固定时间提醒</span>
                 <span className="settings-row-hint">
-                  在「快捷指令 → 自动化 → 每天」里添加「打开日新」，就能按时看复盘；不需要推送服务器。
+                  在「快捷指令 → 自动化 → 每天」里添加「打开麻薯」，就能按时看复盘；不需要推送服务器。
                 </span>
               </span>
             </div>
@@ -445,7 +445,7 @@ export function SettingsScreen({
               <SettingsRow
                 icon="book"
                 label="打开示例记录"
-                hint="看看日新能记些什么"
+                hint="看看麻薯能记些什么"
                 onClick={() => onOpenNote(welcomeNote.id)}
               />
             ) : null}
@@ -454,13 +454,13 @@ export function SettingsScreen({
                 <Icon name="info" size={18} />
               </span>
               <span className="settings-row-text">
-                <span className="settings-row-label">日新 v{APP_VERSION}</span>
+                <span className="settings-row-label">麻薯 v{APP_VERSION}</span>
                 <span className="settings-row-hint">MIT 开源 · 本地优先 · 无服务器</span>
               </span>
             </div>
             <a
               className="settings-row as-static"
-              href="https://github.com/Frank-max610/rixin-notes"
+              href="https://github.com/Frank-max610/mashu-notes"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -475,7 +475,7 @@ export function SettingsScreen({
           </div>
         </section>
 
-        <p className="settings-footer mono">苟日新，日日新，又日新</p>
+        <p className="settings-footer mono">麻薯 · 本地生活记录</p>
       </div>
     </div>
   );

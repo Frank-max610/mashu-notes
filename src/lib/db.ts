@@ -2,19 +2,19 @@ import type { Note } from './types';
 import { normalizeNote } from './prefs';
 
 /**
- * Persistence layer for 日新: IndexedDB with a localStorage fallback.
- * Everything stays on the device. Data from previous brands (麻薯 / 砚) is
- * migrated into the new `rixin` database on first open.
+ * Persistence layer for 麻薯: IndexedDB with a localStorage fallback.
+ * Everything stays on the device. Data from earlier releases (rixin / 麻薯 / 砚)
+ * is migrated into the new `mashu` database on first open.
  */
 
-const DB_NAME = 'rixin';
+const DB_NAME = 'mashu';
 const DB_VERSION = 2;
 const STORE = 'notes';
-const LS_KEY = 'rixin.notes.v1';
+const LS_KEY = 'mashu.notes.v1';
 
-/** Storage from previous brands, adopted once. */
-const LEGACY_DB_NAMES = ['mochi', 'inkstone'] as const;
-const LEGACY_LS_NOTES = ['mochi.notes.v1', 'inkstone.notes.v1'] as const;
+/** Storage from earlier releases, adopted once. */
+const LEGACY_DB_NAMES = ['rixin', 'mochi', 'inkstone'] as const;
+const LEGACY_LS_NOTES = ['rixin.notes.v1', 'mochi.notes.v1', 'inkstone.notes.v1'] as const;
 
 export type StorageMode = 'indexeddb' | 'localstorage';
 
@@ -194,7 +194,7 @@ function cleanupLegacyStorage(): void {
 }
 
 /**
- * Move notes from 麻薯 (mochi) / 砚 (inkstone) into the rixin database.
+ * Move notes from earlier releases (rixin / mochi / inkstone) into the mashu database.
  * The old copies are only deleted after the merged vault has been written.
  */
 async function migrateLegacyVault(): Promise<Note[]> {

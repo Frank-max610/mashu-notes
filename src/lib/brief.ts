@@ -10,7 +10,7 @@ import {
 } from './insights';
 
 /**
- * Daily brief engine for 日新 (Rixin).
+ * Daily brief engine for 麻薯.
  *
  * The first screen of the app is a daily dashboard: yesterday's review on top,
  * today's concrete adjustments below. This module is the brain behind it. It

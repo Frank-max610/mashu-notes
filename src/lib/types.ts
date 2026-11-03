@@ -1,5 +1,5 @@
 /**
- * Core data model for Rixin.
+ * Core data model for Mashu.
  *
  * A vault is a flat set of notes plus optional life records (food, health,
  * finance, diary). Relations are derived from Markdown (`[[wiki links]]`,

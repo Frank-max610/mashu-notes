@@ -7,7 +7,7 @@ import { Icon } from './Icon';
 import './GraphView.css';
 
 /**
- * Editable life graph for 日新 v0.4.
+ * Editable life graph for 麻薯 v0.5.
  *
  * Notes are drawn as kind-coloured nodes; `[[wiki links]]`, hand-drawn links and
  * same-day life records become typed edges. Users can drag nodes (positions are

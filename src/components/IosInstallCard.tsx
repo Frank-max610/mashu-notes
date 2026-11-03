@@ -27,7 +27,7 @@ export interface IosInstallCardProps {
 }
 
 /**
- * iPhone-first delivery card: 日新 has no server, so the whole app is installed
+ * iPhone-first delivery card: 麻薯 has no server, so the whole app is installed
  * to the Home Screen from Safari and then runs (and saves data) offline.
  */
 export function IosInstallCard({ onCopyLink }: IosInstallCardProps) {

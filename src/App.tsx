@@ -21,7 +21,7 @@ import { ActionSheet, type ActionSheetItem } from './components/ActionSheet';
 import { Icon } from './components/Icon';
 import { SearchScreen } from './components/SearchScreen';
 
-const APP_TITLE = '日新';
+const APP_TITLE = '麻薯';
 
 function safeFileName(title: string): string {
   return (
@@ -99,7 +99,7 @@ export default function App() {
       document.documentElement.dataset.theme = resolved;
       document.title = APP_TITLE;
       const meta = document.querySelector('meta[name="theme-color"]');
-      meta?.setAttribute('content', resolved === 'light' ? '#f4f1ea' : '#111316');
+      meta?.setAttribute('content', resolved === 'light' ? '#f7f6fa' : '#08090c');
     };
     apply();
     setStoredTheme(theme);

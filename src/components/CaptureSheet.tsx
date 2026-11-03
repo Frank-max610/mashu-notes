@@ -121,7 +121,7 @@ function metaFacts(kind: NoteKind, meta: NoteMeta): Fact[] {
 }
 
 /**
- * Bottom sheet for capturing one life record, in the 日新 editorial style:
+ * Bottom sheet for capturing one life record, in the 麻薯 style:
  * hairline rules, receipt-like preview table, mono meta and lean underlined
  * quick fields. The textarea is parsed live with the offline agent
  * (`captureDraft`); the preview and quick fields share one merged meta object,

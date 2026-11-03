@@ -1,7 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="日新">
-  <rect width="512" height="512" rx="41" fill="#f4f1ea"/>
-  <rect x="28" y="28" width="456" height="456" fill="none" stroke="#16181c" stroke-opacity=".16"/>
-  <rect x="100" y="100" width="312" height="312" fill="#a63d33"/>
-  <rect x="123" y="123" width="266" height="266" fill="none" stroke="#fff8f2" stroke-opacity=".82" stroke-width="3"/>
-  <text x="256" y="301" text-anchor="middle" font-family="Songti SC, Noto Serif SC, STSong, serif" font-size="150" font-weight="600" fill="#fff8f2">日新</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="麻薯">
+  <defs>
+    <linearGradient id="brand" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff7a17"/>
+      <stop offset=".55" stop-color="#ff4d8d"/>
+      <stop offset="1" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <radialGradient id="gloss" cx=".28" cy=".18" r=".7">
+      <stop offset="0" stop-color="#fff" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="113" fill="url(#brand)"/>
+  <rect width="512" height="512" rx="113" fill="url(#gloss)"/>
+  <text x="256" y="318" text-anchor="middle" font-family="PingFang SC, SF Pro Display, Noto Sans SC, sans-serif" font-size="168" font-weight="700" fill="#fff7f2">麻薯</text>
 </svg>

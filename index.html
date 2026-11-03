@@ -6,30 +6,32 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no"
     />
-    <meta name="theme-color" content="#f4f1ea" />
+    <meta name="theme-color" content="#08090c" />
     <meta
       name="description"
-      content="日新 —— 本地优先的生活记录与复盘笔记本。苟日新，日日新，又日新。"
+      content="麻薯 —— 本地优先、AI 原生的生活记录与复盘 App：吃得怎样、花了多少、睡得好不好，都记在一起。"
     />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="日新" />
+    <meta name="apple-mobile-web-app-title" content="麻薯" />
     <meta name="format-detection" content="telephone=no" />
     <script>
       (function () {
         try {
           var stored =
+            localStorage.getItem('mashu.theme.v1') ||
             localStorage.getItem('rixin.theme.v1') ||
             localStorage.getItem('mochi.theme.v1') ||
             localStorage.getItem('inkstone.theme.v1');
           var dark =
             stored === 'dark' ||
             (stored !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (stored === 'light') dark = false;
           if (dark) {
             document.documentElement.dataset.theme = 'dark';
             var meta = document.querySelector('meta[name="theme-color"]');
-            if (meta) meta.setAttribute('content', '#111316');
+            if (meta) meta.setAttribute('content', '#08090c');
           }
         } catch (error) {
           /* private mode / blocked storage: keep the light default */
@@ -46,7 +48,7 @@
     <link rel="apple-touch-startup-image" href="./splash/iphone-xr.png" media="screen and (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
     <link rel="apple-touch-startup-image" href="./splash/iphone-se.png" media="screen and (device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
     <link rel="manifest" href="./manifest.webmanifest" />
-    <title>日新</title>
+    <title>麻薯</title>
     <style>
       html,
       body {
@@ -54,8 +56,8 @@
       }
       body {
         margin: 0;
-        background: #f4f1ea;
-        color: #5c6067;
+        background: #08090c;
+        color: #9aa1b0;
         font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', system-ui, sans-serif;
       }
       .boot {
@@ -68,8 +70,8 @@
     </style>
   </head>
   <body>
-    <div id="root"><div class="boot">日新 · 正在整理记录</div></div>
-    <noscript>日新需要 JavaScript 才能运行。</noscript>
+    <div id="root"><div class="boot">麻薯 · 正在整理记录</div></div>
+    <noscript>麻薯需要 JavaScript 才能运行。</noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

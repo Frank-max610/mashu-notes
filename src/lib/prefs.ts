@@ -4,12 +4,12 @@ import { extractTags } from './links';
 
 /** Simple client-side preference storage (theme, onboarding flag). */
 
-const THEME_KEY = 'rixin.theme.v1';
-const ONBOARDED_KEY = 'rixin.onboarded.v1';
+const THEME_KEY = 'mashu.theme.v1';
+const ONBOARDED_KEY = 'mashu.onboarded.v1';
 
 /** Previous brands' keys, adopted once so upgrades keep their preferences. */
-const LEGACY_THEME_KEYS = ['mochi.theme.v1', 'inkstone.theme.v1'] as const;
-const LEGACY_ONBOARDED_KEYS = ['mochi.onboarded.v1', 'inkstone.onboarded.v1'] as const;
+const LEGACY_THEME_KEYS = ['rixin.theme.v1', 'mochi.theme.v1', 'inkstone.theme.v1'] as const;
+const LEGACY_ONBOARDED_KEYS = ['rixin.onboarded.v1', 'mochi.onboarded.v1', 'inkstone.onboarded.v1'] as const;
 
 export function getStoredTheme(): 'dark' | 'light' | 'system' {
   try {
@@ -27,7 +27,7 @@ export function getStoredTheme(): 'dark' | 'light' | 'system' {
   } catch {
     /* ignore */
   }
-  return 'light';
+  return 'dark';
 }
 
 export function setStoredTheme(theme: 'dark' | 'light' | 'system'): void {
@@ -172,37 +172,40 @@ export function makeNote(input: NoteInput = {}): Note {
 
 /* ---------------- agent persona ---------------- */
 
-const AGENT_KEY = 'rixin.agent.v1';
-const LEGACY_AGENT_KEYS = ['mochi.agent.v1'] as const;
+const AGENT_KEY = 'mashu.agent.v1';
+const LEGACY_AGENT_KEYS = ['rixin.agent.v1', 'mochi.agent.v1'] as const;
 
 export interface AgentAvatarOption {
   id: string;
   label: string;
 }
 
-/** Abstract sigil avatars for the local agent (no mascots, no emoji defaults). */
+/** Abstract gradient avatars for the local agent (no mascots, no emoji defaults). */
 export const AGENT_AVATARS: readonly AgentAvatarOption[] = [
-  { id: 'seal', label: '印章' },
+  { id: 'orb', label: '光晕' },
   { id: 'initial', label: '首字' },
   { id: 'ring', label: '圆环' },
-  { id: 'square', label: '方格' },
-  { id: 'triad', label: '三才' },
+  { id: 'square', label: '方块' },
+  { id: 'triad', label: '三角' },
   { id: 'spark', label: '星芒' },
-  { id: 'wave', label: '水纹' },
-  { id: 'grid', label: '经纬' },
+  { id: 'wave', label: '水波' },
+  { id: 'grid', label: '网格' },
 ];
 
-/** Older releases used emoji/mochi avatars; map them to the new default. */
-const LEGACY_AVATAR_IDS = new Set(['mochi', 'cat', 'leaf', 'sun', 'star', 'book', 'tea', 'bowl']);
+/** Avatars/names from earlier releases map onto the new defaults. */
+const LEGACY_AVATAR_IDS = new Set([
+  'mochi', 'cat', 'leaf', 'sun', 'star', 'book', 'tea', 'bowl', 'seal',
+]);
+const LEGACY_AGENT_NAMES = new Set(['小麻薯', '麻薯', '知几']);
 
-export const DEFAULT_AGENT_PERSONA: AgentPersona = { name: '知几', avatar: 'seal' };
+export const DEFAULT_AGENT_PERSONA: AgentPersona = { name: '小助手', avatar: 'orb' };
 
 function personaFromRaw(raw: string | null): AgentPersona | null {
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw) as Partial<AgentPersona>;
     let name = typeof parsed.name === 'string' && parsed.name.trim() ? parsed.name.trim() : DEFAULT_AGENT_PERSONA.name;
-    if (name === '小麻薯' || name === '麻薯') name = DEFAULT_AGENT_PERSONA.name;
+    if (LEGACY_AGENT_NAMES.has(name)) name = DEFAULT_AGENT_PERSONA.name;
     let avatar = typeof parsed.avatar === 'string' && parsed.avatar.trim() ? parsed.avatar.trim() : DEFAULT_AGENT_PERSONA.avatar;
     if (LEGACY_AVATAR_IDS.has(avatar)) avatar = DEFAULT_AGENT_PERSONA.avatar;
     return { name, avatar };
@@ -294,8 +297,8 @@ export function migrateLegacyPreferences(): void {
   }
 }
 
-const INSTALL_HINT_KEY = 'rixin.installHint.v1';
-const LEGACY_INSTALL_HINT_KEYS = ['mochi.installHint.v1'] as const;
+const INSTALL_HINT_KEY = 'mashu.installHint.v1';
+const LEGACY_INSTALL_HINT_KEYS = ['rixin.installHint.v1', 'mochi.installHint.v1'] as const;
 
 export function isInstallHintDismissed(): boolean {
   try {

@@ -41,7 +41,7 @@ const PROFILE_DIR = resolve(tmpdir(), `rixin-chrome-${Date.now()}`);
 const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
 
 const SHOTS = [
-  { file: 'today.png', hash: '#/today', waitFor: '.brief-block', delay: 900 },
+  { file: 'today.png', hash: '#/today', waitFor: '.brief-block', delay: 1000 },
   { file: 'records.png', hash: '#/records', waitFor: '.note-card', delay: 800 },
   {
     file: 'capture.png',
@@ -84,7 +84,7 @@ const SHOTS = [
     hash: '#/search',
     waitFor: '.search-screen__input',
     delay: 500,
-    action: `(() => { const input = document.querySelector('.search-screen__input'); if (!input) return; input.focus(); const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set; setter.call(input, '日新'); input.dispatchEvent(new Event('input', { bubbles: true })); })()`,
+    action: `(() => { const input = document.querySelector('.search-screen__input'); if (!input) return; input.focus(); const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set; setter.call(input, '麻薯'); input.dispatchEvent(new Event('input', { bubbles: true })); })()`,
     afterActionWaitFor: '.search-screen mark',
     afterActionDelay: 600,
   },
@@ -98,11 +98,11 @@ const SHOTS = [
     scrollTo: '.install-card',
   },
   {
-    file: 'dark-today.png',
+    file: 'light-today.png',
     hash: '#/today',
     waitFor: '.brief-block',
     delay: 800,
-    theme: 'dark',
+    theme: 'light',
   },
   {
     file: 'empty-records.png',
@@ -247,7 +247,7 @@ async function capture(shot) {
 
     if (shot.theme) {
       await cdp.send('Runtime.evaluate', {
-        expression: `localStorage.setItem('rixin.theme.v1', ${JSON.stringify(shot.theme)}); location.reload();`,
+        expression: `localStorage.setItem('mashu.theme.v1', ${JSON.stringify(shot.theme)}); location.reload();`,
       });
       await sleep(500);
       await waitForExpression(cdp, 'document.readyState === "complete"', 12000);
@@ -257,13 +257,13 @@ async function capture(shot) {
       // Empty vault + light theme, so the captured empty state is reproducible.
       await cdp.send('Runtime.evaluate', {
         expression: `(async () => {
-          localStorage.setItem('rixin.theme.v1', 'light');
-          localStorage.setItem('rixin.onboarded.v1', '1');
-          localStorage.removeItem('rixin.notes.v1');
+          localStorage.setItem('mashu.theme.v1', 'light');
+          localStorage.setItem('mashu.onboarded.v1', '1');
+          localStorage.removeItem('mashu.notes.v1');
           localStorage.removeItem('mochi.notes.v1');
           localStorage.removeItem('inkstone.notes.v1');
           await new Promise((done) => {
-            const request = indexedDB.deleteDatabase('rixin');
+            const request = indexedDB.deleteDatabase('mashu');
             request.onsuccess = request.onerror = request.onblocked = () => done();
           });
           location.reload();

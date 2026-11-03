@@ -95,7 +95,7 @@ function replyLines(text: string) {
 }
 
 /**
- * The built-in local helper, in the 日新 editorial style: a flat chat on paper
+ * The built-in local helper, in the 麻薯 chat style: glassy rows on a dark canvas
  * with hairline rules, serif display name and mono meta labels. The greeting
  * comes from `agentGreeting`, replies from `agentReply`, and a prepared record
  * arrives as a bordered confirm table so nothing is saved silently. Messages

@@ -2,7 +2,7 @@ import type { Note, NoteMeta } from './types';
 import { makeNote } from './prefs';
 
 /**
- * First-run demo vault for 日新. It contains a week of life records so the
+ * First-run demo vault for 麻薯. It contains a week of life records so the
  * daily brief, the dashboard trends and the life graph are meaningful from the
  * very first launch, plus a couple of Markdown notes explaining the app.
  */
@@ -120,19 +120,17 @@ function daySpecs(spec: (typeof DAYS)[number]): SeedSpec[] {
 const NOTES: SeedSpec[] = [
   {
     id: 'seed-welcome',
-    title: '欢迎来到日新',
+    title: '欢迎来到麻薯',
     minutesAgo: 3,
     pinned: true,
-    content: `**日新**，取名自《礼记 · 大学》：「苟日新，日日新，又日新。」
+    content: `**麻薯**：一个把每天吃、睡、花、想，连成一张图的本地生活 App。
 
-这里适合记下每天真实的片段，再在第二天翻回来看看。
+打开先看**昨日复盘**和**今日建议**，不用翻笔记。
 
-- 用一句话记一笔：吃了什么、睡了多久、花了多少
-- 打开就是**昨日复盘**和**今日改进建议**
-- 所有记录会连成一张[[生活图谱]]，节点可以自由拖动、添加、连线
-- 有想问的，交给[[助手说明]]
-
-> 数据与判断全部留在本机，不联网。
+- 一句话记一笔：吃了什么、睡了多久、花了多少
+- 所有记录长成一张[[生活图谱]]，随便拖、加、连
+- 有想问的，直接找[[助手说明]]
+- 数据只在这台手机上，不联网也能用
 
 #开始 #使用`,
   },
@@ -140,11 +138,11 @@ const NOTES: SeedSpec[] = [
     id: 'seed-graph',
     title: '生活图谱',
     minutesAgo: 4 * 60,
-    content: `图谱把每条记录画成节点：饮食、健康、收支、日记各有颜色，同一天会自动串起来。
+    content: `每条记录是一个节点：饮食、健康、收支、日记各有颜色，同一天自动连线。
 
-点节点可以编辑或删除，也可以手动连线；拖到喜欢的位置会记住。
+点节点可以编辑、删除、拖到喜欢的位置；也可以手动连线、重新布局。
 
-相关：[[欢迎来到日新]]
+相关：[[欢迎来到麻薯]]
 
 #功能 #使用`,
   },
@@ -156,9 +154,9 @@ const NOTES: SeedSpec[] = [
 
 - 用一句话记一笔，确认后才会保存
 - 回答「今天花了多少」「本周睡眠怎么样」这类本机统计
-- 名字和头像都可以在「我的」里改
+- 名字和头像都可以在「我的」里换
 
-它不是大语言模型，回答范围由本地规则决定，因此可预测、可解释。
+它不是大语言模型，回答范围由本地规则决定，所以稳定、可解释、不联网。
 
 #功能 #智能体`,
   },
@@ -169,7 +167,7 @@ const NOTES: SeedSpec[] = [
     content: `在「我的 → Apple 健康」里可以：
 
 - 导入 Apple 健康导出的 JSON / CSV
-- 用「快捷指令」每天自动把步数、睡眠、心率、体重发过来
+- 用「快捷指令」把步数、睡眠、心率、体重发过来
 
 也可以查看原生壳（Xcode + HealthKit）的接入说明。
 

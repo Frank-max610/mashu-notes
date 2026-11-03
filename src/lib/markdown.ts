@@ -2,7 +2,7 @@ import MarkdownIt from 'markdown-it';
 import type { NoteSummary } from './types';
 
 /**
- * Markdown rendering for Rixin.
+ * Markdown rendering for Mashu.
  *
  * Output is sanitised by construction: raw HTML is disabled and only
  * `http(s)`/`mailto` links are kept as external links. `[[wiki links]]` become
