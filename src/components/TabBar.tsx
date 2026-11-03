@@ -11,7 +11,7 @@ const TABS: ReadonlyArray<{ name: TabName; label: string; icon: IconName; en: st
   { name: 'records', label: '记录', icon: 'notes', en: 'RECORDS' },
   { name: 'graph', label: '图谱', icon: 'graph', en: 'GRAPH' },
   { name: 'agent', label: '助手', icon: 'sparkles', en: 'AGENT' },
-  { name: 'settings', label: '我的', icon: 'settings', en: 'ME' },
+  { name: 'settings', label: '设置', icon: 'settings', en: 'SETTINGS' },
 ];
 
 /** Flat, lean bottom navigation. */

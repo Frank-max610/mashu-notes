@@ -81,6 +81,7 @@ export function SettingsScreen({
   const [customAvatar, setCustomAvatar] = useState('');
   const [busy, setBusy] = useState(false);
   const [healthDetailsOpen, setHealthDetailsOpen] = useState(false);
+  const [personaOpen, setPersonaOpen] = useState(false);
   const healthInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -200,204 +201,74 @@ export function SettingsScreen({
     <div className="screen settings-screen">
       <header className="screen-header settings-header">
         <div className="brand-row">
-          <MochiNode size={28} />
+          <MochiNode size={26} />
           <div className="brand-copy">
-            <h1 className="page-title display">我的</h1>
-            <p className="brand-date mono">麻薯 v{APP_VERSION}</p>
+            <h1 className="page-title">设置</h1>
+            <p className="brand-date">麻薯 v{APP_VERSION}</p>
           </div>
         </div>
       </header>
 
-      <div className="screen-body">
+      <div className="screen-body settings-body">
         <section>
-          <div className="section-label">智能体 / AGENT</div>
-          <div className="settings-card agent-persona">
-            <div className="agent-persona-head">
-              <AgentAvatar avatar={persona.avatar} name={persona.name} size={44} />
-              <div className="agent-persona-copy">
-                <div className="agent-persona-name">{persona.name}</div>
-                <div className="agent-persona-hint">本地处理 · 仅你可见</div>
+          <div className="section-label">助手</div>
+          <div className="settings-card">
+            <button type="button" className="settings-row" onClick={() => setPersonaOpen((open) => !open)} aria-expanded={personaOpen}>
+              <AgentAvatar avatar={persona.avatar} name={persona.name} size={34} />
+              <span className="settings-row-text">
+                <span className="settings-row-label">{persona.name}</span>
+                <span className="settings-row-hint">本地处理 · 仅你可见</span>
+              </span>
+              <Icon name={personaOpen ? 'chevronDown' : 'arrowRight'} size={15} />
+            </button>
+            {personaOpen ? (
+              <div className="persona-editor">
+                <label className="field-field">
+                  <span className="field-label">名字</span>
+                  <input
+                    className="field-input"
+                    value={nameDraft}
+                    maxLength={12}
+                    onChange={(event) => setNameDraft(event.target.value)}
+                    onBlur={commitName}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') event.currentTarget.blur();
+                    }}
+                  />
+                </label>
+                <div className="field-label">头像</div>
+                <div className="avatar-grid">
+                  {AGENT_AVATARS.map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      className={`avatar-option${persona.avatar === option.id ? ' is-active' : ''}`}
+                      onClick={() => onPersonaChange({ ...persona, avatar: option.id })}
+                    >
+                      <AgentAvatar avatar={option.id} name={persona.name} size={28} />
+                      <span>{option.label}</span>
+                    </button>
+                  ))}
+                </div>
+                <input
+                  className="field-input persona-custom"
+                  value={customAvatar}
+                  maxLength={4}
+                  placeholder="或输入一个字符"
+                  aria-label="自定义头像字符"
+                  onChange={(event) => setCustomAvatar(event.target.value)}
+                  onBlur={commitCustomAvatar}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') event.currentTarget.blur();
+                  }}
+                />
               </div>
-            </div>
-
-            <label className="field-field">
-              <span className="field-label">名字</span>
-              <input
-                className="field-input"
-                value={nameDraft}
-                maxLength={12}
-                onChange={(event) => setNameDraft(event.target.value)}
-                onBlur={commitName}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') event.currentTarget.blur();
-                }}
-              />
-            </label>
-
-            <div className="field-label">头像</div>
-            <div className="avatar-grid">
-              {AGENT_AVATARS.map((option) => (
-                <button
-                  key={option.id}
-                  type="button"
-                  className={`avatar-option${persona.avatar === option.id ? ' is-active' : ''}`}
-                  onClick={() => onPersonaChange({ ...persona, avatar: option.id })}
-                >
-                  <AgentAvatar avatar={option.id} name={persona.name} size={30} />
-                  <span>{option.label}</span>
-                </button>
-              ))}
-            </div>
-            <div className="avatar-custom">
-              <input
-                className="field-input"
-                value={customAvatar}
-                maxLength={4}
-                placeholder="或输入一个字符 / emoji"
-                aria-label="自定义头像字符"
-                onChange={(event) => setCustomAvatar(event.target.value)}
-                onBlur={commitCustomAvatar}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') event.currentTarget.blur();
-                }}
-              />
-            </div>
+            ) : null}
           </div>
         </section>
 
         <section>
-          <div className="section-label">每日复盘 / BRIEF</div>
-          <div className="settings-card">
-            <div className="settings-row as-static">
-              <span className="settings-row-icon">
-                <Icon name="sun" size={18} />
-              </span>
-              <span className="settings-row-text">
-                <span className="settings-row-label">打开即生成</span>
-                <span className="settings-row-hint">
-                  「今日」页会根据昨天的记录生成复盘与 3 条改进建议，全部在本机计算，没有服务器。
-                </span>
-              </span>
-            </div>
-            <div className="settings-row as-static">
-              <span className="settings-row-icon">
-                <Icon name="clock" size={18} />
-              </span>
-              <span className="settings-row-text">
-                <span className="settings-row-label">固定时间提醒</span>
-                <span className="settings-row-hint">
-                  在「快捷指令 → 自动化 → 每天」里添加「打开麻薯」，就能按时看复盘；不需要推送服务器。
-                </span>
-              </span>
-            </div>
-          </div>
-        </section>
-
-        <section>
-          <div className="section-label">Apple 健康 / HEALTH</div>
-          <div className="settings-card">
-            <SettingsRow
-              icon="heart"
-              label="导入健康数据"
-              hint="Apple 健康导出的 JSON / CSV（步数、睡眠、心率、体重…）"
-              onClick={() => healthInputRef.current?.click()}
-            />
-            <input
-              ref={healthInputRef}
-              type="file"
-              accept=".json,.csv,.txt,application/json,text/csv,text/plain"
-              hidden
-              onChange={(event) => {
-                void handleHealthFile(event.target.files?.[0]);
-                event.target.value = '';
-              }}
-            />
-            <SettingsRow
-              icon="link"
-              label="复制快捷指令导入链接"
-              hint="配合「快捷指令」每日自动同步（见下方说明）"
-              onClick={() => void handleCopyShortcutUrl()}
-            />
-            <div className="settings-row as-static">
-              <span className="settings-row-icon">
-                <Icon name="phone" size={18} />
-              </span>
-              <span className="settings-row-text">
-                <span className="settings-row-label">Apple Watch / HealthKit</span>
-                <span className="settings-row-hint">
-                  Web 应用无法直接读取 HealthKit。当前提供「导出文件 / 快捷指令」两条零服务器路径；原生壳（Xcode + HealthKit）见仓库说明。
-                </span>
-              </span>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            className="health-guide-toggle mono"
-            aria-expanded={healthDetailsOpen}
-            onClick={() => setHealthDetailsOpen((open) => !open)}
-          >
-            {healthDetailsOpen ? '收起快捷指令说明' : '查看快捷指令说明'}
-            <Icon name={healthDetailsOpen ? 'chevronDown' : 'arrowRight'} size={13} />
-          </button>
-          {healthDetailsOpen ? (
-            <div className="health-guide">
-              <p className="settings-note">
-                推荐用文件方式（更稳定）：在「快捷指令」里读取健康样本 → 存到「文件」→ 回到这里点「导入健康数据」。
-              </p>
-              <p className="settings-note">
-                也可以拼一条 URL 打开本应用自动导入：
-                <code>{healthShortcutUrl}</code> 后接 URL 编码后的 JSON，例如
-                <code>{'{"samples":[{"type":"steps","value":8321,"date":"2026-11-03T22:00:00+08:00"}]}'}</code>
-                。注意：如果打开的是 Safari 而不是主屏幕应用，iOS 可能把数据写进另一份存储，所以文件导入更可靠。
-              </p>
-              <p className="settings-note">
-                想直接读「健康」App：需要一个原生 iOS 壳（Swift + HealthKit），这是路线图里的可选形态；本仓库不含签名与 App Store 发布。
-              </p>
-            </div>
-          ) : null}
-        </section>
-
-        <section>
-          <div className="section-label">数据 / DATA</div>
-          <div className="settings-card">
-            <SettingsRow
-              icon="download"
-              label="导出全部记录（JSON）"
-              hint={`${notes.length} 条 · 保留结构化字段`}
-              onClick={() => void handleExportJson()}
-            />
-            <SettingsRow
-              icon="book"
-              label="导出 Markdown 合集"
-              hint="单个 .md 文件，方便迁移"
-              onClick={() => void handleExportMarkdown()}
-            />
-            <SettingsRow
-              icon="upload"
-              label="导入记录（合并）"
-              hint="按标题合并，较新的优先"
-              onClick={() => void handleImport('merge')}
-            />
-            <SettingsRow
-              icon="database"
-              label="导入记录（替换全部）"
-              hint="用备份覆盖当前数据"
-              onClick={() => void handleImport('replace')}
-            />
-            <SettingsRow
-              icon="trash"
-              label="清空全部记录"
-              hint="不可撤销，建议先导出备份"
-              onClick={() => void handleClear()}
-              danger
-            />
-          </div>
-          {busy ? <p className="settings-note">正在处理文件…</p> : null}
-        </section>
-
-        <section>
-          <div className="section-label">外观 / APPEARANCE</div>
+          <div className="section-label">外观</div>
           <div className="segmented" role="group" aria-label="主题">
             {THEMES.map((item) => (
               <button
@@ -414,32 +285,150 @@ export function SettingsScreen({
         </section>
 
         <section>
-          <div className="section-label">装到 iPhone / INSTALL</div>
-          <IosInstallCard onCopyLink={() => void handleCopyLink()} />
-          <p className="settings-note">
-            装到主屏幕后断网也能用；换手机时先导出备份，再在新手机导入。所有内容只在这台设备上。
-          </p>
+          <div className="section-label">数据与隐私</div>
+          <div className="settings-card">
+            <SettingsRow
+              icon="download"
+              label="导出完整备份"
+              hint="可存到「文件」或 iCloud 云盘"
+              onClick={() => void handleExportJson()}
+            />
+            <SettingsRow
+              icon="upload"
+              label="从备份恢复"
+              hint="合并记录，保留较新的版本"
+              onClick={() => void handleImport('merge')}
+            />
+            <SettingsRow
+              icon="upload"
+              label="用备份替换全部记录"
+              hint="会覆盖当前数据"
+              onClick={() => void handleImport('replace')}
+            />
+            <SettingsRow
+              icon="trash"
+              label="清空全部记录"
+              hint="不可撤销，建议先导出备份"
+              onClick={() => void handleClear()}
+              danger
+            />
+          </div>
+          <p className="settings-note">记录只保存在这台设备上；清除浏览器数据或删除应用会移除本地记录。</p>
+          {busy ? <p className="settings-note">正在处理文件…</p> : null}
         </section>
 
         <section>
-          <div className="section-label">存储 / STORAGE</div>
+          <div className="section-label">Apple 健康</div>
+          <div className="settings-card">
+            <SettingsRow
+              icon="heart"
+              label="连接 Apple 健康"
+              hint="通过快捷指令导入步数、睡眠、心率、体重"
+              onClick={() => healthInputRef.current?.click()}
+            />
+            <input
+              ref={healthInputRef}
+              type="file"
+              accept=".json,.csv,.txt,application/json,text/csv,text/plain"
+              hidden
+              onChange={(event) => {
+                void handleHealthFile(event.target.files?.[0]);
+                event.target.value = '';
+              }}
+            />
+          </div>
+          <button
+            type="button"
+            className="health-guide-toggle"
+            aria-expanded={healthDetailsOpen}
+            onClick={() => setHealthDetailsOpen((open) => !open)}
+          >
+            {healthDetailsOpen ? '收起导入说明' : '如何导入？'}
+            <Icon name={healthDetailsOpen ? 'chevronDown' : 'arrowRight'} size={13} />
+          </button>
+          {healthDetailsOpen ? (
+            <p className="settings-note">
+              Web 版无法直接读取健康数据。推荐在「快捷指令」里读取健康样本并存成文件，再回到这里导入；详细格式与自动化说明在「高级」。
+            </p>
+          ) : null}
+        </section>
+
+        <section>
+          <div className="section-label">自动化</div>
           <div className="settings-card">
             <div className="settings-row as-static">
               <span className="settings-row-icon">
-                <Icon name="database" size={18} />
+                <Icon name="sun" size={18} />
               </span>
               <span className="settings-row-text">
-                <span className="settings-row-label">
-                  本地存储 · {storageMode === 'indexeddb' ? '仅本机' : '仅本机（兼容模式）'}
-                </span>
-                <span className="settings-row-hint">已用 {usedText} · 数据不离开这台设备</span>
+                <span className="settings-row-label">每日复盘</span>
+                <span className="settings-row-hint">打开「今日」时自动生成，全部在本机计算</span>
+              </span>
+            </div>
+            <div className="settings-row as-static">
+              <span className="settings-row-icon">
+                <Icon name="clock" size={18} />
+              </span>
+              <span className="settings-row-text">
+                <span className="settings-row-label">固定时间提醒</span>
+                <span className="settings-row-hint">在「快捷指令 → 自动化」里每天打开麻薯</span>
               </span>
             </div>
           </div>
         </section>
 
         <section>
-          <div className="section-label">关于 / ABOUT</div>
+          <details className="settings-advanced">
+            <summary className="settings-advanced-summary">
+              <span>高级设置</span>
+              <span className="settings-advanced-hint">导出格式、健康导入、存储与迁移</span>
+            </summary>
+            <div className="settings-card">
+              <SettingsRow
+                icon="book"
+                label="导出为文本（Markdown）"
+                hint="方便迁移到其他笔记工具"
+                onClick={() => void handleExportMarkdown()}
+              />
+              <SettingsRow
+                icon="link"
+                label="复制快捷指令导入链接"
+                hint="用于「健康」自动化导入"
+                onClick={() => void handleCopyShortcutUrl()}
+              />
+              <div className="settings-row as-static">
+                <span className="settings-row-icon">
+                  <Icon name="database" size={18} />
+                </span>
+                <span className="settings-row-text">
+                  <span className="settings-row-label">本地存储</span>
+                  <span className="settings-row-hint">
+                    {storageMode === 'indexeddb' ? 'IndexedDB' : 'localStorage'} · 已用 {usedText}
+                  </span>
+                </span>
+              </div>
+              <div className="settings-row as-static">
+                <span className="settings-row-icon">
+                  <Icon name="info" size={18} />
+                </span>
+                <span className="settings-row-text">
+                  <span className="settings-row-label">数据迁移</span>
+                  <span className="settings-row-hint">旧版本记录会在首次打开时自动迁移到新存储</span>
+                </span>
+              </div>
+              <div className="settings-note settings-note-inner">
+                健康导入支持 Apple 健康的 JSON / CSV 文件，或 URL 参数
+                <code>{healthShortcutUrl}</code>
+                （后接 URL 编码的 JSON）。示例：
+                <code>{'{"samples":[{"type":"steps","value":8321,"date":"2026-11-03T22:00:00+08:00"}]}'}</code>
+                。原生 HealthKit 壳是路线图可选项，当前版本不包含。
+              </div>
+            </div>
+          </details>
+        </section>
+
+        <section>
+          <div className="section-label">关于</div>
           <div className="settings-card">
             {welcomeNote ? (
               <SettingsRow
@@ -455,7 +444,7 @@ export function SettingsScreen({
               </span>
               <span className="settings-row-text">
                 <span className="settings-row-label">麻薯 v{APP_VERSION}</span>
-                <span className="settings-row-hint">MIT 开源 · 本地优先 · 无服务器</span>
+                <span className="settings-row-hint">本地生活操作系统 · 开源</span>
               </span>
             </div>
             <a
@@ -469,13 +458,16 @@ export function SettingsScreen({
               </span>
               <span className="settings-row-text">
                 <span className="settings-row-label">项目主页</span>
-                <span className="settings-row-hint">开源项目</span>
+                <span className="settings-row-hint">开源许可与更新说明</span>
               </span>
             </a>
           </div>
+          <div className="settings-install">
+            <IosInstallCard onCopyLink={() => void handleCopyLink()} />
+          </div>
         </section>
 
-        <p className="settings-footer mono">麻薯 · 本地生活记录</p>
+        <p className="settings-footer">记录 · 连接 · 理解</p>
       </div>
     </div>
   );

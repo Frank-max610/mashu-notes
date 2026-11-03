@@ -1,7 +1,9 @@
 /*
- * Agent panel — 麻薯 chat: dark glass surfaces, gradient accents, mono meta,
- * mono meta labels. Scoped under `.agent-screen`; all colours/radii come from
- * tokens.css. No fixed overlay: App mounts this as an in-shell full screen.
+ * Agent panel — 麻薯 v0.9 local helper (§09): Mochi Node mark + persona name +
+ * 「本地处理 · 仅你可见」, a quiet flat chat log with time-only meta, compact
+ * draft confirmation card and a warm pill composer. Scoped under
+ * `.agent-screen`; all colours/radii come from tokens.css. No avatars, no
+ * emoji decoration, no fixed overlay (App mounts it as an in-shell screen).
  */
 
 .agent-screen {
@@ -23,14 +25,14 @@
   justify-content: space-between;
   gap: 12px;
   flex: none;
-  padding: calc(var(--safe-top) + 16px) 18px 12px;
-  border-bottom: 1px solid var(--border-strong);
+  padding: calc(var(--safe-top) + 16px) 20px 12px;
+  border-bottom: 1px solid var(--border);
 }
 
 .agent-screen__identity {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
 }
 
@@ -41,9 +43,9 @@
 .agent-screen__name {
   font-family: var(--font-display);
   font-size: var(--text-xl);
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
   color: var(--text);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -51,11 +53,9 @@
 }
 
 .agent-screen__subtitle {
-  margin-top: 3px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  margin-top: 2px;
+  font-size: var(--text-xs);
+  font-weight: 400;
   color: var(--text-faint);
   white-space: nowrap;
 }
@@ -64,28 +64,28 @@
   width: 44px;
   height: 44px;
   flex: none;
-  margin-right: -8px;
-  border-radius: var(--radius-s);
+  margin-right: -10px;
+  border-radius: var(--radius-full);
 }
 
-/* ---------- chat scroll area ---------- */
+/* ---------- chat log ---------- */
 
 .agent-screen__scroll {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 22px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  padding: 20px 18px 14px;
+  padding: 16px 20px 12px;
 }
 
 .agent-screen__row {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 6px;
   max-width: 100%;
 }
 
@@ -95,12 +95,11 @@
 
 .agent-screen__meta {
   margin: 0;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-size: 11px;
+  line-height: 1.4;
+  font-weight: 400;
   color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
 }
 
 .agent-screen__meta--user {
@@ -112,9 +111,9 @@
   min-width: 0;
 }
 
-/* Bot voice: plain on paper with a single hairline rule, no bubble. */
+/* Bot voice: quiet paragraph with one warm hairline. */
 .agent-screen__row--bot .agent-screen__body {
-  padding-left: 13px;
+  padding-left: 14px;
   border-left: 1px solid var(--border-strong);
 }
 
@@ -125,7 +124,7 @@
 .agent-screen__text {
   margin: 0;
   font-size: var(--text-base);
-  line-height: 1.75;
+  line-height: 1.65;
   color: var(--text);
   overflow-wrap: anywhere;
 }
@@ -140,7 +139,7 @@
 }
 
 .agent-screen__bullet::before {
-  content: '—';
+  content: '·';
   flex: none;
   color: var(--text-faint);
 }
@@ -149,24 +148,24 @@
 .agent-screen__bullet + .agent-screen__line,
 .agent-screen__line + .agent-screen__bullet,
 .agent-screen__bullet + .agent-screen__bullet {
-  margin-top: 6px;
+  margin-top: 4px;
 }
 
-/* User voice: light paper block, 4px radius, hairline border. */
+/* User voice: warm surface block. */
 .agent-screen__user-block {
-  padding: 10px 13px;
+  padding: 10px 14px;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: var(--radius-s);
+  border-radius: var(--radius-m);
 }
 
-/* ---------- draft confirm table ---------- */
+/* ---------- compact draft confirmation ---------- */
 
 .agent-screen__draft {
-  margin-top: 14px;
+  margin-top: 12px;
   background: var(--surface);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-s);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
   overflow: hidden;
 }
 
@@ -175,32 +174,27 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 8px 13px;
+  padding: 8px 14px;
   border-bottom: 1px solid var(--border);
 }
 
 .agent-screen__draft-kind {
-  font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: var(--text-xs);
   font-weight: 600;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
 }
 
 .agent-screen__draft-state {
   flex: none;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-size: var(--text-xs);
+  font-weight: 400;
   color: var(--text-faint);
 }
 
 .agent-screen__draft-title {
   margin: 0;
-  padding: 11px 13px;
-  font-family: var(--font-display);
-  font-size: var(--text-lg);
+  padding: 10px 14px;
+  font-size: var(--text-base);
   font-weight: 600;
   line-height: 1.4;
   color: var(--text);
@@ -209,7 +203,7 @@
 
 .agent-screen__draft-facts {
   margin: 0;
-  padding: 0 13px 4px;
+  padding: 0 14px 2px;
 }
 
 .agent-screen__draft-fact {
@@ -217,24 +211,22 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
-  padding: 7px 0;
+  padding: 6px 0;
   border-top: 1px solid var(--border);
 }
 
 .agent-screen__draft-fact dt {
   flex: none;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-faint);
+  font-size: var(--text-xs);
+  font-weight: 400;
+  color: var(--text-muted);
 }
 
 .agent-screen__draft-fact dd {
   margin: 0;
   min-width: 0;
-  font-family: var(--font-mono);
   font-size: var(--text-sm);
+  font-weight: 500;
   text-align: right;
   color: var(--text);
   overflow-wrap: anywhere;
@@ -243,7 +235,7 @@
 .agent-screen__draft-actions {
   display: flex;
   gap: 8px;
-  padding: 10px 13px;
+  padding: 10px 14px;
   border-top: 1px solid var(--border);
 }
 
@@ -251,14 +243,14 @@
   flex: 1;
   min-height: 44px;
   padding: 0 14px;
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-m);
   font-size: var(--text-sm);
   font-weight: 600;
-  letter-spacing: 0.04em;
   transition:
     background var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease),
     color var(--dur-fast) var(--ease),
-    border-color var(--dur-fast) var(--ease);
+    opacity var(--dur-fast) var(--ease);
 }
 
 .agent-screen__draft-btn:disabled {
@@ -268,15 +260,16 @@
 .agent-screen__draft-btn--save {
   border: 1px solid var(--accent);
   color: var(--accent-ink);
-  background: transparent;
-}
-
-.agent-screen__draft-btn--save:active {
   background: var(--accent-soft);
 }
 
+.agent-screen__draft-btn--save:active {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
 .agent-screen__draft-btn--cancel {
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--border);
   color: var(--text-muted);
   background: transparent;
 }
@@ -285,12 +278,12 @@
   background: var(--surface-2);
 }
 
-/* ---------- suggestion chips ---------- */
+/* ---------- quick suggestions (chips are the only pills) ---------- */
 
 .agent-screen__suggestions {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
   margin-top: 10px;
 }
 
@@ -298,24 +291,24 @@
   display: inline-flex;
   align-items: center;
   min-height: 44px;
-  padding: 0 12px;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-xs);
-  background: transparent;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: var(--surface);
   color: var(--text-muted);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.02em;
+  font-size: var(--text-sm);
+  font-weight: 500;
   line-height: 1.2;
   text-align: left;
   touch-action: manipulation;
   transition:
+    background var(--dur-fast) var(--ease),
     border-color var(--dur-fast) var(--ease),
     color var(--dur-fast) var(--ease);
 }
 
-.agent-screen .agent-screen__suggestion:active,
-.agent-screen .agent-screen__suggestion:hover {
+.agent-screen .agent-screen__suggestion:active {
+  background: var(--accent-soft);
   border-color: var(--accent);
   color: var(--accent-ink);
 }
@@ -328,14 +321,14 @@
 
 .agent-screen__composer-wrap {
   flex: none;
-  padding: 10px 18px calc(12px + var(--safe-bottom));
-  border-top: 1px solid var(--border-strong);
+  padding: 10px 20px calc(12px + var(--safe-bottom));
+  border-top: 1px solid var(--border);
   background: var(--bg);
 }
 
 .agent-screen__composer {
   display: flex;
-  align-items: stretch;
+  align-items: center;
   gap: 8px;
 }
 
@@ -346,14 +339,14 @@
   flex: none;
   width: 44px;
   height: 44px;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-s);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
   background: var(--surface);
   color: var(--text-muted);
   transition:
+    background var(--dur-fast) var(--ease),
     border-color var(--dur-fast) var(--ease),
-    color var(--dur-fast) var(--ease),
-    background var(--dur-fast) var(--ease);
+    color var(--dur-fast) var(--ease);
 }
 
 .agent-screen__action:active {
@@ -366,16 +359,16 @@
   flex: 1;
   min-width: 0;
   height: 44px;
-  padding: 0 12px;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-s);
+  padding: 0 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
   background: var(--surface);
   color: var(--text);
   font-size: 16px; /* 16px avoids the iOS focus zoom */
   outline: none;
   transition:
     border-color var(--dur-fast) var(--ease),
-    box-shadow var(--dur-fast) var(--ease);
+    background var(--dur-fast) var(--ease);
 }
 
 .agent-screen__input::placeholder {
@@ -384,23 +377,24 @@
 
 .agent-screen__input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-soft);
+  background: var(--surface);
 }
 
 .agent-screen .agent-screen__send {
   background: var(--accent);
-  border-color: var(--accent-strong);
+  border-color: var(--accent);
   color: var(--accent-contrast);
 }
 
 .agent-screen .agent-screen__send:active {
   background: var(--accent-strong);
+  border-color: var(--accent-strong);
   color: var(--accent-contrast);
 }
 
 .agent-screen .agent-screen__send:disabled {
   background: transparent;
-  border-color: var(--border-strong);
+  border-color: var(--border);
   color: var(--text-faint);
   pointer-events: none;
 }
@@ -411,82 +405,4 @@
   .agent-screen__scroll {
     scroll-behavior: auto;
   }
-}
-
-
-/* v0.9 assistant refinements (§09): compact confirmation card, quiet meta */
-.agent-screen__meta,
-.agent-screen__meta--bot,
-.agent-screen__meta--user {
-  font-family: var(--font-sans);
-  font-size: 11px;
-  font-weight: 400;
-  letter-spacing: 0;
-  text-transform: none;
-  color: var(--text-faint);
-}
-
-.agent-screen__draft {
-  border-radius: var(--radius-m);
-  border-color: var(--border);
-  margin-top: 12px;
-}
-
-.agent-screen__draft-head {
-  padding: 7px 12px;
-}
-
-.agent-screen__draft-kind,
-.agent-screen__draft-state {
-  font-family: var(--font-sans);
-  font-size: var(--text-xs);
-  font-weight: 500;
-  letter-spacing: 0;
-  text-transform: none;
-}
-
-.agent-screen__draft-title {
-  padding: 9px 12px;
-  font-family: var(--font-sans);
-  font-size: var(--text-base);
-  font-weight: 600;
-}
-
-.agent-screen__draft-facts {
-  padding: 0 12px 2px;
-}
-
-.agent-screen__draft-fact {
-  padding: 6px 0;
-}
-
-.agent-screen__draft-fact dt {
-  font-family: var(--font-sans);
-  font-size: var(--text-xs);
-  font-weight: 400;
-  letter-spacing: 0;
-  text-transform: none;
-}
-
-.agent-screen__draft-fact dd {
-  font-family: var(--font-sans);
-  font-size: var(--text-sm);
-}
-
-.agent-screen__draft-actions {
-  gap: 8px;
-  padding: 10px 12px;
-}
-
-.agent-screen__draft-btn {
-  min-height: 42px;
-  border-radius: var(--radius-s);
-  font-family: var(--font-sans);
-  font-size: var(--text-sm);
-  letter-spacing: 0;
-}
-
-.agent-screen__suggestion {
-  font-family: var(--font-sans);
-  letter-spacing: 0;
 }

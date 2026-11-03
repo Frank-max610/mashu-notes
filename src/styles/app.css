@@ -2360,3 +2360,68 @@ button.settings-row:active {
 .editor-header-meta .editor-dot {
   opacity: 0.5;
 }
+
+
+/* settings v0.9 information architecture (§11) */
+.settings-body {
+  padding-bottom: calc(100px + var(--safe-bottom));
+}
+
+.persona-editor {
+  padding: 4px 14px 16px;
+  border-top: 1px solid var(--border);
+}
+
+.persona-custom {
+  margin-top: 10px;
+}
+
+.settings-note-inner {
+  margin: 0;
+  padding: 10px 14px 14px;
+  border-top: 1px solid var(--border);
+}
+
+.settings-advanced {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.settings-advanced-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 52px;
+  padding: 0 14px;
+  cursor: pointer;
+  font-size: var(--text-base);
+  font-weight: 500;
+  list-style: none;
+}
+
+.settings-advanced-summary::-webkit-details-marker {
+  display: none;
+}
+
+.settings-advanced-hint {
+  font-size: var(--text-xs);
+  color: var(--text-faint);
+  font-weight: 400;
+}
+
+.settings-advanced[open] .settings-advanced-summary {
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-advanced .settings-card {
+  border: 0;
+  border-radius: 0;
+  margin: 0;
+}
+
+.settings-install {
+  margin-top: 10px;
+}

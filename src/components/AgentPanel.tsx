@@ -21,7 +21,7 @@ interface ChatMessage {
   id: number;
   role: 'user' | 'bot';
   text: string;
-  /** Creation time (epoch ms) shown as the mono AGENT/YOU meta label. */
+  /** Creation time (epoch ms) shown as the quiet time label above the row. */
   at: number;
   suggestions?: string[];
   /** Set when the agent prepared a record and asks for confirmation. */

@@ -1,33 +1,33 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Note, NoteKind, NotePosition } from '../lib/types';
-import { buildGraph, layoutSync, seedPositions, tick } from '../lib/graph';
+import { buildGraph, seedPositions } from '../lib/graph';
 import type { Graph, GraphNode } from '../lib/graph';
 import { NOTE_KINDS } from '../lib/kinds';
 import { Icon } from './Icon';
 import './GraphView.css';
 
 /**
- * Editable life graph for 麻薯 v0.5.
+ * P1 force-directed life graph (design doc §10).
  *
- * Notes are drawn as kind-coloured nodes; `[[wiki links]]`, hand-drawn links and
- * same-day life records become typed edges. Users can drag nodes (positions are
- * persisted normalized 0..1), tap a node to select it, tap empty space to drop a
- * new record, or flip into connect mode to draw a manual link.
+ * A warm, near-fullscreen canvas with a living force simulation: node drag moves
+ * the node and lets neighbours respond in real time, then reheats the simulation
+ * on release so the map re-balances around the saved position. Hover reveals the
+ * first-degree neighbourhood (everything else dims) and selects open a compact
+ * bottom node inspector. All editing behavior (add/link/reset, position saving,
+ * pinch zoom, reduced motion) is preserved.
  *
- * The force simulation runs through requestAnimationFrame; pan/zoom only change
- * a transform so they never restart it. The graph is rebuilt only when a cheap
- * fingerprint of the notes changes, and settled coordinates are carried over so
- * editing one record never reshuffles the whole map.
+ * Coordinates are simulation/canvas space; the viewport is a separate pan/zoom
+ * transform so camera moves never restart the physics.
  */
 
 export interface GraphViewProps {
   notes: Note[];
-  /** Note currently open in the editor (small marker). */
+  /** Note currently open in the editor (subtle dashed marker). */
   activeNoteId?: string | null;
-  /** Node selected for the editor sheet (accent ring + halo). */
+  /** Node selected for the inspector (subtle ring + neighbourhood focus). */
   selectedNoteId?: string | null;
   onSelectNote: (id: string | null) => void;
-  /** Second tap on an already selected node (App opens the note). */
+  /** Opens the note editor (inspector 编辑, double-tap, connection taps). */
   onOpenNote?: (id: string) => void;
   /** Drag end: persist the node's normalised position (0..1). */
   onMoveNote: (id: string, position: NotePosition) => void;
@@ -37,6 +37,12 @@ export interface GraphViewProps {
   onLinkNotes: (sourceId: string, targetId: string) => void;
   /** Toolbar "重新布局": App/store clears saved positions. */
   onRequestResetLayout?: () => void;
+  /** Optional: inspector 删除 action (hidden when absent). */
+  onDeleteNote?: (id: string) => void;
+  /** Immersive explore state: App makes the host full-bleed and hides nav. */
+  fullscreen?: boolean;
+  /** App toggles immersive explore (button hidden when absent). */
+  onToggleFullscreen?: () => void;
 }
 
 type GraphMode = 'idle' | 'add' | 'connect';
@@ -84,9 +90,19 @@ interface PinchState {
   ty: number;
 }
 
-/** Theme-aware Obsidian-style graph palette read from the app design tokens. */
+interface InspectorContact {
+  id: string;
+  title: string;
+  outgoing: boolean;
+  exists: boolean;
+}
+
+/** Warm canvas palette read from the P1 design tokens. */
 interface Palette {
   panel: string;
+  surface: string;
+  border: string;
+  edge: string;
   ghost: string;
   accent: string;
   text: string;
@@ -108,25 +124,38 @@ const ZOOM_STEP = 1.25;
 const TAP_SLOP = 8;
 const TAP_TIME = 350;
 const DOUBLE_TAP_MS = 320;
-const DEFAULT_TICK_BUDGET = 160;
-/** Small settle only when a brand-new free node appears (e.g. from the editor). */
-const ADDED_NODE_SETTLE_TICKS = 28;
-const TICKS_PER_FRAME = 3;
 const LABEL_FONT_SIZE = 11;
-const SELECTED_LABEL_FONT_SIZE = 12;
+const FOCUS_LABEL_FONT_SIZE = 12;
 const MAX_LABEL_CHARS = 14;
-/** Obsidian hides labels when zoomed too far out. */
-const LABEL_MIN_SCALE = 0.45;
-/** Nodes stay this far from the canvas edges (parity with lib/graph.ts). */
+/** Below this zoom labels are hidden (canvas gets too small to read). */
+const LABEL_MIN_SCALE = 0.42;
+/** Nodes stay this far from the canvas edges when free. */
 const NODE_MARGIN_MAX = 12;
 const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
-/** Edges are faint neutral lines; differences stay subtle, Obsidian-like. */
-const EDGE_WIKI_ALPHA = 0.16;
-const EDGE_MANUAL_ALPHA = 0.24;
-const EDGE_DAY_ALPHA = 0.1;
-const EDGE_FOCUS_ALPHA = 0.6;
+const ADDED_NODE_SETTLE_ALPHA = 0.32;
 
-/** Kind → pastel theme token (Obsidian "groups"). */
+/**
+ * Force tuning (design doc §10 ranges): charge -90..-160 style repulsion,
+ * link distance 56-110, link strength 0.16-0.34, collision 8-14px and
+ * velocity decay 0.38-0.55.
+ */
+const FORCE = {
+  repulsion: 3400,
+  linkDistance: 82,
+  linkStrength: 0.014,
+  centerStrength: 0.0018,
+  clusterStrength: 0.0045,
+  collisionPadding: 11,
+  velocityDecay: 0.45,
+  alphaDecay: 0.965,
+  alphaMin: 0.015,
+  maxSpeed: 24,
+  initialAlpha: 1,
+  dragAlpha: 0.3,
+  releaseAlpha: 0.42,
+};
+
+/** Kind → warm category token. */
 const KIND_COLOR_VARS: Record<NoteKind, string> = {
   diary: '--kind-diary',
   food: '--kind-food',
@@ -146,22 +175,25 @@ const KIND_LABELS: Record<NoteKind, string> = {
 
 const FALLBACK_KIND_COLORS: Record<NoteKind, string> = {
   diary: '#5c6f80',
-  food: '#a9522b',
-  health: '#5d753f',
-  finance: '#8a6417',
-  note: '#7e6c5b',
+  food: '#a8522c',
+  health: '#556e43',
+  finance: '#85611a',
+  note: '#6e6357',
 };
 
 const FALLBACK_PALETTE: Palette = {
-  panel: '#fdf7f0',
-  ghost: '#d9c9b6',
-  accent: '#e3a06a',
-  text: '#43392f',
-  textMuted: '#7a6857',
+  panel: '#f7f3ec',
+  surface: '#fcfaf6',
+  border: '#e5dbcf',
+  edge: 'rgba(117, 109, 99, 0.28)',
+  ghost: '#cbbfb2',
+  accent: '#c8783f',
+  text: '#2c2925',
+  textMuted: '#756d63',
   fontSans: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'PingFang SC', system-ui, sans-serif",
   kindColors: FALLBACK_KIND_COLORS,
 };
-const FALLBACK_RGBA: Rgba = { r: 67, g: 57, b: 47, a: 1 };
+const FALLBACK_RGBA: Rgba = { r: 44, g: 41, b: 37, a: 1 };
 
 function clamp(value: number, min: number, max: number): number {
   if (value < min) return min;
@@ -248,14 +280,227 @@ function fingerprintNotes(notes: Note[]): string {
   return parts.join('\u0002');
 }
 
-/** Obsidian-style node size: small dots that grow with the number of links. */
+/** Node size grows with the number of connections. */
 function radiusForDegree(degree: number): number {
-  return 4 + Math.min(9, Math.sqrt(Math.max(0, degree)) * 2.4);
+  return 5 + Math.min(9, Math.sqrt(Math.max(0, degree)) * 2.4);
 }
 
 function truncateLabel(title: string): string {
   const text = title.trim();
   return text.length > MAX_LABEL_CHARS ? `${text.slice(0, MAX_LABEL_CHARS - 1)}…` : text;
+}
+
+/** Plain-text excerpt for the inspector (light markdown stripping). */
+function excerptOf(content: string, max = 150): string {
+  const text = content
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+    .replace(/\[\[([^[\]|]+?)(?:\|([^[\]]+))?\]\]/g, (_match, target: string, alias?: string) => alias || target)
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/`([^`]*)`/g, '$1')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/^>\s?/gm, '')
+    .replace(/[*_~#]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return text.length > max ? `${text.slice(0, max)}…` : text;
+}
+
+/** High-degree nodes that keep their labels visible by default (sparse). */
+function importantNodeIds(graph: Graph): Set<string> {
+  const count = Math.max(4, Math.min(10, Math.round(graph.nodes.length * 0.16)));
+  const ranked = graph.nodes
+    .filter((node) => !node.ghost)
+    .sort((a, b) => b.degree - a.degree || a.title.localeCompare(b.title));
+  const ids = new Set<string>();
+  for (const node of ranked) {
+    if (ids.size >= count) break;
+    ids.add(node.id);
+  }
+  return ids;
+}
+
+/** First-degree neighbours of a node. */
+function neighbourIds(graph: Graph, id: string): Set<string> {
+  const ids = new Set<string>();
+  for (const edge of graph.edges) {
+    if (edge.source === id) ids.add(edge.target);
+    else if (edge.target === id) ids.add(edge.source);
+  }
+  return ids;
+}
+
+/**
+ * One force-simulation step in canvas space. Keeps fixed (saved) nodes pinned.
+ * `stress` is the simulation alpha (1 = hot start, → 0 = settled).
+ */
+function stepSimulation(graph: Graph, width: number, height: number, stress: number): void {
+  const nodes = graph.nodes;
+  const count = nodes.length;
+  if (count === 0 || stress <= 0) return;
+  const w = Number.isFinite(width) && width > 0 ? width : 1;
+  const h = Number.isFinite(height) && height > 0 ? height : 1;
+  const centerX = w / 2;
+  const centerY = h / 2;
+  const marginX = Math.min(NODE_MARGIN_MAX, w * 0.04);
+  const marginY = Math.min(NODE_MARGIN_MAX, h * 0.04);
+  const maxX = Math.max(marginX, w - marginX);
+  const maxY = Math.max(marginY, h - marginY);
+
+  const forceX = new Float64Array(count);
+  const forceY = new Float64Array(count);
+  const indexById = new Map<string, number>();
+  for (let index = 0; index < count; index += 1) indexById.set(nodes[index].id, index);
+
+  // Weak category gravity: five soft anchors instead of five separate islands.
+  const anchorRadius = Math.min(w, h) * 0.16;
+  const kindIndex = new Map<NoteKind, number>();
+  NOTE_KINDS.forEach((kind, index) => kindIndex.set(kind, index));
+  const anchorFor = (kind: NoteKind): { x: number; y: number } => {
+    const index = kindIndex.get(kind) ?? 0;
+    const angle = -Math.PI / 2 + (index / NOTE_KINDS.length) * Math.PI * 2;
+    return {
+      x: centerX + Math.cos(angle) * anchorRadius,
+      y: centerY + Math.sin(angle) * anchorRadius,
+    };
+  };
+
+  // Pairwise repulsion (charge).
+  for (let i = 0; i < count; i += 1) {
+    for (let j = i + 1; j < count; j += 1) {
+      let dx = nodes[i].x - nodes[j].x;
+      let dy = nodes[i].y - nodes[j].y;
+      let distanceSq = dx * dx + dy * dy;
+      if (distanceSq < 1) {
+        const angle = (i * 2.399963 + j * 1.3247) % (Math.PI * 2);
+        dx = Math.cos(angle);
+        dy = Math.sin(angle);
+        distanceSq = 1;
+      }
+      const distance = Math.sqrt(distanceSq);
+      const force = (FORCE.repulsion * stress) / distanceSq;
+      const ux = dx / distance;
+      const uy = dy / distance;
+      forceX[i] += ux * force;
+      forceY[i] += uy * force;
+      forceX[j] -= ux * force;
+      forceY[j] -= uy * force;
+    }
+  }
+
+  // Link springs along every edge type.
+  for (const edge of graph.edges) {
+    const sourceIndex = indexById.get(edge.source);
+    const targetIndex = indexById.get(edge.target);
+    if (sourceIndex === undefined || targetIndex === undefined) continue;
+    const dx = nodes[targetIndex].x - nodes[sourceIndex].x;
+    const dy = nodes[targetIndex].y - nodes[sourceIndex].y;
+    const distance = Math.sqrt(dx * dx + dy * dy) || 0.01;
+    const force = (distance - FORCE.linkDistance) * FORCE.linkStrength * stress;
+    const ux = dx / distance;
+    const uy = dy / distance;
+    forceX[sourceIndex] += ux * force;
+    forceY[sourceIndex] += uy * force;
+    forceX[targetIndex] -= ux * force;
+    forceY[targetIndex] -= uy * force;
+  }
+
+  // Weak centering + weak category clustering.
+  for (let i = 0; i < count; i += 1) {
+    const node = nodes[i];
+    forceX[i] += (centerX - node.x) * FORCE.centerStrength * stress;
+    forceY[i] += (centerY - node.y) * FORCE.centerStrength * stress;
+    const anchor = anchorFor(node.kind);
+    forceX[i] += (anchor.x - node.x) * FORCE.clusterStrength * stress;
+    forceY[i] += (anchor.y - node.y) * FORCE.clusterStrength * stress;
+  }
+
+  // Integrate with velocity decay, speed clamp and soft canvas bounds.
+  for (let i = 0; i < count; i += 1) {
+    const node = nodes[i];
+    if (node.fixed) {
+      node.vx = 0;
+      node.vy = 0;
+      continue;
+    }
+    let vx = (node.vx + forceX[i]) * FORCE.velocityDecay;
+    let vy = (node.vy + forceY[i]) * FORCE.velocityDecay;
+    if (!Number.isFinite(vx)) vx = 0;
+    if (!Number.isFinite(vy)) vy = 0;
+    const speed = Math.sqrt(vx * vx + vy * vy);
+    if (speed > FORCE.maxSpeed) {
+      vx = (vx / speed) * FORCE.maxSpeed;
+      vy = (vy / speed) * FORCE.maxSpeed;
+    }
+    let x = node.x + vx;
+    let y = node.y + vy;
+    if (!Number.isFinite(x)) x = centerX;
+    if (!Number.isFinite(y)) y = centerY;
+    if (x < marginX) {
+      x = marginX;
+      vx = 0;
+    } else if (x > maxX) {
+      x = maxX;
+      vx = 0;
+    }
+    if (y < marginY) {
+      y = marginY;
+      vy = 0;
+    } else if (y > maxY) {
+      y = maxY;
+      vy = 0;
+    }
+    node.x = x;
+    node.y = y;
+    node.vx = vx;
+    node.vy = vy;
+  }
+
+  // Collision pass: nodes keep a finger-sized gap, saved nodes stay put.
+  for (let i = 0; i < count; i += 1) {
+    for (let j = i + 1; j < count; j += 1) {
+      const a = nodes[i];
+      const b = nodes[j];
+      if (a.fixed && b.fixed) continue;
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const distance = Math.sqrt(dx * dx + dy * dy) || 0.01;
+      const minDistance =
+        radiusForDegree(a.degree) + radiusForDegree(b.degree) + FORCE.collisionPadding;
+      if (distance >= minDistance) continue;
+      const overlap = (minDistance - distance) * 0.5;
+      const ux = dx / distance;
+      const uy = dy / distance;
+      if (!a.fixed && !b.fixed) {
+        a.x -= ux * overlap;
+        a.y -= uy * overlap;
+        b.x += ux * overlap;
+        b.y += uy * overlap;
+      } else if (!a.fixed) {
+        a.x -= ux * overlap * 2;
+        a.y -= uy * overlap * 2;
+      } else {
+        b.x += ux * overlap * 2;
+        b.y += uy * overlap * 2;
+      }
+      if (!a.fixed) {
+        a.x = clamp(a.x, marginX, maxX);
+        a.y = clamp(a.y, marginY, maxY);
+      }
+      if (!b.fixed) {
+        b.x = clamp(b.x, marginX, maxX);
+        b.y = clamp(b.y, marginY, maxY);
+      }
+    }
+  }
+}
+
+/** Run the force simulation synchronously (reduced motion / initial fallback). */
+function settleSimulation(graph: Graph, width: number, height: number, steps: number): void {
+  for (let step = 0; step < steps; step += 1) {
+    const stress = Math.max(0.05, 1 - step / Math.max(1, steps));
+    stepSimulation(graph, width, height, stress);
+  }
 }
 
 export function GraphView({
@@ -268,6 +513,9 @@ export function GraphView({
   onCreateNoteAt,
   onLinkNotes,
   onRequestResetLayout,
+  onDeleteNote,
+  fullscreen = false,
+  onToggleFullscreen,
 }: GraphViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -280,21 +528,23 @@ export function GraphView({
   const paletteRef = useRef<Palette | null>(null);
   const paletteThemeRef = useRef<string>('');
   const rafRef = useRef<number | null>(null);
-  const ticksDoneRef = useRef<number>(0);
-  const tickBudgetRef = useRef<number>(DEFAULT_TICK_BUDGET);
+  const alphaRef = useRef<number>(0);
   const resizeTimerRef = useRef<number | null>(null);
+  const pendingReseedRef = useRef<boolean>(false);
   /** False until the current graph has real (seeded) coordinates. */
   const layoutReadyRef = useRef<boolean>(false);
   const pointersRef = useRef<Map<number, PointerInfo>>(new Map());
   const pinchRef = useRef<PinchState | null>(null);
   const dragRef = useRef<DragState | null>(null);
   const lastTapRef = useRef<{ id: string; time: number } | null>(null);
+  const hoveredIdRef = useRef<string | null>(null);
   const reducedMotionRef = useRef<boolean>(false);
   /** Keep the camera fitted to the graph while the simulation settles. */
   const autoFitRef = useRef<boolean>(true);
 
   const [mode, setMode] = useState<GraphMode>('idle');
   const [connectSource, setConnectSource] = useState<string | null>(null);
+  const [legendOpen, setLegendOpen] = useState<boolean>(false);
   const [hasGhost, setHasGhost] = useState<boolean>(false);
 
   // Latest props kept in refs so the canvas loop always sees fresh values
@@ -309,6 +559,7 @@ export function GraphView({
   const onCreateAtRef = useRef(onCreateNoteAt);
   const onLinkRef = useRef(onLinkNotes);
   const onResetRef = useRef(onRequestResetLayout);
+  const onDeleteRef = useRef(onDeleteNote);
   activeIdRef.current = activeNoteId;
   selectedIdRef.current = selectedNoteId;
   modeRef.current = mode;
@@ -319,6 +570,7 @@ export function GraphView({
   onCreateAtRef.current = onCreateNoteAt;
   onLinkRef.current = onLinkNotes;
   onResetRef.current = onRequestResetLayout;
+  onDeleteRef.current = onDeleteNote;
 
   /** Read theme-aware canvas tokens (cached per app theme). */
   function getPalette(): Palette {
@@ -338,7 +590,10 @@ export function GraphView({
       kindColors[kind] = read(KIND_COLOR_VARS[kind], FALLBACK_KIND_COLORS[kind]);
     }
     const palette: Palette = {
-      panel: read('--graph-panel', read('--bg', FALLBACK_PALETTE.panel)),
+      panel: read('--bg', FALLBACK_PALETTE.panel),
+      surface: read('--surface', FALLBACK_PALETTE.surface),
+      border: read('--border', FALLBACK_PALETTE.border),
+      edge: read('--graph-edge', FALLBACK_PALETTE.edge),
       ghost: read('--graph-node-ghost', FALLBACK_PALETTE.ghost),
       accent: read('--accent', FALLBACK_PALETTE.accent),
       text: read('--text', FALLBACK_PALETTE.text),
@@ -383,15 +638,6 @@ export function GraphView({
     }
   }
 
-  /** Pixels a node must stay away from the canvas edges (parity with lib). */
-  function nodeMarginX(width: number): number {
-    return Math.min(NODE_MARGIN_MAX, width * 0.04);
-  }
-
-  function nodeMarginY(height: number): number {
-    return Math.min(NODE_MARGIN_MAX, height * 0.04);
-  }
-
   function screenToWorld(screenX: number, screenY: number): { x: number; y: number } {
     const view = viewRef.current;
     return { x: (screenX - view.tx) / view.scale, y: (screenY - view.ty) / view.scale };
@@ -410,7 +656,7 @@ export function GraphView({
     return worldToNormalized(node.x, node.y);
   }
 
-  /** Obsidian-style node: filled dot, selected halo, active dashed halo. */
+  /** One warm category node; selected gets a subtle ring, active a dashed ring. */
   function drawNode(
     context: CanvasRenderingContext2D,
     palette: Palette,
@@ -418,36 +664,22 @@ export function GraphView({
     scale: number,
     selected: boolean,
     active: boolean,
+    hovered: boolean,
   ): void {
     const radius = radiusForDegree(node.degree);
 
-    // Unresolved links stay hollow and muted.
     if (node.ghost) {
       context.beginPath();
-      context.arc(node.x, node.y, Math.max(3.4, radius * 0.86), 0, Math.PI * 2);
-      context.setLineDash([3 / scale, 2.4 / scale]);
+      context.arc(node.x, node.y, Math.max(3.5, radius * 0.82), 0, Math.PI * 2);
+      context.setLineDash([2.6 / scale, 2.6 / scale]);
       context.lineWidth = 1.2 / scale;
-      context.strokeStyle = colorToRgba(palette.textMuted, 0.55);
+      context.strokeStyle = colorToRgba(palette.textMuted, 0.5);
       context.stroke();
       context.setLineDash([]);
       return;
     }
 
     const color = palette.kindColors[node.kind] ?? palette.textMuted;
-
-    // Selected only: a soft halo (no neon glows anywhere else).
-    if (selected) {
-      const haloRadius = radius + 10 / scale;
-      const halo = context.createRadialGradient(node.x, node.y, radius, node.x, node.y, haloRadius);
-      halo.addColorStop(0, colorToRgba(palette.accent, 0.34));
-      halo.addColorStop(1, colorToRgba(palette.accent, 0));
-      context.fillStyle = halo;
-      context.beginPath();
-      context.arc(node.x, node.y, haloRadius, 0, Math.PI * 2);
-      context.fill();
-    }
-
-    // Filled dot with a barely-there outline for both themes.
     context.beginPath();
     context.arc(node.x, node.y, radius, 0, Math.PI * 2);
     context.fillStyle = color;
@@ -458,18 +690,24 @@ export function GraphView({
 
     if (selected) {
       context.beginPath();
-      context.arc(node.x, node.y, radius + 2.8 / scale, 0, Math.PI * 2);
-      context.lineWidth = 2 / scale;
+      context.arc(node.x, node.y, radius + 3 / scale, 0, Math.PI * 2);
+      context.lineWidth = 1.5 / scale;
       context.strokeStyle = colorToRgba(palette.accent, 0.9);
+      context.stroke();
+    } else if (hovered) {
+      context.beginPath();
+      context.arc(node.x, node.y, radius + 2.5 / scale, 0, Math.PI * 2);
+      context.lineWidth = 1 / scale;
+      context.strokeStyle = colorToRgba(palette.textMuted, 0.45);
       context.stroke();
     }
 
     if (active) {
       context.beginPath();
-      context.arc(node.x, node.y, radius + 5.5 / scale, 0, Math.PI * 2);
+      context.arc(node.x, node.y, radius + 5 / scale, 0, Math.PI * 2);
       context.setLineDash([3 / scale, 3 / scale]);
-      context.lineWidth = 1.4 / scale;
-      context.strokeStyle = colorToRgba(palette.accent, 0.75);
+      context.lineWidth = 1.2 / scale;
+      context.strokeStyle = colorToRgba(palette.accent, 0.55);
       context.stroke();
       context.setLineDash([]);
     }
@@ -494,9 +732,16 @@ export function GraphView({
     const view = viewRef.current;
     const activeId = activeIdRef.current;
     const selectedId = selectedIdRef.current;
+    const hoveredId = hoveredIdRef.current;
     const pendingSource = modeRef.current === 'connect' ? connectSourceRef.current : null;
+    const focusId = hoveredId ?? selectedId;
+    const dimOthers = hoveredId !== null && hoveredId !== selectedId;
+    const focusNodes = new Set<string>();
+    if (focusId) {
+      focusNodes.add(focusId);
+      for (const id of neighbourIds(graph, focusId)) focusNodes.add(id);
+    }
 
-    // Plain theme-aware canvas: the CSS panel background shows through.
     context.setTransform(1, 0, 0, 1, 0, 0);
     context.clearRect(0, 0, pixelWidth, pixelHeight);
     if (graph.nodes.length === 0) return;
@@ -509,101 +754,127 @@ export function GraphView({
     context.lineCap = 'round';
     context.lineJoin = 'round';
 
-    // ---- edges: thin, faint, neutral (Obsidian keeps them almost uniform) ----
-    const traceEdges = (accept: (edgeType: string) => boolean): void => {
-      context.beginPath();
-      for (const edge of graph.edges) {
-        if (!accept(edge.type)) continue;
-        const source = nodeById.get(edge.source);
-        const target = nodeById.get(edge.target);
-        if (!source || !target) continue;
-        context.moveTo(source.x, source.y);
-        context.lineTo(target.x, target.y);
+    // ---- edges: thin warm threads, first-degree highlighted on focus ----
+    for (const edge of graph.edges) {
+      const source = nodeById.get(edge.source);
+      const target = nodeById.get(edge.target);
+      if (!source || !target) continue;
+      const incident = focusId !== null && (edge.source === focusId || edge.target === focusId);
+      const dimmed = dimOthers && !incident;
+      let alpha: number;
+      let stroke: string;
+      if (dimmed) {
+        alpha = 0.12;
+        stroke = palette.edge;
+      } else if (incident) {
+        alpha = 0.7;
+        stroke = palette.accent;
+      } else if (edge.type === 'manual') {
+        alpha = 0.8;
+        stroke = palette.edge;
+      } else if (edge.type === 'day') {
+        alpha = 0.3;
+        stroke = palette.edge;
+      } else {
+        alpha = 0.55;
+        stroke = palette.edge;
       }
+      context.globalAlpha = alpha;
+      context.strokeStyle = stroke;
+      context.lineWidth = (incident ? 1.4 : 1) / view.scale;
+      if (edge.type === 'day' && !incident) {
+        context.setLineDash([2.6 / view.scale, 3.4 / view.scale]);
+      } else {
+        context.setLineDash([]);
+      }
+      context.beginPath();
+      context.moveTo(source.x, source.y);
+      context.lineTo(target.x, target.y);
       context.stroke();
-    };
-
-    context.setLineDash([2.6 / view.scale, 3.4 / view.scale]);
-    context.strokeStyle = colorToRgba(palette.text, EDGE_DAY_ALPHA);
-    context.lineWidth = 1 / view.scale;
-    traceEdges((type) => type === 'day');
+    }
+    context.globalAlpha = 1;
     context.setLineDash([]);
 
-    context.strokeStyle = colorToRgba(palette.text, EDGE_WIKI_ALPHA);
-    context.lineWidth = 1 / view.scale;
-    traceEdges((type) => type === 'wiki');
-
-    context.strokeStyle = colorToRgba(palette.text, EDGE_MANUAL_ALPHA);
-    context.lineWidth = 1.2 / view.scale;
-    traceEdges((type) => type === 'manual');
-
-    // Selected/active node edges pick up the accent, still light-touch.
-    const focusIds = new Set<string>();
-    if (selectedId) focusIds.add(selectedId);
-    if (activeId) focusIds.add(activeId);
-    if (focusIds.size > 0) {
-      context.strokeStyle = colorToRgba(palette.accent, EDGE_FOCUS_ALPHA);
-      context.lineWidth = 1.6 / view.scale;
-      context.beginPath();
-      for (const edge of graph.edges) {
-        if (!focusIds.has(edge.source) && !focusIds.has(edge.target)) continue;
-        const source = nodeById.get(edge.source);
-        const target = nodeById.get(edge.target);
-        if (!source || !target) continue;
-        context.moveTo(source.x, source.y);
-        context.lineTo(target.x, target.y);
-      }
-      context.stroke();
-    }
-
-    // ---- nodes: filled dots, focused ones last ----
-    for (const node of graph.nodes) {
-      if (node.ghost) drawNode(context, palette, node, view.scale, false, false);
-    }
+    // ---- nodes: ghosts first, dimmed background, focused last ----
     const selectedNode = selectedId ? nodeById.get(selectedId) : undefined;
     const activeNode = activeId && activeId !== selectedId ? nodeById.get(activeId) : undefined;
-    const orderedNodes = graph.nodes
-      .filter((node) => !node.ghost && node.id !== selectedId && node.id !== activeId)
-      .sort((a, b) => a.degree - b.degree);
+    const orderedNodes = [...graph.nodes].sort((a, b) => {
+      if (a.ghost !== b.ghost) return a.ghost ? -1 : 1;
+      return a.degree - b.degree;
+    });
+    const drawOne = (node: GraphNode, alpha: number): void => {
+      context.globalAlpha = alpha;
+      drawNode(
+        context,
+        palette,
+        node,
+        view.scale,
+        node.id === selectedId,
+        node.id === activeId,
+        node.id === hoveredId,
+      );
+    };
     for (const node of orderedNodes) {
-      drawNode(context, palette, node, view.scale, false, false);
+      if (node.id === selectedId || node.id === activeId) continue;
+      const inFocus = focusId === null || focusNodes.has(node.id);
+      const dimmed = dimOthers && !inFocus;
+      drawOne(node, dimmed ? 0.2 : 1);
     }
     if (pendingSource) {
       const sourceNode = nodeById.get(pendingSource);
       if (sourceNode && !sourceNode.ghost) {
-        const radius = radiusForDegree(sourceNode.degree) + 4.5 / view.scale;
+        context.globalAlpha = 1;
         context.beginPath();
-        context.arc(sourceNode.x, sourceNode.y, radius, 0, Math.PI * 2);
-        context.setLineDash([3 / view.scale, 2.4 / view.scale]);
-        context.lineWidth = 1.6 / view.scale;
+        context.arc(
+          sourceNode.x,
+          sourceNode.y,
+          radiusForDegree(sourceNode.degree) + 6 / view.scale,
+          0,
+          Math.PI * 2,
+        );
+        context.setLineDash([3 / view.scale, 2.6 / view.scale]);
+        context.lineWidth = 1.5 / view.scale;
         context.strokeStyle = colorToRgba(palette.accent, 0.95);
         context.stroke();
         context.setLineDash([]);
       }
     }
     if (selectedNode && !selectedNode.ghost) {
-      drawNode(context, palette, selectedNode, view.scale, true, selectedNode.id === activeId);
+      const dimmed = dimOthers && !focusNodes.has(selectedNode.id);
+      drawOne(selectedNode, dimmed ? 0.35 : 1);
     }
     if (activeNode && !activeNode.ghost) {
-      drawNode(context, palette, activeNode, view.scale, false, true);
+      drawOne(activeNode, 1);
     }
+    context.globalAlpha = 1;
 
-    // ---- labels: every node, sans-serif, centered under the dot ----
+    // ---- labels: important by default; focus reveals first-degree labels ----
     if (view.scale < LABEL_MIN_SCALE) return;
+
+    const labelIds = new Set<string>();
+    if (hoveredId) {
+      labelIds.add(hoveredId);
+      for (const id of neighbourIds(graph, hoveredId)) labelIds.add(id);
+    } else if (selectedId) {
+      for (const id of importantNodeIds(graph)) labelIds.add(id);
+      labelIds.add(selectedId);
+      for (const id of neighbourIds(graph, selectedId)) labelIds.add(id);
+    } else {
+      for (const id of importantNodeIds(graph)) labelIds.add(id);
+    }
 
     context.setTransform(dpr, 0, 0, dpr, 0, 0);
     context.textAlign = 'center';
     context.textBaseline = 'middle';
 
-    // Focused nodes claim label space first; then busier nodes; ghosts last.
-    const priority = [...graph.nodes].sort((a, b) => {
-      const focusA = a.id === selectedId || a.id === activeId ? 1 : 0;
-      const focusB = b.id === selectedId || b.id === activeId ? 1 : 0;
-      if (focusA !== focusB) return focusB - focusA;
-      if (b.degree !== a.degree) return b.degree - a.degree;
-      if (a.ghost !== b.ghost) return a.ghost ? 1 : -1;
-      return a.title.localeCompare(b.title);
-    });
+    const priority = graph.nodes
+      .filter((node) => labelIds.has(node.id))
+      .sort((a, b) => {
+        const focusA = a.id === focusId ? 1 : 0;
+        const focusB = b.id === focusId ? 1 : 0;
+        if (focusA !== focusB) return focusB - focusA;
+        return b.degree - a.degree || a.title.localeCompare(b.title);
+      });
     const takenLabelAreas: Array<{ left: number; right: number; top: number; bottom: number }> = [];
     for (const node of priority) {
       const label = truncateLabel(node.title);
@@ -613,11 +884,9 @@ export function GraphView({
       if (screenX < -120 || screenX > width + 120 || screenY < -30 || screenY > height + 30) {
         continue;
       }
-      const isSelected = node.id === selectedId;
-      const isActive = node.id === activeId;
-      const isFocused = isSelected || isActive;
+      const isFocused = node.id === hoveredId || node.id === selectedId;
       context.font = isFocused
-        ? `600 ${SELECTED_LABEL_FONT_SIZE}px ${palette.fontSans}`
+        ? `600 ${FOCUS_LABEL_FONT_SIZE}px ${palette.fontSans}`
         : `400 ${LABEL_FONT_SIZE}px ${palette.fontSans}`;
       const textWidth = context.measureText(label).width;
       if (textWidth > width - 12) continue;
@@ -644,22 +913,23 @@ export function GraphView({
       }
       takenLabelAreas.push(area);
 
-      // A faint canvas-coloured halo keeps labels legible over edges.
+      // Faint canvas-coloured halo keeps labels legible over edges.
       context.lineWidth = 3;
-      context.strokeStyle = colorToRgba(palette.panel, 0.82);
+      context.strokeStyle = colorToRgba(palette.panel, 0.85);
       context.strokeText(label, labelX, labelY);
-      context.fillStyle = node.ghost
-        ? colorToRgba(palette.textMuted, 0.58)
-        : colorToRgba(palette.text, isFocused ? 1 : 0.74);
+      context.fillStyle = isFocused
+        ? palette.text
+        : node.ghost
+          ? colorToRgba(palette.textMuted, 0.55)
+          : colorToRgba(palette.textMuted, 0.9);
       context.fillText(label, labelX, labelY);
     }
   }
 
   /**
-   * Canvas-local rectangle the graph content must stay inside. It excludes the
-   * edit toolbar / mode hint at the topband the legend and floating zoom controls
-   * at the bottom, plus a little breathing room. This keeps nodes and labels off
-   * the floating chrome and the bottom navigation scrim on a phone.
+   * Canvas-local rectangle the graph content must stay inside. Floating title,
+   * toolbars, mode hint, legend, zoom controls and the inspector are excluded so
+   * no node/label hides beneath the chrome.
    */
   function getSafeRect(width: number, height: number): {
     left: number;
@@ -684,14 +954,15 @@ export function GraphView({
         if (rect.width <= 0 || rect.height <= 0) return;
         if (side === 'right') right = Math.min(right, rect.left - canvasRect.left - gap);
         else if (side === 'bottom') bottom = Math.min(bottom, rect.top - canvasRect.top - gap);
-        else top = Math.max(top, rect.bottom - canvasRect.top + 10);
+        else top = Math.max(top, rect.bottom - canvasRect.top + gap);
       };
+      reserve('.graph-floating-title', 'top');
       reserve('.graph-toolbar', 'top');
       reserve('.graph-hint', 'top');
-      reserve('.graph-legend', 'bottom');
+      reserve('.graph-legend-wrap', 'bottom');
       reserve('.graph-view-controls', 'bottom');
+      reserve('.graph-inspector', 'bottom');
     }
-    // Never let a cramped layout collapse the play area entirely.
     if (right - left < 80) {
       left = base;
       right = width - base;
@@ -703,10 +974,7 @@ export function GraphView({
     return { left, top, right, bottom };
   }
 
-  /**
-   * Union of nodes (plus focus halos) and their labels in screen space for a
-   * candidate camera, so the fit accounts for the fixed-size text labels.
-   */
+  /** Union of node dots and the labels that will be visible, in screen space. */
   function measureFitContent(
     scale: number,
     tx: number,
@@ -715,7 +983,6 @@ export function GraphView({
     const graph = graphRef.current;
     if (!graph) return { left: 0, top: 0, right: 1, bottom: 1 };
     const selectedId = selectedIdRef.current;
-    const activeId = activeIdRef.current;
     let left = Infinity;
     let top = Infinity;
     let right = -Infinity;
@@ -729,7 +996,8 @@ export function GraphView({
 
     for (const node of graph.nodes) {
       const radius = radiusForDegree(node.degree) * scale;
-      const padding = node.id === selectedId ? 12 : node.id === activeId ? 10 : node.ghost ? 8 : 4;
+      const padding =
+        node.id === selectedId ? 14 : node.id === activeIdRef.current ? 12 : node.ghost ? 8 : 5;
       const screenX = node.x * scale + tx;
       const screenY = node.y * scale + ty;
       include(
@@ -744,30 +1012,29 @@ export function GraphView({
     if (context) {
       const palette = getPalette();
       const canvasWidth = sizeRef.current.width;
+      const labelIds = importantNodeIds(graph);
+      if (selectedId) labelIds.add(selectedId);
       for (const node of graph.nodes) {
+        if (!labelIds.has(node.id)) continue;
         const label = truncateLabel(node.title);
         if (!label) continue;
-        const focused = node.id === selectedId || node.id === activeId;
+        const focused = node.id === selectedId;
         context.font = focused
-          ? `600 ${SELECTED_LABEL_FONT_SIZE}px ${palette.fontSans}`
+          ? `600 ${FOCUS_LABEL_FONT_SIZE}px ${palette.fontSans}`
           : `400 ${LABEL_FONT_SIZE}px ${palette.fontSans}`;
         const labelWidth = Math.min(context.measureText(label).width + 4, canvasWidth - 12);
-        const labelHeight = 16;
         const radius = radiusForDegree(node.degree) * scale;
         const screenX = node.x * scale + tx;
         const screenY = node.y * scale + ty;
         const labelTop = screenY + radius + 8;
-        include(screenX - labelWidth / 2, labelTop, screenX + labelWidth / 2, labelTop + labelHeight);
+        include(screenX - labelWidth / 2, labelTop, screenX + labelWidth / 2, labelTop + 16);
       }
     }
 
     return { left, top, right, bottom };
   }
 
-  /**
-   * Camera that fits every node ball and label pill inside the overlay-safe area.
-   * Labels are fixed screen-pixel size, so the fit iterates a few times.
-   */
+  /** Camera that fits every node and its visible labels inside the safe rect. */
   function computeFitView(): Viewport {
     const graph = graphRef.current;
     const { width, height } = sizeRef.current;
@@ -780,13 +1047,13 @@ export function GraphView({
     const availableHeight = Math.max(40, safe.bottom - safe.top - 8);
     const targetX = (safe.left + safe.right) / 2;
     const targetY = (safe.top + safe.bottom) / 2;
-    // First guess: fit the node dots only, then iterate labels + overlays in.
+
     let minX = Infinity;
     let minY = Infinity;
     let maxX = -Infinity;
     let maxY = -Infinity;
     for (const node of graph.nodes) {
-      const radius = radiusForDegree(node.degree) + (node.id === selectedIdRef.current ? 12 : 4);
+      const radius = radiusForDegree(node.degree) + (node.id === selectedIdRef.current ? 14 : 5);
       minX = Math.min(minX, node.x - radius);
       minY = Math.min(minY, node.y - radius);
       maxX = Math.max(maxX, node.x + radius);
@@ -804,7 +1071,6 @@ export function GraphView({
 
     for (let pass = 0; pass < 5; pass += 1) {
       const content = measureFitContent(scale, tx, ty);
-      // Re-centre the measured content, then shrink if it still overflows.
       tx += targetX - (content.left + content.right) / 2;
       ty += targetY - (content.top + content.bottom) / 2;
       const usedWidth = Math.max(1, content.right - content.left);
@@ -813,13 +1079,11 @@ export function GraphView({
       if (overflow > 0.995) break;
       const nextScale = clamp(scale * overflow * 0.995, MIN_SCALE, 1.6);
       if (Math.abs(nextScale - scale) < 0.0005) break;
-      // Scale around the safe-area centre (content is centred there by now).
       tx = targetX - ((targetX - tx) / scale) * nextScale;
       ty = targetY - ((targetY - ty) / scale) * nextScale;
       scale = nextScale;
     }
 
-    // Final nudge: guarantee the measured content sits inside the safe rect.
     const finalContent = measureFitContent(scale, tx, ty);
     if (finalContent.right > safe.right - 4) tx -= finalContent.right - (safe.right - 4);
     if (finalContent.left < safe.left + 4) tx += safe.left + 4 - finalContent.left;
@@ -845,30 +1109,53 @@ export function GraphView({
     };
   }
 
-  function animateFrame(): void {
+  /** One animation frame of the force simulation; stops when alpha decays. */
+  function simulationFrame(): void {
     rafRef.current = null;
     const graph = graphRef.current;
     if (!graph) return;
     const { width, height } = sizeRef.current;
     if (width < 2 || height < 2) return;
-    const budget = tickBudgetRef.current;
-    for (let step = 0; step < TICKS_PER_FRAME && ticksDoneRef.current < budget; step += 1) {
-      tick(graph, width, height);
-      ticksDoneRef.current += 1;
+    let alpha = alphaRef.current;
+    if (alpha <= FORCE.alphaMin) {
+      alphaRef.current = 0;
+      if (autoFitRef.current) fitView();
+      draw();
+      return;
     }
-    const settled = ticksDoneRef.current >= budget;
-    if (autoFitRef.current) {
-      if (settled) fitView();
-      else followView();
-    }
+    stepSimulation(graph, width, height, alpha);
+    alpha *= FORCE.alphaDecay;
+    alphaRef.current = alpha;
+    if (autoFitRef.current) followView();
     draw();
-    if (!settled) rafRef.current = requestAnimationFrame(animateFrame);
+    if (alpha > FORCE.alphaMin) {
+      rafRef.current = requestAnimationFrame(simulationFrame);
+    } else if (autoFitRef.current) {
+      fitView();
+      draw();
+    }
+  }
+
+  /** Nudge the simulation awake (drag, release, add). */
+  function reheat(alpha: number): void {
+    const graph = graphRef.current;
+    if (!graph) return;
+    if (reducedMotionRef.current) {
+      const { width, height } = sizeRef.current;
+      settleSimulation(graph, width, height, 20);
+      draw();
+      return;
+    }
+    alphaRef.current = Math.max(alphaRef.current, alpha);
+    if (rafRef.current === null) {
+      rafRef.current = requestAnimationFrame(simulationFrame);
+    }
   }
 
   /** Map saved positions onto the current canvas (used when preserving). */
   function placeSavedNodes(graph: Graph, width: number, height: number): void {
-    const marginX = nodeMarginX(width);
-    const marginY = nodeMarginY(height);
+    const marginX = Math.min(NODE_MARGIN_MAX, width * 0.04);
+    const marginY = Math.min(NODE_MARGIN_MAX, height * 0.04);
     for (const node of graph.nodes) {
       if (!node.position) continue;
       node.fixed = true;
@@ -881,12 +1168,11 @@ export function GraphView({
 
   /**
    * (Re)start the simulation.
-   * `reseed = true` rebuilds the deterministic spiral (fresh layout / resize).
-   * `reseed = false` keeps every settled coordinate untouched (drag, add, edit),
-   * so a small edit never reshuffles the map; `settleTicks` may request a short
-   * settle for brand-new free nodes only.
+   * `reseed = true` rebuilds the deterministic seed + hot simulation (initial,
+   * resize, reset). `reseed = false` keeps settled coordinates for edits and
+   * only reheats when a brand-new free node appears.
    */
-  function startLayout(reseed: boolean, settleTicks?: number): void {
+  function startLayout(reseed: boolean, addedFree = false): void {
     if (resizeTimerRef.current !== null) {
       window.clearTimeout(resizeTimerRef.current);
       resizeTimerRef.current = null;
@@ -897,6 +1183,7 @@ export function GraphView({
     const { width, height } = sizeRef.current;
     if (graph.nodes.length === 0) {
       layoutReadyRef.current = true;
+      alphaRef.current = 0;
       viewRef.current = { scale: 1, tx: 0, ty: 0 };
       draw();
       return;
@@ -906,32 +1193,31 @@ export function GraphView({
       return;
     }
 
-    if (reseed) seedPositions(graph, width, height);
-    else placeSavedNodes(graph, width, height);
+    if (reseed) {
+      seedPositions(graph, width, height);
+      for (const node of graph.nodes) {
+        node.vx = 0;
+        node.vy = 0;
+      }
+    } else {
+      placeSavedNodes(graph, width, height);
+    }
     layoutReadyRef.current = true;
 
-    const budget = reseed
-      ? DEFAULT_TICK_BUDGET
-      : Math.max(0, settleTicks ?? 0);
-    const reduced = reducedMotionRef.current;
-    if (reduced) {
-      const staticSteps = reseed ? (graph.nodes.length > 400 ? 80 : 220) : budget;
-      if (reseed) layoutSync(graph, width, height, staticSteps);
-      else for (let i = 0; i < staticSteps; i += 1) tick(graph, width, height);
+    if (reducedMotionRef.current) {
+      settleSimulation(graph, width, height, reseed ? 70 : 24);
       if (reseed || autoFitRef.current) fitView();
+      alphaRef.current = 0;
       draw();
       return;
     }
 
-    if (reseed || autoFitRef.current) fitView();
-    if (budget <= 0) {
-      draw();
-      return;
-    }
-    ticksDoneRef.current = 0;
-    tickBudgetRef.current = graph.nodes.length > 400 ? Math.min(100, budget) : budget;
+    alphaRef.current = reseed ? FORCE.initialAlpha : addedFree ? ADDED_NODE_SETTLE_ALPHA : 0;
+    if (reseed && autoFitRef.current) fitView();
     draw();
-    rafRef.current = requestAnimationFrame(animateFrame);
+    if (alphaRef.current > FORCE.alphaMin) {
+      rafRef.current = requestAnimationFrame(simulationFrame);
+    }
   }
 
   /** Resize re-layouts are debounced so dragging a window stays calm. */
@@ -981,8 +1267,7 @@ export function GraphView({
       const screenX = node.x * view.scale + view.tx;
       const screenY = node.y * view.scale + view.ty;
       const distance = Math.hypot(px - screenX, py - screenY);
-      // Generous hit target: comfortable for fingers on a phone.
-      const hitRadius = Math.max(20, radiusForDegree(node.degree) * view.scale + 12);
+      const hitRadius = Math.max(22, radiusForDegree(node.degree) * view.scale + 14);
       if (distance <= hitRadius && distance < bestDistance) {
         best = node;
         bestDistance = distance;
@@ -991,7 +1276,26 @@ export function GraphView({
     return best;
   }
 
-  // ---- tap / selection / linking ----
+  // ---- hover / tap / selection / linking ----
+
+  function updateHover(screenX: number, screenY: number, pointerType: string): void {
+    if (pointerType === 'touch') return;
+    const hit = findNodeAt(screenX, screenY);
+    const nextId = hit && !hit.ghost ? hit.id : null;
+    if (nextId === hoveredIdRef.current) return;
+    hoveredIdRef.current = nextId;
+    const canvas = canvasRef.current;
+    if (canvas) canvas.style.cursor = nextId && modeRef.current === 'idle' ? 'pointer' : '';
+    draw();
+  }
+
+  function clearHover(): void {
+    if (hoveredIdRef.current === null) return;
+    hoveredIdRef.current = null;
+    const canvas = canvasRef.current;
+    if (canvas) canvas.style.cursor = '';
+    draw();
+  }
 
   function handleNodeTap(node: GraphNode): void {
     const currentMode = modeRef.current;
@@ -1012,12 +1316,11 @@ export function GraphView({
         onLinkRef.current(source, node.id);
       }
       setConnectSource(null);
-      setMode('idle');
       draw();
       return;
     }
 
-    // Idle / add mode: select, second tap on the same node opens it.
+    // Idle / add mode: select (opens the inspector), second tap opens the note.
     const now = performance.now();
     const last = lastTapRef.current;
     if (last && last.id === node.id && now - last.time <= DOUBLE_TAP_MS) {
@@ -1054,7 +1357,6 @@ export function GraphView({
 
   function handleTap(screenX: number, screenY: number): void {
     const node = findNodeAt(screenX, screenY);
-    // Ghost nodes are unresolved `[[wiki links]]`, not editable records.
     if (node && !node.ghost) {
       handleNodeTap(node);
       return;
@@ -1110,6 +1412,7 @@ export function GraphView({
     node.vx = 0;
     node.vy = 0;
     onMoveRef.current(node.id, position);
+    reheat(FORCE.releaseAlpha);
     draw();
   }
 
@@ -1118,6 +1421,8 @@ export function GraphView({
     const graph = graphRef.current;
     if (!canvas || !graph || graph.nodes.length === 0) return;
     if (event.pointerType === 'mouse' && event.button !== 0) return;
+    hoveredIdRef.current = null;
+    if (canvas.style.cursor === 'pointer') canvas.style.cursor = '';
     const position = eventPosition(event);
     const world = screenToWorld(position.x, position.y);
     pointersRef.current.set(event.pointerId, {
@@ -1150,15 +1455,21 @@ export function GraphView({
         };
       }
     } else if (pointersRef.current.size === 2) {
-      // A second finger switches to pinch zoom; abandon (and revert) any drag.
       cancelDrag(true);
       beginPinchIfNeeded();
     }
+    draw();
   }
 
   function handlePointerMove(event: PointerEvent): void {
     const pointer = pointersRef.current.get(event.pointerId);
-    if (!pointer) return;
+    if (!pointer) {
+      if (pointersRef.current.size === 0) {
+        const position = eventPosition(event);
+        updateHover(position.x, position.y, event.pointerType);
+      }
+      return;
+    }
     const position = eventPosition(event);
     const dx = position.x - pointer.x;
     const dy = position.y - pointer.y;
@@ -1203,13 +1514,15 @@ export function GraphView({
       if (!graph || !node) return;
       const world = screenToWorld(position.x, position.y);
       const { width, height } = sizeRef.current;
-      const marginX = nodeMarginX(width);
-      const marginY = nodeMarginY(height);
+      const marginX = Math.min(NODE_MARGIN_MAX, width * 0.04);
+      const marginY = Math.min(NODE_MARGIN_MAX, height * 0.04);
       node.fixed = true;
       node.x = clamp(world.x + drag.offsetX, marginX, Math.max(marginX, width - marginX));
       node.y = clamp(world.y + drag.offsetY, marginY, Math.max(marginY, height - marginY));
       node.vx = 0;
       node.vy = 0;
+      // Let the neighbourhood respond while the node is being dragged.
+      reheat(FORCE.dragAlpha);
       draw();
       return;
     }
@@ -1235,7 +1548,6 @@ export function GraphView({
     }
 
     if (pointersRef.current.size === 1) {
-      // One finger lifted from a pinch: keep panning with the other one, no tap.
       pinchRef.current = null;
       const remaining = [...pointersRef.current.values()][0];
       if (remaining) remaining.moved = true;
@@ -1244,7 +1556,6 @@ export function GraphView({
     if (pointersRef.current.size > 0) return;
 
     pinchRef.current = null;
-
     const drag = dragRef.current;
     if (drag && drag.pointerId === event.pointerId) {
       if (drag.moved) {
@@ -1280,6 +1591,10 @@ export function GraphView({
     draw();
   }
 
+  function handlePointerLeave(): void {
+    clearHover();
+  }
+
   function handleWheel(event: WheelEvent): void {
     const graph = graphRef.current;
     if (!graph || graph.nodes.length === 0) return;
@@ -1299,18 +1614,25 @@ export function GraphView({
 
   function handleResetLayout(): void {
     autoFitRef.current = true;
+    pendingReseedRef.current = true;
     setMode('idle');
     setConnectSource(null);
     lastTapRef.current = null;
+    hoveredIdRef.current = null;
     dragRef.current = null;
+    const canvas = canvasRef.current;
+    if (canvas) canvas.style.cursor = '';
     const graph = graphRef.current;
     if (graph) {
       for (const node of graph.nodes) {
         node.fixed = false;
         node.position = undefined;
+        node.vx = 0;
+        node.vy = 0;
       }
     }
     onResetRef.current?.();
+    onSelectRef.current?.(null);
     startLayout(true);
   }
 
@@ -1324,12 +1646,35 @@ export function GraphView({
     setMode((current) => (current === 'add' ? 'idle' : 'add'));
     setConnectSource(null);
     lastTapRef.current = null;
+    clearHover();
   }
 
   function toggleConnectMode(): void {
     setMode((current) => (current === 'connect' ? 'idle' : 'connect'));
     setConnectSource(null);
     lastTapRef.current = null;
+    clearHover();
+  }
+
+  /** Inspector 编辑: open the note editor through the App callback. */
+  function handleEditSelected(id: string): void {
+    if (onOpenRef.current) onOpenRef.current(id);
+    else onSelectRef.current(id);
+  }
+
+  /** Inspector 连线: enter Link mode with this node as the first endpoint. */
+  function handleLinkFromSelected(id: string): void {
+    setMode('connect');
+    setConnectSource(id);
+    lastTapRef.current = null;
+    clearHover();
+    onSelectRef.current(null);
+  }
+
+  /** Inspector 删除. */
+  function handleDeleteSelected(id: string): void {
+    onDeleteRef.current?.(id);
+    onSelectRef.current(null);
   }
 
   // ---- lifecycle: canvas sizing, native listeners, cleanup ----
@@ -1357,11 +1702,22 @@ export function GraphView({
     canvas.addEventListener('pointermove', handlePointerMove);
     canvas.addEventListener('pointerup', handlePointerUp);
     canvas.addEventListener('pointercancel', handlePointerCancel);
+    canvas.addEventListener('pointerleave', handlePointerLeave);
     window.addEventListener('resize', handleWindowResize);
 
     const handleMotionChange = (): void => {
       reducedMotionRef.current = media.matches;
-      startLayout(false, media.matches ? 200 : 0);
+      if (media.matches) {
+        const graph = graphRef.current;
+        const { width, height } = sizeRef.current;
+        if (graph) settleSimulation(graph, width, height, 40);
+        cancelAnimation();
+        alphaRef.current = 0;
+        if (autoFitRef.current) fitView();
+        draw();
+      } else {
+        startLayout(false);
+      }
     };
     media.addEventListener('change', handleMotionChange);
 
@@ -1378,6 +1734,7 @@ export function GraphView({
 
     return () => {
       cancelAnimation();
+      alphaRef.current = 0;
       if (resizeTimerRef.current !== null) {
         window.clearTimeout(resizeTimerRef.current);
         resizeTimerRef.current = null;
@@ -1388,12 +1745,14 @@ export function GraphView({
       canvas.removeEventListener('pointermove', handlePointerMove);
       canvas.removeEventListener('pointerup', handlePointerUp);
       canvas.removeEventListener('pointercancel', handlePointerCancel);
+      canvas.removeEventListener('pointerleave', handlePointerLeave);
       window.removeEventListener('resize', handleWindowResize);
       media.removeEventListener('change', handleMotionChange);
       themeObserver.disconnect();
       pointersRef.current.clear();
       pinchRef.current = null;
       dragRef.current = null;
+      hoveredIdRef.current = null;
     };
   }, []);
 
@@ -1410,9 +1769,12 @@ export function GraphView({
     graphRef.current = next;
     dragRef.current = null;
     lastTapRef.current = null;
+    hoveredIdRef.current = null;
 
-    const preserve = previous !== null && previousFingerprint !== null;
-    let settleTicks = 0;
+    const forceReseed = pendingReseedRef.current;
+    pendingReseedRef.current = false;
+    const preserve = previous !== null && previousFingerprint !== null && !forceReseed;
+    let addedFree = false;
     if (preserve && previous) {
       const previousById = new Map(previous.nodes.map((node) => [node.id, node]));
       const { width, height } = sizeRef.current;
@@ -1427,13 +1789,19 @@ export function GraphView({
           node.vx = 0;
           node.vy = 0;
         } else {
-          // New free node (e.g. created in the editor): drop it in a calm spiral
-          // slot, then let the neighbours make a little room.
-          settleTicks = ADDED_NODE_SETTLE_TICKS;
+          addedFree = true;
           if (width > 4 && height > 4) {
-            const radius = 36 + Math.sqrt(index + 1) * 16;
-            node.x = width / 2 + Math.cos(index * GOLDEN_ANGLE) * radius;
-            node.y = height / 2 + Math.sin(index * GOLDEN_ANGLE) * radius;
+            const radius = 40 + Math.sqrt(index + 1) * 18;
+            node.x = clamp(
+              width / 2 + Math.cos(index * GOLDEN_ANGLE) * radius,
+              20,
+              Math.max(20, width - 20),
+            );
+            node.y = clamp(
+              height / 2 + Math.sin(index * GOLDEN_ANGLE) * radius,
+              20,
+              Math.max(20, height - 20),
+            );
           }
         }
       }
@@ -1446,48 +1814,113 @@ export function GraphView({
     const ghostPresent = next.nodes.some((node) => node.ghost);
     setHasGhost((current) => (current === ghostPresent ? current : ghostPresent));
 
-    startLayout(!preserve, settleTicks);
+    startLayout(!preserve, addedFree);
   }, [notes]);
 
-  // Selection / active note changes are pure redraws.
+  // Selection changes adjust the camera (inspector reserves space) + redraw.
   useEffect(() => {
+    if (autoFitRef.current && layoutReadyRef.current) fitView();
     draw();
   }, [activeNoteId, selectedNoteId]);
 
-  // Mode changes toggle cursors, hints and pending-source rings.
+  // Mode changes redraw cursors/hints and re-fit for the new hint band so the
+  // graph never sits under the Add/Link hint chip.
   useEffect(() => {
+    if (autoFitRef.current && layoutReadyRef.current) fitView();
     draw();
   }, [mode, connectSource]);
 
   const hint =
     mode === 'add'
-      ? '点空白处放一个新点'
+      ? '添加模式 · 点空白处放一个新点'
       : mode === 'connect'
         ? connectSource
-          ? '再点一个点完成连线'
-          : '点两个点，把它们连起来'
+          ? '连线模式 · 再选第二个节点'
+          : '连线模式 · 选择第一个节点'
         : null;
 
   const presentKinds = NOTE_KINDS.filter((kind) => notes.some((note) => noteKind(note) === kind));
+
+  // Compact node inspector data (derived from the selected note + graph edges).
+  const inspectorNote = selectedNoteId ? notes.find((note) => note.id === selectedNoteId) ?? null : null;
+  let inspectorContacts: InspectorContact[] = [];
+  let inspectorExcerpt = '';
+  if (inspectorNote) {
+    const graph = graphRef.current;
+    const nodeById = new Map<string, GraphNode>();
+    if (graph) for (const node of graph.nodes) nodeById.set(node.id, node);
+    const titleById = new Map<string, string>();
+    for (const note of notes) titleById.set(note.id, note.title);
+    if (graph) {
+      const seen = new Set<string>();
+      for (const edge of graph.edges) {
+        const outgoing = edge.source === inspectorNote.id;
+        const incoming = edge.target === inspectorNote.id;
+        if (!outgoing && !incoming) continue;
+        const otherId = outgoing ? edge.target : edge.source;
+        if (seen.has(otherId)) continue;
+        seen.add(otherId);
+        inspectorContacts.push({
+          id: otherId,
+          title: titleById.get(otherId) ?? nodeById.get(otherId)?.title ?? '未创建',
+          outgoing,
+          exists: titleById.has(otherId),
+        });
+      }
+      inspectorContacts.sort((a, b) => {
+        if (a.outgoing !== b.outgoing) return a.outgoing ? -1 : 1;
+        return a.title.localeCompare(b.title);
+      });
+    }
+    inspectorExcerpt = excerptOf(inspectorNote.content);
+  }
 
   return (
     <div
       className={`graph-view${mode === 'add' ? ' is-adding' : ''}${
         mode === 'connect' ? ' is-connecting' : ''
-      }`}
+      }${fullscreen ? ' is-fullscreen' : ''}`}
       ref={containerRef}
     >
       <canvas
         ref={canvasRef}
         className="graph-canvas"
         role="img"
-        aria-label="生活图谱画布，可拖动平移、双指缩放，拖动节点可调整位置"
+        aria-label="生活图谱画布，可拖动平移、双指缩放，拖动节点调整位置"
       />
       {notes.length > 0 ? (
         <>
+          <div className="graph-floating-title">
+            <div className="graph-floating-title-row">
+              <h2 className="graph-floating-heading">生活图谱</h2>
+              {onToggleFullscreen ? (
+                <button
+                  type="button"
+                  className="graph-fullscreen-btn"
+                  onClick={onToggleFullscreen}
+                  aria-label={fullscreen ? '退出沉浸模式' : '沉浸模式'}
+                  aria-pressed={fullscreen}
+                  title={fullscreen ? '退出沉浸模式' : '沉浸模式'}
+                >
+                  <Icon name="eye" size={15} />
+                </button>
+              ) : null}
+            </div>
+            <p className="graph-floating-meta">
+              {notes.length} 条记录
+              {mode === 'add' ? ' · 添加模式' : mode === 'connect' ? ' · 连线模式' : ''}
+            </p>
+          </div>
           {hint ? (
             <div className="graph-hint" role="status">
               {hint}
+              {mode === 'connect' ? (
+                <span className="graph-hint-steps" aria-hidden="true">
+                  <span className={connectSource ? 'is-done' : 'is-current'}>1</span>
+                  <span className="graph-hint-arrow">→</span>
+                  <span className={connectSource ? 'is-current' : ''}>2</span>
+                </span>
+              ) : null}
             </div>
           ) : null}
           <div className="graph-toolbar" role="toolbar" aria-label="图谱工具">
@@ -1521,60 +1954,164 @@ export function GraphView({
               <Icon name="refresh" size={19} />
             </button>
           </div>
-          <div className="graph-view-controls" role="toolbar" aria-label="图谱视图">
-            <button
-              type="button"
-              className="icon-btn graph-btn graph-btn--floating"
-              onClick={() => zoomBy(ZOOM_STEP)}
-              aria-label="放大"
-              title="放大"
-            >
-              <Icon name="zoomIn" size={19} />
-            </button>
-            <button
-              type="button"
-              className="icon-btn graph-btn graph-btn--floating"
-              onClick={() => zoomBy(1 / ZOOM_STEP)}
-              aria-label="缩小"
-              title="缩小"
-            >
-              <Icon name="zoomOut" size={19} />
-            </button>
-            <button
-              type="button"
-              className="icon-btn graph-btn graph-btn--floating"
-              onClick={handleFit}
-              aria-label="适应画布"
-              title="适应画布"
-            >
-              <Icon name="fit" size={19} />
-            </button>
-          </div>
-          <div className="graph-legend" aria-label="图例">
-            {presentKinds.map((kind) => (
-              <span key={kind} className="graph-legend-item">
-                <span
-                  className="graph-legend-dot"
-                  style={{ backgroundColor: `var(${KIND_COLOR_VARS[kind]})` }}
-                  aria-hidden="true"
-                />
-                <span>{KIND_LABELS[kind]}</span>
-              </span>
-            ))}
-            {hasGhost ? (
-              <span className="graph-legend-item">
-                <span
-                  className="graph-legend-dot graph-legend-dot--ghost"
-                  aria-hidden="true"
-                />
-                <span>未创建</span>
-              </span>
-            ) : null}
-          </div>
+          {!inspectorNote ? (
+            <div className="graph-view-controls" role="toolbar" aria-label="图谱视图">
+              <button
+                type="button"
+                className="icon-btn graph-btn graph-btn--floating"
+                onClick={() => zoomBy(ZOOM_STEP)}
+                aria-label="放大"
+                title="放大"
+              >
+                <Icon name="zoomIn" size={19} />
+              </button>
+              <button
+                type="button"
+                className="icon-btn graph-btn graph-btn--floating"
+                onClick={() => zoomBy(1 / ZOOM_STEP)}
+                aria-label="缩小"
+                title="缩小"
+              >
+                <Icon name="zoomOut" size={19} />
+              </button>
+              <button
+                type="button"
+                className="icon-btn graph-btn graph-btn--floating"
+                onClick={handleFit}
+                aria-label="适应画布"
+                title="适应画布"
+              >
+                <Icon name="fit" size={19} />
+              </button>
+            </div>
+          ) : null}
+          {!inspectorNote ? (
+            <div className="graph-legend-wrap">
+              <button
+                type="button"
+                className="graph-legend-toggle"
+                onClick={() => setLegendOpen((open) => !open)}
+                aria-label={legendOpen ? '收起图例' : '展开图例'}
+                aria-expanded={legendOpen}
+              >
+                <Icon name="tag" size={14} />
+                <span>图例</span>
+              </button>
+              {legendOpen ? (
+                <div className="graph-legend" aria-label="图例">
+                  {presentKinds.map((kind) => (
+                    <span key={kind} className="graph-legend-item">
+                      <span
+                        className="graph-legend-dot"
+                        style={{ backgroundColor: `var(${KIND_COLOR_VARS[kind]})` }}
+                        aria-hidden="true"
+                      />
+                      <span>{KIND_LABELS[kind]}</span>
+                    </span>
+                  ))}
+                  {hasGhost ? (
+                    <span className="graph-legend-item">
+                      <span
+                        className="graph-legend-dot graph-legend-dot--ghost"
+                        aria-hidden="true"
+                      />
+                      <span>未创建</span>
+                    </span>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {inspectorNote ? (
+            <section className="graph-inspector" aria-label="节点详情">
+              <header className="graph-inspector-head">
+                <span className="graph-inspector-kind">
+                  <span
+                    className="graph-inspector-dot"
+                    style={{ backgroundColor: `var(${KIND_COLOR_VARS[noteKind(inspectorNote)]})` }}
+                    aria-hidden="true"
+                  />
+                  {KIND_LABELS[noteKind(inspectorNote)]}
+                </span>
+                <h3 className="graph-inspector-title">{inspectorNote.title}</h3>
+                <button
+                  type="button"
+                  className="graph-inspector-close"
+                  aria-label="关闭节点详情"
+                  onClick={() => onSelectNote(null)}
+                >
+                  <Icon name="close" size={16} />
+                </button>
+              </header>
+              {inspectorExcerpt ? (
+                <p className="graph-inspector-excerpt">{inspectorExcerpt}</p>
+              ) : (
+                <p className="graph-inspector-excerpt graph-inspector-excerpt--empty">
+                  这条记录还没有正文。
+                </p>
+              )}
+              <div className="graph-inspector-connections">
+                <span className="graph-inspector-label">连接 {inspectorContacts.length}</span>
+                {inspectorContacts.length > 0 ? (
+                  <div className="graph-inspector-chips">
+                    {inspectorContacts.slice(0, 4).map((contact) => (
+                      <button
+                        key={contact.id}
+                        type="button"
+                        className="graph-chip"
+                        disabled={!contact.exists}
+                        onClick={() => {
+                          if (!contact.exists) return;
+                          if (onOpenRef.current) onOpenRef.current(contact.id);
+                          else onSelectRef.current(contact.id);
+                        }}
+                      >
+                        {contact.outgoing ? '→ ' : '← '}
+                        {contact.title}
+                      </button>
+                    ))}
+                    {inspectorContacts.length > 4 ? (
+                      <span className="graph-chip graph-chip--muted">
+                        +{inspectorContacts.length - 4}
+                      </span>
+                    ) : null}
+                  </div>
+                ) : (
+                  <span className="graph-inspector-muted">暂时没有连接</span>
+                )}
+              </div>
+              <footer className="graph-inspector-actions">
+                <button
+                  type="button"
+                  className="graph-action"
+                  onClick={() => handleEditSelected(inspectorNote.id)}
+                >
+                  编辑
+                </button>
+                <button
+                  type="button"
+                  className="graph-action"
+                  onClick={() => handleLinkFromSelected(inspectorNote.id)}
+                >
+                  连线
+                </button>
+                {onDeleteNote ? (
+                  <button
+                    type="button"
+                    className="graph-action graph-action--danger"
+                    onClick={() => handleDeleteSelected(inspectorNote.id)}
+                  >
+                    删除
+                  </button>
+                ) : null}
+              </footer>
+            </section>
+          ) : null}
         </>
       ) : (
         <div className="graph-empty">
-          <div className="graph-empty-line">暂无节点 · 记一笔后再回来</div>
+          <div className="graph-empty-title">还没有记录</div>
+          <div className="graph-empty-text">记一笔后再回来看看它们怎么连在一起</div>
         </div>
       )}
     </div>

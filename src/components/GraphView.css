@@ -1,18 +1,23 @@
-/* 麻薯 life graph — Obsidian-style flat force graph (v0.8).
-   Theme-aware canvas; the app shell supplies the rounded card frame. */
+/* 麻薯 P1 life graph — warm minimal "living data" canvas.
+   Near-fullscreen force-directed graph with floating chrome and node inspector. */
 
 .graph-view {
   position: relative;
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: var(--graph-panel);
+  /* Warm paper in light, warm charcoal in dark (spec §10). */
+  background: var(--bg);
   border-radius: var(--radius-l);
   color: var(--text);
   font-family: var(--font-sans);
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
+}
+
+.graph-view.is-fullscreen {
+  border-radius: 0;
 }
 
 .graph-view .graph-canvas {
@@ -37,12 +42,132 @@
   cursor: crosshair;
 }
 
-/* ---------- edit toolbar (top-right): compact rounded glass pill ---------- */
+/* ---------- floating title (top-left) ---------- */
+
+.graph-view .graph-floating-title {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  pointer-events: none;
+}
+
+.graph-view .graph-floating-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.graph-view .graph-floating-heading {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  color: var(--text);
+}
+
+.graph-view .graph-fullscreen-btn {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  color: var(--text-muted);
+  pointer-events: auto;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.graph-view .graph-fullscreen-btn[aria-pressed='true'] {
+  background: var(--accent-soft);
+  border-color: transparent;
+  color: var(--accent-ink);
+}
+
+.graph-view .graph-floating-meta {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--text-muted);
+}
+
+/* ---------- mode hint with link steps (top-left, under the title) ---------- */
+
+.graph-view .graph-hint {
+  position: absolute;
+  top: 64px;
+  left: 16px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100% - 32px);
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  box-shadow: var(--shadow-1);
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.graph-view .graph-hint-steps {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+}
+
+.graph-view .graph-hint-steps span {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  font-size: 10px;
+  color: var(--text-faint);
+}
+
+.graph-view .graph-hint-steps .is-current {
+  background: var(--accent-soft);
+  border-color: transparent;
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.graph-view .graph-hint-steps .is-done {
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--accent-contrast);
+  font-weight: 600;
+}
+
+.graph-view .graph-hint-arrow {
+  color: var(--text-faint);
+  font-size: 10px;
+}
+
+/* ---------- edit toolbar (top-right) ---------- */
 
 .graph-view .graph-toolbar {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 14px;
+  right: 14px;
   z-index: 3;
   display: flex;
   align-items: center;
@@ -51,14 +176,14 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-full);
   background: color-mix(in srgb, var(--surface) 86%, transparent);
+  box-shadow: var(--shadow-1);
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
-  box-shadow: var(--shadow-1);
 }
 
 .graph-view .graph-btn {
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: var(--radius-full);
   color: var(--text-muted);
   transition:
@@ -81,8 +206,8 @@
 
 .graph-view .graph-view-controls {
   position: absolute;
-  right: 10px;
-  bottom: 10px;
+  right: 14px;
+  bottom: 16px;
   z-index: 3;
   display: flex;
   flex-direction: column;
@@ -94,9 +219,9 @@
   height: 38px;
   border: 1px solid var(--border);
   background: color-mix(in srgb, var(--surface) 86%, transparent);
+  box-shadow: var(--shadow-1);
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
-  box-shadow: var(--shadow-1);
 }
 
 .graph-view .graph-btn--floating:hover,
@@ -105,43 +230,45 @@
   color: var(--text);
 }
 
-/* ---------- mode hint: small rounded chip, top-left ---------- */
+/* ---------- collapsible legend (bottom-left) ---------- */
 
-.graph-view .graph-hint {
+.graph-view .graph-legend-wrap {
   position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 2;
-  max-width: calc(100% - 170px);
-  padding: 7px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-full);
-  background: color-mix(in srgb, var(--surface) 88%, transparent);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  box-shadow: var(--shadow-1);
-  color: var(--text-muted);
-  font-size: var(--text-xs);
-  line-height: 1.4;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  pointer-events: none;
-}
-
-/* ---------- legend: rounded muted chips, bottom-left ---------- */
-
-.graph-view .graph-legend {
-  position: absolute;
-  left: 10px;
-  bottom: 10px;
+  left: 14px;
+  bottom: 16px;
   z-index: 2;
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: calc(100% - 110px);
+}
+
+.graph-view .graph-legend-toggle {
+  display: inline-flex;
   align-items: center;
+  gap: 5px;
+  min-height: 32px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
+  box-shadow: var(--shadow-1);
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.2;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.graph-view .graph-legend-toggle[aria-expanded='true'] {
+  color: var(--text);
+}
+
+.graph-view .graph-legend {
+  display: flex;
+  flex-wrap: wrap;
   gap: 6px;
-  max-width: calc(100% - 130px);
-  pointer-events: none;
 }
 
 .graph-view .graph-legend-item {
@@ -151,12 +278,10 @@
   padding: 5px 9px;
   border: 1px solid var(--border);
   border-radius: var(--radius-full);
-  background: color-mix(in srgb, var(--surface) 82%, transparent);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
   box-shadow: var(--shadow-1);
   color: var(--text-muted);
-  font-size: 10.5px;
+  font-size: 11px;
   line-height: 1.2;
   white-space: nowrap;
 }
@@ -173,23 +298,210 @@
   border: 1.5px dashed var(--graph-node-ghost);
 }
 
-/* ---------- empty state: quiet blank canvas ---------- */
+/* ---------- compact node inspector (bottom sheet) ---------- */
+
+.graph-view .graph-inspector {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 16px;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 48%;
+  padding: 14px 16px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+  box-shadow: var(--shadow-2);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.graph-view .graph-inspector-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.graph-view .graph-inspector-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.graph-view .graph-inspector-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.graph-view .graph-inspector-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.graph-view .graph-inspector-close {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: 50%;
+  color: var(--text-muted);
+}
+
+.graph-view .graph-inspector-close:active {
+  background: var(--surface-2);
+}
+
+.graph-view .graph-inspector-excerpt {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.55;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.graph-view .graph-inspector-excerpt--empty {
+  color: var(--text-faint);
+}
+
+.graph-view .graph-inspector-connections {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.graph-view .graph-inspector-label {
+  color: var(--text-faint);
+  font-size: 11px;
+}
+
+.graph-view .graph-inspector-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.graph-view .graph-chip {
+  display: inline-flex;
+  max-width: 100%;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.graph-view .graph-chip:disabled {
+  opacity: 0.55;
+}
+
+.graph-view .graph-chip--muted {
+  background: transparent;
+}
+
+.graph-view .graph-inspector-muted {
+  color: var(--text-faint);
+  font-size: 12px;
+}
+
+.graph-view .graph-inspector-actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+.graph-view .graph-action {
+  flex: 1;
+  min-height: 38px;
+  border-radius: var(--radius-full);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.graph-view .graph-action:active {
+  opacity: 0.82;
+}
+
+.graph-view .graph-action--danger {
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+}
+
+/* ---------- empty state ---------- */
 
 .graph-view .graph-empty {
   position: absolute;
   inset: 0;
   z-index: 2;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   padding: 24px;
-  background: transparent;
-  color: var(--text-muted);
   text-align: center;
-  pointer-events: none;
 }
 
-.graph-view .graph-empty-line {
-  font-size: var(--text-sm);
-  letter-spacing: 0.01em;
+.graph-view .graph-empty-title {
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.graph-view .graph-empty-text {
+  max-width: 240px;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ---------- immersive explore (App makes the host full-bleed) ---------- */
+
+.graph-view.is-fullscreen .graph-floating-title {
+  top: calc(var(--safe-top) + 14px);
+  left: calc(var(--safe-left) + 16px);
+}
+
+.graph-view.is-fullscreen .graph-toolbar {
+  top: calc(var(--safe-top) + 14px);
+  right: calc(var(--safe-right) + 14px);
+}
+
+.graph-view.is-fullscreen .graph-view-controls {
+  right: calc(var(--safe-right) + 14px);
+  bottom: calc(var(--safe-bottom) + 16px);
+}
+
+.graph-view.is-fullscreen .graph-legend-wrap {
+  left: calc(var(--safe-left) + 14px);
+  bottom: calc(var(--safe-bottom) + 16px);
+}
+
+.graph-view.is-fullscreen .graph-inspector {
+  bottom: calc(var(--safe-bottom) + 16px);
 }

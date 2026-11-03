@@ -98,6 +98,7 @@ export function TodayScreen({
   }, [range]);
 
   const trends = brief.trends;
+  const noData = notes.length === 0;
 
   return (
     <div className="screen today-screen">
@@ -194,7 +195,12 @@ export function TodayScreen({
             <h2 className="review-title">昨日复盘</h2>
             <span className="review-date mono">{brief.yesterdayKey.replaceAll('-', '.')}</span>
           </div>
-          <p className="review-insight">{brief.summary}</p>
+          <p className="review-insight">
+            {noData
+              ? '还没有可对比的数据。今天记一笔，明天就会有自己的复盘。'
+              : brief.summary}
+          </p>
+          {!noData ? (
           <div className="review-numbers">
             {trends.slice(0, 3).map((trend) => (
               <div className="review-number" key={trend.label}>
@@ -203,6 +209,7 @@ export function TodayScreen({
               </div>
             ))}
           </div>
+          ) : null}
           <button
             type="button"
             className="review-link"
@@ -225,7 +232,7 @@ export function TodayScreen({
               <div className="review-divider" />
               <h3 className="suggest-title">今天可以试试</h3>
               <ol className="suggest-list">
-                {brief.suggestions.slice(0, 3).map((line: string, index: number) => (
+                {brief.suggestions.slice(0, noData ? 1 : 3).map((line: string, index: number) => (
                   <li key={line}>
                     <span className="suggest-index mono">{String(index + 1).padStart(2, '0')}</span>
                     <span>{line}</span>
