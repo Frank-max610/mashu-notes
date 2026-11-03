@@ -2567,3 +2567,15 @@ button.settings-row:active {
 .unassigned-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
 .unassigned-row .record-title { flex: 1; min-width: 0; font-size: var(--text-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .directory-select { max-width: 130px; min-height: 34px; border: 1px solid var(--border); border-radius: var(--radius-s); background: var(--surface); color: var(--text); padding: 4px 8px; font-size: var(--text-xs); }
+
+/* digest schedule */
+.digest-time {
+  flex: none;
+  min-height: 34px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--text-sm);
+}

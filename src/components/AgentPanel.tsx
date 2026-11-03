@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent }
 import type { AgentPersona, Note, NoteKind, NoteMeta, RecordDraft } from '../lib/types';
 import { KIND_INFO, formatAmount } from '../lib/kinds';
 import { AGENT_SUGGESTIONS, agentGreeting, agentReply } from '../lib/agent';
+import { groundedAnswer } from '../lib/knowledge';
+import type { DailyDigest } from '../lib/digest';
 import { MochiNode } from './MochiNode';
 import { Icon } from './Icon';
 import './AgentPanel.css';
@@ -15,6 +17,8 @@ export interface AgentPanelProps {
   onEditPersona: () => void;
   /** Opens the capture sheet. */
   onCreateRecord: () => void;
+  /** Today's auto-generated digest, shown as the first assistant module. */
+  dailyDigest?: DailyDigest | null;
 }
 
 interface ChatMessage {
@@ -27,6 +31,8 @@ interface ChatMessage {
   /** Set when the agent prepared a record and asks for confirmation. */
   draft?: RecordDraft;
   draftState?: 'pending' | 'saved' | 'cancelled';
+  /** Knowledge-base notes cited by the answer. */
+  sources?: { id: string; title: string }[];
 }
 
 interface Fact {
@@ -106,8 +112,10 @@ export function AgentPanel({
   persona,
   notes,
   onSaveDraft,
+  onOpenNote,
   onEditPersona,
   onCreateRecord,
+  dailyDigest,
 }: AgentPanelProps) {
   const idRef = useRef(1);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -115,7 +123,31 @@ export function AgentPanel({
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     const greeting = agentGreeting(notes);
-    return [{ id: 0, role: 'bot', text: greeting.text, at: Date.now() }];
+    const initial: ChatMessage[] = [{ id: 0, role: 'bot', text: greeting.text, at: Date.now() }];
+    if (dailyDigest) {
+      const lines: string[] = [`${dailyDigest.summary}`];
+      for (const section of dailyDigest.sections) {
+        if (section.highlights.length === 0) continue;
+        lines.push('', `【${section.title}】`);
+        for (const highlight of section.highlights) lines.push(`· ${highlight}`);
+      }
+      if (dailyDigest.suggestions.length > 0) {
+        lines.push('', '今天可以试试：');
+        dailyDigest.suggestions.forEach((suggestion, index) => lines.push(`${index + 1}. ${suggestion}`));
+      }
+      const titleById = new Map(notes.map((note) => [note.id, note.title]));
+      initial.push({
+        id: idRef.current++,
+        role: 'bot',
+        text: lines.join('\n'),
+        at: Date.now(),
+        sources: dailyDigest.sourceIds
+          .map((id) => ({ id, title: titleById.get(id) ?? '' }))
+          .filter((source) => source.title)
+          .slice(0, 8),
+      });
+    }
+    return initial;
   });
   const [savingId, setSavingId] = useState<number | null>(null);
 
@@ -137,17 +169,24 @@ export function AgentPanel({
       const text = raw.trim();
       if (!text) return;
       const reply = agentReply(text, notes);
+      const grounded =
+        reply.action || reply.intent === 'help' || reply.intent === 'capture'
+          ? null
+          : groundedAnswer(notes, text);
+      const answerText = grounded ? grounded.text : reply.text;
+      const sources = grounded?.sources;
       const now = Date.now();
       const userMessage: ChatMessage = { id: idRef.current++, role: 'user', text, at: now };
       const botMessage: ChatMessage = {
         id: idRef.current++,
         role: 'bot',
-        text: reply.text,
+        text: answerText,
         at: now,
         suggestions:
           reply.suggestions && reply.suggestions.length > 0 ? [...reply.suggestions] : undefined,
         draft: reply.action?.type === 'createNote' ? reply.action.draft : undefined,
         draftState: reply.action?.type === 'createNote' ? 'pending' : undefined,
+        sources: sources && sources.length > 0 ? sources : undefined,
       };
       setMessages((current) => [...current, userMessage, botMessage]);
       setInput('');
@@ -256,6 +295,22 @@ export function AgentPanel({
               ) : (
                 <>
                   <p className="agent-screen__text">{replyLines(message.text)}</p>
+
+                  {message.sources && message.sources.length > 0 ? (
+                    <div className="agent-screen__sources">
+                      {message.sources.map((source) => (
+                        <button
+                          key={source.id}
+                          type="button"
+                          className="agent-screen__source"
+                          onClick={() => onOpenNote(source.id)}
+                          title="打开这条记录"
+                        >
+                          《{source.title}》
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
 
                   {message.draft && message.draftState ? (
                     <div className={`agent-screen__draft is-${message.draftState}`}>

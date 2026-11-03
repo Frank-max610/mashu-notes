@@ -11,11 +11,21 @@ interface NoteOptions {
   createdAt?: number;
   manualLinks?: string[];
   position?: NotePosition;
+  archivedAt?: number;
+  /** Mark the note as a directory hub with this colour. */
+  directoryColor?: string;
+  /** Assign the note to a directory hub id. */
+  dirId?: string;
+  /** Mark the note as a plan item (quiet in the graph). */
+  plan?: boolean;
 }
 
 function makeNote(id: string, title: string, content = '', options: NoteOptions = {}): Note {
   const timestamp = options.occurredAt ?? options.createdAt ?? 0;
-  const meta: NoteMeta = options.occurredAt === undefined ? {} : { occurredAt: options.occurredAt };
+  const meta: NoteMeta = {};
+  if (options.occurredAt !== undefined) meta.occurredAt = options.occurredAt;
+  if (options.plan) meta.plan = { status: 'todo' };
+  if (options.directoryColor) meta.directory = { color: options.directoryColor };
   const note: Note = {
     id,
     title,
@@ -29,6 +39,8 @@ function makeNote(id: string, title: string, content = '', options: NoteOptions 
     manualLinks: options.manualLinks ?? [],
   };
   if (options.position) note.position = options.position;
+  if (options.dirId) note.dirId = options.dirId;
+  if (options.archivedAt) note.archivedAt = options.archivedAt;
   return note;
 }
 
@@ -245,6 +257,146 @@ describe('buildGraph — degree, ghosts, determinism', () => {
 
   it('returns an empty graph for an empty vault', () => {
     expect(buildGraph([])).toEqual({ nodes: [], edges: [] });
+  });
+});
+
+describe('buildGraph — directory hubs', () => {
+  it('marks directory notes as coloured hubs and members with their dirId', () => {
+    const graph = buildGraph([
+      makeNote('dir', '健康知识', '#目录', { directoryColor: '#627a4e' }),
+      makeNote('member', '晨跑笔记', '', { dirId: 'dir' }),
+      makeNote('loose', '随手记'),
+    ]);
+    const byId = new Map(graph.nodes.map((node) => [node.id, node]));
+
+    expect(byId.get('dir')?.directory).toBe(true);
+    expect(byId.get('dir')?.dirColor).toBe('#627a4e');
+    expect(byId.get('dir')?.dirId).toBeUndefined();
+    expect(byId.get('member')?.directory).toBe(false);
+    expect(byId.get('member')?.dirId).toBe('dir');
+    expect(byId.get('loose')?.dirId).toBeUndefined();
+  });
+
+  it('adds one deduped directory edge per assigned note and counts it in degree', () => {
+    const graph = buildGraph([
+      makeNote('dir', '健康知识', '#目录', { directoryColor: '#627a4e' }),
+      makeNote('a', '晨跑', '', { dirId: 'dir', manualLinks: ['b'] }),
+      makeNote('b', '饮食记录', '', { dirId: 'dir' }),
+      makeNote('c', '未分配'),
+    ]);
+
+    const directoryEdges = graph.edges.filter((edge) => edge.type === 'directory');
+    expect(directoryEdges).toHaveLength(2);
+    expect(directoryEdges).toContainEqual({ source: 'a', target: 'dir', type: 'directory' });
+    expect(directoryEdges).toContainEqual({ source: 'b', target: 'dir', type: 'directory' });
+    expect(findEdge(graph.edges, 'a', 'dir')?.type).toBe('directory');
+    expect(degreeOf(graph, 'a')).toBe(2);
+    expect(degreeOf(graph, 'b')).toBe(2);
+    expect(degreeOf(graph, 'c')).toBe(0);
+    expect(degreeOf(graph, 'dir')).toBe(2);
+  });
+
+  it('skips self, missing and archived directory assignments', () => {
+    const graph = buildGraph([
+      makeNote('dir', '健康知识', '#目录', { directoryColor: '#627a4e', dirId: 'dir' }),
+      makeNote('ok', '有效成员', '', { dirId: 'dir' }),
+      makeNote('missing', '目录不存在', '', { dirId: 'ghost-dir' }),
+      makeNote('archived', '归档成员', '', { dirId: 'dir', archivedAt: 1 }),
+    ]);
+
+    expect(graph.nodes.map((node) => node.id).sort()).toEqual(['dir', 'missing', 'ok']);
+    expect(graph.edges).toEqual([{ source: 'ok', target: 'dir', type: 'directory' }]);
+    expect(graph.nodes.find((node) => node.id === 'archived')).toBeUndefined();
+  });
+
+  it('keeps directory hubs out of wiki/manual/day edges', () => {
+    const graph = buildGraph([
+      makeNote('dir', '健康知识', '#目录', { directoryColor: '#627a4e' }),
+      makeNote('a', '晨跑 [[健康知识]]', '', { dirId: 'dir', manualLinks: ['dir'] }),
+      makeNote('b', '同日记录', '', { kind: 'health', occurredAt: at(5, 8) }),
+      makeNote('c', '同日另一条', '', { kind: 'health', occurredAt: at(5, 9) }),
+    ]);
+
+    // No wiki/manual edge from `a` to the directory note.
+    expect(graph.edges.filter((edge) => edge.source === 'a' && edge.target === 'dir')).toHaveLength(1);
+    expect(findEdge(graph.edges, 'a', 'dir')?.type).toBe('directory');
+    expect(graph.edges.some((edge) => edge.type !== 'directory' && (edge.source === 'dir' || edge.target === 'dir'))).toBe(false);
+    // Same-day day chains still work between regular records.
+    expect(findEdge(graph.edges, 'b', 'c')?.type).toBe('day');
+  });
+
+  it('keeps archived and plan notes out of the graph, quietly', () => {
+    const graph = buildGraph([
+      makeNote('live', '现在', '[[旧笔记]] [[计划事项]]'),
+      makeNote('archived', '旧笔记', '[[现在]]', { archivedAt: 10 }),
+      makeNote('plan', '计划事项', '', { plan: true }),
+    ]);
+
+    expect(graph.nodes.map((node) => node.id)).toEqual(['live']);
+    expect(graph.edges).toHaveLength(0);
+    expect(graph.nodes.some((node) => node.ghost)).toBe(false);
+  });
+
+  it('is deterministic with directories and keeps every edge endpoint connected', () => {
+    const notes = [
+      makeNote('d1', '目录一', '#目录', { directoryColor: '#65788a' }),
+      makeNote('d2', '目录二', '#目录', { directoryColor: '#b45d35' }),
+      makeNote('a', '记录 A', '', { dirId: 'd1' }),
+      makeNote('b', '记录 B', '', { dirId: 'd2' }),
+    ];
+    const first = buildGraph(notes);
+    const second = buildGraph(notes);
+
+    expect(second).toEqual(first);
+    expect(first.nodes.filter((node) => node.directory)).toHaveLength(2);
+    const ids = new Set(first.nodes.map((node) => node.id));
+    for (const edge of first.edges) {
+      expect(ids.has(edge.source)).toBe(true);
+      expect(ids.has(edge.target)).toBe(true);
+    }
+  });
+});
+
+describe('seedPositions — directory branches', () => {
+  it('spreads directory hubs on a ring and starts members near their hub', () => {
+    const graph = buildGraph([
+      makeNote('d1', '目录一', '#目录', { directoryColor: '#65788a' }),
+      makeNote('d2', '目录二', '#目录', { directoryColor: '#b45d35' }),
+      makeNote('d3', '目录三', '#目录', { directoryColor: '#627a4e' }),
+      makeNote('a', '记录 A', '', { dirId: 'd1' }),
+      makeNote('b', '记录 B', '', { dirId: 'd2' }),
+      makeNote('c', '记录 C', '', { dirId: 'd3' }),
+    ]);
+
+    seedPositions(graph, WIDTH, HEIGHT);
+    const byId = new Map(graph.nodes.map((node) => [node.id, node]));
+
+    const hubs = ['d1', 'd2', 'd3'].map((id) => byId.get(id)!);
+    for (const hub of hubs) {
+      expect(Number.isFinite(hub.x)).toBe(true);
+      expect(Number.isFinite(hub.y)).toBe(true);
+      expect(hub.x).toBeGreaterThanOrEqual(0);
+      expect(hub.x).toBeLessThanOrEqual(WIDTH);
+      expect(hub.y).toBeGreaterThanOrEqual(0);
+      expect(hub.y).toBeLessThanOrEqual(HEIGHT);
+    }
+    // Hubs sit apart from each other (one branch each).
+    expect(Math.hypot(hubs[0].x - hubs[1].x, hubs[0].y - hubs[1].y)).toBeGreaterThan(60);
+    expect(Math.hypot(hubs[1].x - hubs[2].x, hubs[1].y - hubs[2].y)).toBeGreaterThan(60);
+
+    // Each member starts closer to its own hub than to any other hub.
+    for (const [memberId, own] of [['a', 'd1'], ['b', 'd2'], ['c', 'd3']] as const) {
+      const member = byId.get(memberId)!;
+      const ownHub = byId.get(own)!;
+      const ownDistance = Math.hypot(member.x - ownHub.x, member.y - ownHub.y);
+      for (const other of ['d1', 'd2', 'd3']) {
+        if (other === own) continue;
+        const otherHub = byId.get(other)!;
+        expect(ownDistance).toBeLessThan(
+          Math.hypot(member.x - otherHub.x, member.y - otherHub.y),
+        );
+      }
+    }
   });
 });
 

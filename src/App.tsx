@@ -4,6 +4,7 @@ import { navigate, parseRoute, replaceRoute, routeToHash, useRoute, type Route, 
 import { getAgentPersona, getStoredTheme, setAgentPersona, setStoredTheme } from './lib/prefs';
 import { downloadText } from './lib/exportImport';
 import { buildDailyBrief } from './lib/brief';
+import { buildDailyDigest, getDigestSchedule, isDigestDue, loadDigestHistory, saveDigestToHistory, type DailyDigest } from './lib/digest';
 import { decodeHealthPayload, healthSamplesToNotes, parseHealthCsv, parseHealthJson } from './lib/health';
 import { summarizeRange } from './lib/insights';
 import type { AgentPersona, Note, NoteKind, NotePosition, RecordDraft, ThemeMode } from './lib/types';
@@ -66,6 +67,7 @@ export default function App() {
   const [graphSelectedId, setGraphSelectedId] = useState<string | null>(null);
   const [graphFullscreen, setGraphFullscreen] = useState(false);
   const [hiddenModules, setHiddenModules] = useState<Set<ModuleId>>(() => getHiddenModules());
+  const [dailyDigest, setDailyDigest] = useState<DailyDigest | null>(null);
   const [captureOpen, setCaptureOpen] = useState(false);
   const [captureKind, setCaptureKind] = useState<NoteKind | undefined>(undefined);
   const [nodeEditor, setNodeEditor] = useState<{ open: boolean; noteId: string | null; position?: NotePosition }>({
@@ -405,6 +407,29 @@ export default function App() {
     window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
   }, [api.notes, api.ready, applyHealthDrafts, notify]);
 
+  useEffect(() => {
+    if (!api.ready) return;
+    const now = new Date();
+    const schedule = getDigestSchedule();
+    const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const history = loadDigestHistory();
+    const existing = history.find((digest) => digest.dateKey === todayKey) ?? null;
+    if (schedule.enabled && isDigestDue(now, schedule.time)) {
+      const digest = buildDailyDigest(api.notes, now);
+      saveDigestToHistory(digest);
+      setDailyDigest(digest);
+    } else {
+      setDailyDigest(existing);
+    }
+  }, [api.ready]);
+
+  const generateDigest = useCallback(() => {
+    const digest = buildDailyDigest(api.notes);
+    saveDigestToHistory(digest);
+    setDailyDigest(digest);
+    notify('今日汇总已生成，去助手查看');
+  }, [api.notes, notify]);
+
   const brief = useMemo(() => buildDailyBrief(api.notes), [api.notes]);
   const range = useMemo(() => summarizeRange(api.notes, 7), [api.notes]);
 
@@ -530,6 +555,7 @@ export default function App() {
                 }}
                 fullscreen={graphFullscreen}
                 onToggleFullscreen={() => setGraphFullscreen((value) => !value)}
+                onOpenDirectory={() => navigate({ name: 'directories' })}
               />
             </div>
           </div>
@@ -543,6 +569,7 @@ export default function App() {
             onOpenNote={openNote}
             onEditPersona={() => navigate({ name: 'settings' })}
             onCreateRecord={() => openCapture()}
+            dailyDigest={dailyDigest}
           />
         );
       case 'search':
@@ -567,6 +594,7 @@ export default function App() {
             persona={persona}
             onPersonaChange={handlePersonaChange}
             onImportHealth={importHealthText}
+            onGenerateDigest={generateDigest}
           />
         );
       case 'today':

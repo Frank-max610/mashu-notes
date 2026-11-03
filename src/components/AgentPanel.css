@@ -406,3 +406,22 @@
     scroll-behavior: auto;
   }
 }
+
+/* knowledge-base citations */
+.agent-screen__sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.agent-screen__source {
+  max-width: 100%;
+  padding: 4px 9px;
+  border-radius: var(--radius-full);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

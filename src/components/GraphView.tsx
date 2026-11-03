@@ -2,22 +2,25 @@ import { useEffect, useRef, useState } from 'react';
 import type { Note, NoteKind, NotePosition } from '../lib/types';
 import { buildGraph, seedPositions } from '../lib/graph';
 import type { Graph, GraphNode } from '../lib/graph';
+import { directoryList, isDirectory } from '../lib/directories';
 import { NOTE_KINDS } from '../lib/kinds';
 import { Icon } from './Icon';
 import './GraphView.css';
 
 /**
- * P1 force-directed life graph (design doc §10).
+ * P1 force-directed life graph (design doc §10) + user directories (v0.10).
  *
  * A warm, near-fullscreen canvas with a living force simulation: node drag moves
  * the node and lets neighbours respond in real time, then reheats the simulation
  * on release so the map re-balances around the saved position. Hover reveals the
  * first-degree neighbourhood (everything else dims) and selects open a compact
- * bottom node inspector. All editing behavior (add/link/reset, position saving,
- * pinch zoom, reduced motion) is preserved.
+ * bottom node inspector.
  *
- * Coordinates are simulation/canvas space; the viewport is a separate pan/zoom
- * transform so camera moves never restart the physics.
+ * User-created knowledge-base directories become coloured hub nodes: members
+ * inherit their directory colour and cluster weakly around the hub, so N
+ * directories read as N branches. A 目录/记录 toggle switches to a pure
+ * directory view (hubs + cross-directory relations derived from member links),
+ * and directory selection opens a member-list inspector.
  */
 
 export interface GraphViewProps {
@@ -43,6 +46,8 @@ export interface GraphViewProps {
   fullscreen?: boolean;
   /** App toggles immersive explore (button hidden when absent). */
   onToggleFullscreen?: () => void;
+  /** Optional: directory inspector "打开目录" action (hidden when absent). */
+  onOpenDirectory?: (id: string) => void;
 }
 
 type GraphMode = 'idle' | 'add' | 'connect';
@@ -153,7 +158,19 @@ const FORCE = {
   initialAlpha: 1,
   dragAlpha: 0.3,
   releaseAlpha: 0.42,
+  /** Directory hubs are anchored on a ring so each directory owns a branch. */
+  directoryAnchorStrength: 0.03,
+  directoryCenterStrength: 0.003,
+  /** Members weakly orbit their hub (link springs add the rest). */
+  memberAttraction: 0.012,
+  memberKindNudge: 0.0018,
+  directoryLinkDistance: 96,
+  directoryLinkStrength: 0.02,
+  hubRepulsionBoost: 1.6,
 };
+
+/** Fallback when a directory note has no colour yet. */
+const DEFAULT_DIRECTORY_COLOR = '#7d7164';
 
 /** Kind → warm category token. */
 const KIND_COLOR_VARS: Record<NoteKind, string> = {
@@ -285,9 +302,9 @@ function radiusForDegree(degree: number): number {
   return 5 + Math.min(9, Math.sqrt(Math.max(0, degree)) * 2.4);
 }
 
-function truncateLabel(title: string): string {
+function truncateLabel(title: string, max = MAX_LABEL_CHARS): string {
   const text = title.trim();
-  return text.length > MAX_LABEL_CHARS ? `${text.slice(0, MAX_LABEL_CHARS - 1)}…` : text;
+  return text.length > max ? `${text.slice(0, max - 1)}…` : text;
 }
 
 /** Plain-text excerpt for the inspector (light markdown stripping). */
@@ -330,6 +347,72 @@ function neighbourIds(graph: Graph, id: string): Set<string> {
   return ids;
 }
 
+/** Directory hubs, ordered deterministically so anchors never jump around. */
+function directoryNodes(graph: Graph): GraphNode[] {
+  return graph.nodes.filter((node) => node.directory).sort((a, b) => a.id.localeCompare(b.id));
+}
+
+/** Directory hub id → warm colour (every hub has one, with a quiet fallback). */
+function directoryColorMap(graph: Graph): Map<string, string> {
+  const colors = new Map<string, string>();
+  for (const node of graph.nodes) {
+    if (!node.directory) continue;
+    colors.set(node.id, node.dirColor || DEFAULT_DIRECTORY_COLOR);
+  }
+  return colors;
+}
+
+/** Directory hubs are bigger than regular notes (they anchor whole branches). */
+function nodeRadius(node: GraphNode): number {
+  const base = radiusForDegree(node.degree);
+  return node.directory ? base + 4.5 : base;
+}
+
+interface CrossDirectoryEdge {
+  source: string;
+  target: string;
+  weight: number;
+}
+
+/**
+ * Directory-view relations: member wiki/manual links that cross two different
+ * directories, deduped per directory pair. Pure + deterministic.
+ */
+function crossDirectoryEdges(graph: Graph, directoryIds: Set<string>): CrossDirectoryEdge[] {
+  const nodeById = new Map<string, GraphNode>();
+  for (const node of graph.nodes) nodeById.set(node.id, node);
+  const pairs = new Map<string, CrossDirectoryEdge>();
+  for (const edge of graph.edges) {
+    if (edge.type !== 'wiki' && edge.type !== 'manual') continue;
+    const source = nodeById.get(edge.source);
+    const target = nodeById.get(edge.target);
+    if (!source || !target) continue;
+    const from = source.dirId;
+    const to = target.dirId;
+    if (!from || !to || from === to) continue;
+    if (!directoryIds.has(from) || !directoryIds.has(to)) continue;
+    const key = from < to ? `${from}\u0000${to}` : `${to}\u0000${from}`;
+    const existing = pairs.get(key);
+    if (existing) existing.weight += 1;
+    else pairs.set(key, { source: from, target: to, weight: 1 });
+  }
+  return [...pairs.values()];
+}
+
+/** First-degree directory neighbours in the 目录 view. */
+function crossDirectoryNeighbours(
+  graph: Graph,
+  directoryIds: Set<string>,
+  id: string,
+): Set<string> {
+  const ids = new Set<string>();
+  for (const edge of crossDirectoryEdges(graph, directoryIds)) {
+    if (edge.source === id) ids.add(edge.target);
+    else if (edge.target === id) ids.add(edge.source);
+  }
+  return ids;
+}
+
 /**
  * One force-simulation step in canvas space. Keeps fixed (saved) nodes pinned.
  * `stress` is the simulation alpha (1 = hot start, → 0 = settled).
@@ -365,6 +448,27 @@ function stepSimulation(graph: Graph, width: number, height: number, stress: num
     };
   };
 
+  // Directory branches: each hub is anchored on its own spot of a quiet ring so
+  // N directories produce N visibly separate clusters instead of one blob.
+  const directoryList: GraphNode[] = nodes
+    .filter((node) => node.directory)
+    .sort((a, b) => a.id.localeCompare(b.id));
+  const directoryById = new Map<string, GraphNode>();
+  const directoryAnchor = new Map<string, { x: number; y: number }>();
+  const directoryRing = Math.max(24, Math.min(w, h) * 0.28);
+  directoryList.forEach((node, index) => {
+    directoryById.set(node.id, node);
+    if (directoryList.length === 1) {
+      directoryAnchor.set(node.id, { x: centerX, y: centerY });
+      return;
+    }
+    const angle = -Math.PI / 2 + (index / directoryList.length) * Math.PI * 2;
+    directoryAnchor.set(node.id, {
+      x: centerX + Math.cos(angle) * directoryRing,
+      y: centerY + Math.sin(angle) * directoryRing,
+    });
+  });
+
   // Pairwise repulsion (charge).
   for (let i = 0; i < count; i += 1) {
     for (let j = i + 1; j < count; j += 1) {
@@ -378,7 +482,8 @@ function stepSimulation(graph: Graph, width: number, height: number, stress: num
         distanceSq = 1;
       }
       const distance = Math.sqrt(distanceSq);
-      const force = (FORCE.repulsion * stress) / distanceSq;
+      const hubMass = nodes[i].directory || nodes[j].directory ? FORCE.hubRepulsionBoost : 1;
+      const force = (FORCE.repulsion * hubMass * stress) / distanceSq;
       const ux = dx / distance;
       const uy = dy / distance;
       forceX[i] += ux * force;
@@ -396,7 +501,10 @@ function stepSimulation(graph: Graph, width: number, height: number, stress: num
     const dx = nodes[targetIndex].x - nodes[sourceIndex].x;
     const dy = nodes[targetIndex].y - nodes[sourceIndex].y;
     const distance = Math.sqrt(dx * dx + dy * dy) || 0.01;
-    const force = (distance - FORCE.linkDistance) * FORCE.linkStrength * stress;
+    const rest = edge.type === 'directory' ? FORCE.directoryLinkDistance : FORCE.linkDistance;
+    const strength =
+      edge.type === 'directory' ? FORCE.directoryLinkStrength : FORCE.linkStrength;
+    const force = (distance - rest) * strength * stress;
     const ux = dx / distance;
     const uy = dy / distance;
     forceX[sourceIndex] += ux * force;
@@ -405,14 +513,35 @@ function stepSimulation(graph: Graph, width: number, height: number, stress: num
     forceY[targetIndex] -= uy * force;
   }
 
-  // Weak centering + weak category clustering.
+  // Weak centering + category clustering; directories take over the structure.
   for (let i = 0; i < count; i += 1) {
     const node = nodes[i];
+    if (node.directory) {
+      // Hubs hold their ring spot so the branches stay readable.
+      const anchor = directoryAnchor.get(node.id);
+      if (anchor) {
+        forceX[i] += (anchor.x - node.x) * FORCE.directoryAnchorStrength * stress;
+        forceY[i] += (anchor.y - node.y) * FORCE.directoryAnchorStrength * stress;
+      }
+      forceX[i] += (centerX - node.x) * FORCE.directoryCenterStrength * stress;
+      forceY[i] += (centerY - node.y) * FORCE.directoryCenterStrength * stress;
+      continue;
+    }
+    const directory = node.dirId ? directoryById.get(node.dirId) : undefined;
+    if (directory) {
+      // Members orbit their directory hub (weak per-directory clustering).
+      forceX[i] += (directory.x - node.x) * FORCE.memberAttraction * stress;
+      forceY[i] += (directory.y - node.y) * FORCE.memberAttraction * stress;
+      const kindAnchor = anchorFor(node.kind);
+      forceX[i] += (kindAnchor.x - node.x) * FORCE.memberKindNudge * stress;
+      forceY[i] += (kindAnchor.y - node.y) * FORCE.memberKindNudge * stress;
+    } else {
+      const anchor = anchorFor(node.kind);
+      forceX[i] += (anchor.x - node.x) * FORCE.clusterStrength * stress;
+      forceY[i] += (anchor.y - node.y) * FORCE.clusterStrength * stress;
+    }
     forceX[i] += (centerX - node.x) * FORCE.centerStrength * stress;
     forceY[i] += (centerY - node.y) * FORCE.centerStrength * stress;
-    const anchor = anchorFor(node.kind);
-    forceX[i] += (anchor.x - node.x) * FORCE.clusterStrength * stress;
-    forceY[i] += (anchor.y - node.y) * FORCE.clusterStrength * stress;
   }
 
   // Integrate with velocity decay, speed clamp and soft canvas bounds.
@@ -465,8 +594,7 @@ function stepSimulation(graph: Graph, width: number, height: number, stress: num
       const dx = b.x - a.x;
       const dy = b.y - a.y;
       const distance = Math.sqrt(dx * dx + dy * dy) || 0.01;
-      const minDistance =
-        radiusForDegree(a.degree) + radiusForDegree(b.degree) + FORCE.collisionPadding;
+      const minDistance = nodeRadius(a) + nodeRadius(b) + FORCE.collisionPadding;
       if (distance >= minDistance) continue;
       const overlap = (minDistance - distance) * 0.5;
       const ux = dx / distance;
@@ -516,6 +644,7 @@ export function GraphView({
   onDeleteNote,
   fullscreen = false,
   onToggleFullscreen,
+  onOpenDirectory,
 }: GraphViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -546,6 +675,8 @@ export function GraphView({
   const [connectSource, setConnectSource] = useState<string | null>(null);
   const [legendOpen, setLegendOpen] = useState<boolean>(false);
   const [hasGhost, setHasGhost] = useState<boolean>(false);
+  /** 记录 (all notes) vs 目录 (directories + cross-directory relations only). */
+  const [dirView, setDirView] = useState<'all' | 'directories'>('all');
 
   // Latest props kept in refs so the canvas loop always sees fresh values
   // without being torn down and rebuilt on every React render.
@@ -553,6 +684,7 @@ export function GraphView({
   const selectedIdRef = useRef<string | null>(selectedNoteId);
   const modeRef = useRef<GraphMode>(mode);
   const connectSourceRef = useRef<string | null>(connectSource);
+  const dirViewRef = useRef<'all' | 'directories'>(dirView);
   const onSelectRef = useRef(onSelectNote);
   const onOpenRef = useRef(onOpenNote);
   const onMoveRef = useRef(onMoveNote);
@@ -564,6 +696,7 @@ export function GraphView({
   selectedIdRef.current = selectedNoteId;
   modeRef.current = mode;
   connectSourceRef.current = connectSource;
+  dirViewRef.current = dirView;
   onSelectRef.current = onSelectNote;
   onOpenRef.current = onOpenNote;
   onMoveRef.current = onMoveNote;
@@ -665,8 +798,9 @@ export function GraphView({
     selected: boolean,
     active: boolean,
     hovered: boolean,
+    directoryColors: Map<string, string>,
   ): void {
-    const radius = radiusForDegree(node.degree);
+    const radius = nodeRadius(node);
 
     if (node.ghost) {
       context.beginPath();
@@ -679,18 +813,35 @@ export function GraphView({
       return;
     }
 
-    const color = palette.kindColors[node.kind] ?? palette.textMuted;
+    // Members inherit their directory colour; unassigned notes keep kind colour.
+    const color =
+      (node.directory ? directoryColors.get(node.id) : undefined) ??
+      (node.dirId ? directoryColors.get(node.dirId) : undefined) ??
+      palette.kindColors[node.kind] ??
+      palette.textMuted;
+
+    if (node.directory) {
+      // Quiet coloured halo: a directory hub reads as a branch, never neon.
+      context.beginPath();
+      context.arc(node.x, node.y, radius + 4 / scale, 0, Math.PI * 2);
+      context.lineWidth = 1.4 / scale;
+      context.strokeStyle = colorToRgba(color, 0.38);
+      context.stroke();
+    }
+
     context.beginPath();
     context.arc(node.x, node.y, radius, 0, Math.PI * 2);
     context.fillStyle = color;
     context.fill();
-    context.lineWidth = 1 / scale;
-    context.strokeStyle = colorToRgba(palette.text, 0.14);
+    context.lineWidth = (node.directory ? 1.4 : 1) / scale;
+    context.strokeStyle = node.directory
+      ? colorToRgba(palette.panel, 0.72)
+      : colorToRgba(palette.text, 0.14);
     context.stroke();
 
     if (selected) {
       context.beginPath();
-      context.arc(node.x, node.y, radius + 3 / scale, 0, Math.PI * 2);
+      context.arc(node.x, node.y, radius + (node.directory ? 5 : 3) / scale, 0, Math.PI * 2);
       context.lineWidth = 1.5 / scale;
       context.strokeStyle = colorToRgba(palette.accent, 0.9);
       context.stroke();
@@ -734,12 +885,27 @@ export function GraphView({
     const selectedId = selectedIdRef.current;
     const hoveredId = hoveredIdRef.current;
     const pendingSource = modeRef.current === 'connect' ? connectSourceRef.current : null;
-    const focusId = hoveredId ?? selectedId;
-    const dimOthers = hoveredId !== null && hoveredId !== selectedId;
+    const directoryView = dirViewRef.current === 'directories';
+    const directories = directoryNodes(graph);
+    const directoryIds = new Set(directories.map((node) => node.id));
+    const directoryColors = directoryColorMap(graph);
+    const visibleNodes = directoryView ? directories : graph.nodes;
+    const visibleIds = new Set(visibleNodes.map((node) => node.id));
+
+    const nodeById = new Map<string, GraphNode>();
+    for (const node of graph.nodes) nodeById.set(node.id, node);
+
+    const focusCandidate = hoveredId ?? selectedId;
+    const focusId =
+      focusCandidate !== null && visibleIds.has(focusCandidate) ? focusCandidate : null;
+    const dimOthers = hoveredId !== null && visibleIds.has(hoveredId);
     const focusNodes = new Set<string>();
     if (focusId) {
       focusNodes.add(focusId);
-      for (const id of neighbourIds(graph, focusId)) focusNodes.add(id);
+      const neighbours = directoryView
+        ? crossDirectoryNeighbours(graph, directoryIds, focusId)
+        : neighbourIds(graph, focusId);
+      for (const id of neighbours) focusNodes.add(id);
     }
 
     context.setTransform(1, 0, 0, 1, 0, 0);
@@ -747,59 +913,96 @@ export function GraphView({
     if (graph.nodes.length === 0) return;
     if (!layoutReadyRef.current) return;
 
-    const nodeById = new Map<string, GraphNode>();
-    for (const node of graph.nodes) nodeById.set(node.id, node);
-
     context.setTransform(dpr * view.scale, 0, 0, dpr * view.scale, dpr * view.tx, dpr * view.ty);
     context.lineCap = 'round';
     context.lineJoin = 'round';
 
-    // ---- edges: thin warm threads, first-degree highlighted on focus ----
-    for (const edge of graph.edges) {
-      const source = nodeById.get(edge.source);
-      const target = nodeById.get(edge.target);
-      if (!source || !target) continue;
-      const incident = focusId !== null && (edge.source === focusId || edge.target === focusId);
-      const dimmed = dimOthers && !incident;
-      let alpha: number;
-      let stroke: string;
-      if (dimmed) {
-        alpha = 0.12;
-        stroke = palette.edge;
-      } else if (incident) {
-        alpha = 0.7;
-        stroke = palette.accent;
-      } else if (edge.type === 'manual') {
-        alpha = 0.8;
-        stroke = palette.edge;
-      } else if (edge.type === 'day') {
-        alpha = 0.3;
-        stroke = palette.edge;
-      } else {
-        alpha = 0.55;
-        stroke = palette.edge;
+    // ---- edges ----
+    if (directoryView) {
+      // 目录 view: only cross-directory relations, weighted by how many member
+      // links connect the two directories.
+      for (const edge of crossDirectoryEdges(graph, directoryIds)) {
+        const source = nodeById.get(edge.source);
+        const target = nodeById.get(edge.target);
+        if (!source || !target) continue;
+        const incident = focusId !== null && (edge.source === focusId || edge.target === focusId);
+        const dimmed = dimOthers && !incident;
+        context.globalAlpha = dimmed ? 0.16 : incident ? 0.85 : 0.5;
+        context.strokeStyle = incident ? palette.accent : palette.edge;
+        context.lineWidth =
+          (incident ? 1.8 : 1.2 + Math.min(0.6, (edge.weight - 1) * 0.25)) / view.scale;
+        context.beginPath();
+        context.moveTo(source.x, source.y);
+        context.lineTo(target.x, target.y);
+        context.stroke();
       }
-      context.globalAlpha = alpha;
-      context.strokeStyle = stroke;
-      context.lineWidth = (incident ? 1.4 : 1) / view.scale;
-      if (edge.type === 'day' && !incident) {
-        context.setLineDash([2.6 / view.scale, 3.4 / view.scale]);
-      } else {
-        context.setLineDash([]);
+    } else {
+      // Directory threads sit under the regular links, tinted by their branch.
+      for (const edge of graph.edges) {
+        if (edge.type !== 'directory') continue;
+        const source = nodeById.get(edge.source);
+        const target = nodeById.get(edge.target);
+        if (!source || !target) continue;
+        const color = directoryColors.get(edge.target) ?? palette.edge;
+        const incident = focusId !== null && (edge.source === focusId || edge.target === focusId);
+        const dimmed = dimOthers && !incident;
+        context.globalAlpha = dimmed ? 0.14 : incident ? 0.78 : 0.42;
+        context.strokeStyle = incident ? palette.accent : color;
+        context.lineWidth = (incident ? 1.5 : 1.1) / view.scale;
+        context.beginPath();
+        context.moveTo(source.x, source.y);
+        context.lineTo(target.x, target.y);
+        context.stroke();
       }
-      context.beginPath();
-      context.moveTo(source.x, source.y);
-      context.lineTo(target.x, target.y);
-      context.stroke();
+      // Regular wiki/manual/day threads: thin warm lines, first-degree focused.
+      for (const edge of graph.edges) {
+        if (edge.type === 'directory') continue;
+        const source = nodeById.get(edge.source);
+        const target = nodeById.get(edge.target);
+        if (!source || !target) continue;
+        const incident = focusId !== null && (edge.source === focusId || edge.target === focusId);
+        const dimmed = dimOthers && !incident;
+        let alpha: number;
+        let stroke: string;
+        if (dimmed) {
+          alpha = 0.12;
+          stroke = palette.edge;
+        } else if (incident) {
+          alpha = 0.7;
+          stroke = palette.accent;
+        } else if (edge.type === 'manual') {
+          alpha = 0.8;
+          stroke = palette.edge;
+        } else if (edge.type === 'day') {
+          alpha = 0.3;
+          stroke = palette.edge;
+        } else {
+          alpha = 0.55;
+          stroke = palette.edge;
+        }
+        context.globalAlpha = alpha;
+        context.strokeStyle = stroke;
+        context.lineWidth = (incident ? 1.4 : 1) / view.scale;
+        if (edge.type === 'day' && !incident) {
+          context.setLineDash([2.6 / view.scale, 3.4 / view.scale]);
+        } else {
+          context.setLineDash([]);
+        }
+        context.beginPath();
+        context.moveTo(source.x, source.y);
+        context.lineTo(target.x, target.y);
+        context.stroke();
+      }
     }
     context.globalAlpha = 1;
     context.setLineDash([]);
 
-    // ---- nodes: ghosts first, dimmed background, focused last ----
+    // ---- nodes: ghosts first, regular notes, and directory hubs on top ----
     const selectedNode = selectedId ? nodeById.get(selectedId) : undefined;
-    const activeNode = activeId && activeId !== selectedId ? nodeById.get(activeId) : undefined;
-    const orderedNodes = [...graph.nodes].sort((a, b) => {
+    const activeNode = activeId ? nodeById.get(activeId) : undefined;
+    const orderedNodes = [...visibleNodes].sort((a, b) => {
       if (a.ghost !== b.ghost) return a.ghost ? -1 : 1;
+      if (Boolean(a.directory) !== Boolean(b.directory)) return a.directory ? 1 : -1;
       return a.degree - b.degree;
     });
     const drawOne = (node: GraphNode, alpha: number): void => {
@@ -812,6 +1015,7 @@ export function GraphView({
         node.id === selectedId,
         node.id === activeId,
         node.id === hoveredId,
+        directoryColors,
       );
     };
     for (const node of orderedNodes) {
@@ -820,7 +1024,7 @@ export function GraphView({
       const dimmed = dimOthers && !inFocus;
       drawOne(node, dimmed ? 0.2 : 1);
     }
-    if (pendingSource) {
+    if (pendingSource && visibleIds.has(pendingSource)) {
       const sourceNode = nodeById.get(pendingSource);
       if (sourceNode && !sourceNode.ghost) {
         context.globalAlpha = 1;
@@ -828,7 +1032,7 @@ export function GraphView({
         context.arc(
           sourceNode.x,
           sourceNode.y,
-          radiusForDegree(sourceNode.degree) + 6 / view.scale,
+          nodeRadius(sourceNode) + 6 / view.scale,
           0,
           Math.PI * 2,
         );
@@ -839,58 +1043,67 @@ export function GraphView({
         context.setLineDash([]);
       }
     }
-    if (selectedNode && !selectedNode.ghost) {
+    if (selectedNode && !selectedNode.ghost && visibleIds.has(selectedNode.id)) {
       const dimmed = dimOthers && !focusNodes.has(selectedNode.id);
       drawOne(selectedNode, dimmed ? 0.35 : 1);
     }
-    if (activeNode && !activeNode.ghost) {
+    if (activeNode && !activeNode.ghost && visibleIds.has(activeNode.id)) {
       drawOne(activeNode, 1);
     }
     context.globalAlpha = 1;
 
-    // ---- labels: important by default; focus reveals first-degree labels ----
+    // ---- labels: directory names always; important notes; focus first-degree ----
     if (view.scale < LABEL_MIN_SCALE) return;
 
+    const important = importantNodeIds(graph);
     const labelIds = new Set<string>();
-    if (hoveredId) {
+    const labelNeighbours = (id: string): Set<string> =>
+      directoryView
+        ? crossDirectoryNeighbours(graph, directoryIds, id)
+        : neighbourIds(graph, id);
+    if (hoveredId !== null && visibleIds.has(hoveredId)) {
       labelIds.add(hoveredId);
-      for (const id of neighbourIds(graph, hoveredId)) labelIds.add(id);
-    } else if (selectedId) {
-      for (const id of importantNodeIds(graph)) labelIds.add(id);
+      for (const id of labelNeighbours(hoveredId)) if (visibleIds.has(id)) labelIds.add(id);
+    } else if (selectedId !== null && visibleIds.has(selectedId)) {
+      for (const id of important) if (visibleIds.has(id)) labelIds.add(id);
       labelIds.add(selectedId);
-      for (const id of neighbourIds(graph, selectedId)) labelIds.add(id);
+      for (const id of labelNeighbours(selectedId)) if (visibleIds.has(id)) labelIds.add(id);
     } else {
-      for (const id of importantNodeIds(graph)) labelIds.add(id);
+      for (const id of important) if (visibleIds.has(id)) labelIds.add(id);
     }
+    // Directory hubs are always labelled.
+    for (const node of directories) labelIds.add(node.id);
 
     context.setTransform(dpr, 0, 0, dpr, 0, 0);
     context.textAlign = 'center';
     context.textBaseline = 'middle';
 
-    const priority = graph.nodes
+    const priority = visibleNodes
       .filter((node) => labelIds.has(node.id))
       .sort((a, b) => {
         const focusA = a.id === focusId ? 1 : 0;
         const focusB = b.id === focusId ? 1 : 0;
         if (focusA !== focusB) return focusB - focusA;
+        if (Boolean(a.directory) !== Boolean(b.directory)) return a.directory ? -1 : 1;
         return b.degree - a.degree || a.title.localeCompare(b.title);
       });
     const takenLabelAreas: Array<{ left: number; right: number; top: number; bottom: number }> = [];
     for (const node of priority) {
-      const label = truncateLabel(node.title);
+      const isDirectoryNode = Boolean(node.directory);
+      const isFocused = node.id === hoveredId || node.id === selectedId;
+      const label = truncateLabel(node.title, isDirectoryNode ? 18 : MAX_LABEL_CHARS);
       if (!label) continue;
       const screenX = node.x * view.scale + view.tx;
       const screenY = node.y * view.scale + view.ty;
-      if (screenX < -120 || screenX > width + 120 || screenY < -30 || screenY > height + 30) {
+      if (screenX < -140 || screenX > width + 140 || screenY < -30 || screenY > height + 30) {
         continue;
       }
-      const isFocused = node.id === hoveredId || node.id === selectedId;
-      context.font = isFocused
+      context.font = isDirectoryNode || isFocused
         ? `600 ${FOCUS_LABEL_FONT_SIZE}px ${palette.fontSans}`
         : `400 ${LABEL_FONT_SIZE}px ${palette.fontSans}`;
       const textWidth = context.measureText(label).width;
       if (textWidth > width - 12) continue;
-      const radius = radiusForDegree(node.degree) * view.scale;
+      const radius = nodeRadius(node) * view.scale;
       const labelX = clamp(screenX, textWidth / 2 + 4, width - textWidth / 2 - 4);
       let labelY = screenY + radius + 9;
       if (labelY + 7 > height - 4) labelY = screenY - radius - 9;
@@ -901,7 +1114,7 @@ export function GraphView({
         top: labelY - 8,
         bottom: labelY + 8,
       };
-      if (!isFocused) {
+      if (!isFocused && !isDirectoryNode) {
         const overlaps = takenLabelAreas.some(
           (other) =>
             area.left < other.right + 2 &&
@@ -917,7 +1130,7 @@ export function GraphView({
       context.lineWidth = 3;
       context.strokeStyle = colorToRgba(palette.panel, 0.85);
       context.strokeText(label, labelX, labelY);
-      context.fillStyle = isFocused
+      context.fillStyle = isDirectoryNode || isFocused
         ? palette.text
         : node.ghost
           ? colorToRgba(palette.textMuted, 0.55)
@@ -958,6 +1171,7 @@ export function GraphView({
       };
       reserve('.graph-floating-title', 'top');
       reserve('.graph-toolbar', 'top');
+      reserve('.graph-view-toggle', 'top');
       reserve('.graph-hint', 'top');
       reserve('.graph-legend-wrap', 'bottom');
       reserve('.graph-view-controls', 'bottom');
@@ -974,7 +1188,7 @@ export function GraphView({
     return { left, top, right, bottom };
   }
 
-  /** Union of node dots and the labels that will be visible, in screen space. */
+  /** Union of visible node dots and their labels, in screen space. */
   function measureFitContent(
     scale: number,
     tx: number,
@@ -983,6 +1197,10 @@ export function GraphView({
     const graph = graphRef.current;
     if (!graph) return { left: 0, top: 0, right: 1, bottom: 1 };
     const selectedId = selectedIdRef.current;
+    const directoryView = dirViewRef.current === 'directories';
+    const directories = directoryNodes(graph);
+    const visibleNodes = directoryView ? directories : graph.nodes;
+    const visibleIds = new Set(visibleNodes.map((node) => node.id));
     let left = Infinity;
     let top = Infinity;
     let right = -Infinity;
@@ -994,10 +1212,18 @@ export function GraphView({
       if (b > bottom) bottom = b;
     };
 
-    for (const node of graph.nodes) {
-      const radius = radiusForDegree(node.degree) * scale;
+    for (const node of visibleNodes) {
+      const radius = nodeRadius(node) * scale;
       const padding =
-        node.id === selectedId ? 14 : node.id === activeIdRef.current ? 12 : node.ghost ? 8 : 5;
+        node.id === selectedId
+          ? 14
+          : node.id === activeIdRef.current
+            ? 12
+            : node.directory
+              ? 10
+              : node.ghost
+                ? 8
+                : 5;
       const screenX = node.x * scale + tx;
       const screenY = node.y * scale + ty;
       include(
@@ -1012,18 +1238,21 @@ export function GraphView({
     if (context) {
       const palette = getPalette();
       const canvasWidth = sizeRef.current.width;
-      const labelIds = importantNodeIds(graph);
-      if (selectedId) labelIds.add(selectedId);
-      for (const node of graph.nodes) {
+      const labelIds = new Set<string>();
+      for (const id of importantNodeIds(graph)) if (visibleIds.has(id)) labelIds.add(id);
+      if (selectedId && visibleIds.has(selectedId)) labelIds.add(selectedId);
+      for (const node of directories) labelIds.add(node.id);
+      for (const node of visibleNodes) {
         if (!labelIds.has(node.id)) continue;
-        const label = truncateLabel(node.title);
-        if (!label) continue;
+        const isDirectoryNode = Boolean(node.directory);
         const focused = node.id === selectedId;
-        context.font = focused
+        const label = truncateLabel(node.title, isDirectoryNode ? 18 : MAX_LABEL_CHARS);
+        if (!label) continue;
+        context.font = isDirectoryNode || focused
           ? `600 ${FOCUS_LABEL_FONT_SIZE}px ${palette.fontSans}`
           : `400 ${LABEL_FONT_SIZE}px ${palette.fontSans}`;
         const labelWidth = Math.min(context.measureText(label).width + 4, canvasWidth - 12);
-        const radius = radiusForDegree(node.degree) * scale;
+        const radius = nodeRadius(node) * scale;
         const screenX = node.x * scale + tx;
         const screenY = node.y * scale + ty;
         const labelTop = screenY + radius + 8;
@@ -1034,13 +1263,17 @@ export function GraphView({
     return { left, top, right, bottom };
   }
 
-  /** Camera that fits every node and its visible labels inside the safe rect. */
+  /** Camera that fits every visible node and label inside the safe rect. */
   function computeFitView(): Viewport {
     const graph = graphRef.current;
     const { width, height } = sizeRef.current;
-    if (!graph || graph.nodes.length === 0 || width < 2 || height < 2) {
+    if (!graph || width < 2 || height < 2) {
       return { scale: 1, tx: 0, ty: 0 };
     }
+    const directoryView = dirViewRef.current === 'directories';
+    const directories = directoryNodes(graph);
+    const visibleNodes = directoryView ? directories : graph.nodes;
+    if (visibleNodes.length === 0) return { scale: 1, tx: 0, ty: 0 };
 
     const safe = getSafeRect(width, height);
     const availableWidth = Math.max(40, safe.right - safe.left - 8);
@@ -1052,8 +1285,10 @@ export function GraphView({
     let minY = Infinity;
     let maxX = -Infinity;
     let maxY = -Infinity;
-    for (const node of graph.nodes) {
-      const radius = radiusForDegree(node.degree) + (node.id === selectedIdRef.current ? 14 : 5);
+    for (const node of visibleNodes) {
+      const radius =
+        nodeRadius(node) +
+        (node.id === selectedIdRef.current ? 14 : node.directory ? 10 : 5);
       minX = Math.min(minX, node.x - radius);
       minY = Math.min(minY, node.y - radius);
       maxX = Math.max(maxX, node.x + radius);
@@ -1261,13 +1496,15 @@ export function GraphView({
     const graph = graphRef.current;
     if (!graph) return null;
     const view = viewRef.current;
+    const directoryView = dirViewRef.current === 'directories';
+    const candidates = directoryView ? directoryNodes(graph) : graph.nodes;
     let best: GraphNode | null = null;
     let bestDistance = Infinity;
-    for (const node of graph.nodes) {
+    for (const node of candidates) {
       const screenX = node.x * view.scale + view.tx;
       const screenY = node.y * view.scale + view.ty;
       const distance = Math.hypot(px - screenX, py - screenY);
-      const hitRadius = Math.max(22, radiusForDegree(node.degree) * view.scale + 14);
+      const hitRadius = Math.max(22, nodeRadius(node) * view.scale + 14);
       if (distance <= hitRadius && distance < bestDistance) {
         best = node;
         bestDistance = distance;
@@ -1299,6 +1536,10 @@ export function GraphView({
 
   function handleNodeTap(node: GraphNode): void {
     const currentMode = modeRef.current;
+    if (node.directory && currentMode === 'connect') {
+      // Directories connect through their members, not through hand-drawn links.
+      return;
+    }
     if (currentMode === 'connect') {
       const source = connectSourceRef.current;
       if (!source) {
@@ -1656,6 +1897,25 @@ export function GraphView({
     clearHover();
   }
 
+  /** 记录/目录 toggle: directory view shows only hubs + cross-directory edges. */
+  function setDirectoryView(next: 'all' | 'directories'): void {
+    if (dirViewRef.current === next) return;
+    dirViewRef.current = next;
+    setDirView(next);
+    setMode('idle');
+    setConnectSource(null);
+    lastTapRef.current = null;
+    clearHover();
+    if (next === 'directories') {
+      const selected = selectedIdRef.current;
+      const node = selected ? graphRef.current?.nodes.find((item) => item.id === selected) : undefined;
+      if (selected && (!node || !node.directory)) onSelectRef.current(null);
+    }
+    autoFitRef.current = true;
+    if (layoutReadyRef.current) fitView();
+    draw();
+  }
+
   /** Inspector 编辑: open the note editor through the App callback. */
   function handleEditSelected(id: string): void {
     if (onOpenRef.current) onOpenRef.current(id);
@@ -1830,6 +2090,12 @@ export function GraphView({
     draw();
   }, [mode, connectSource]);
 
+  // 记录 → 目录 switches to a new visible subset; re-fit + redraw.
+  useEffect(() => {
+    if (autoFitRef.current && layoutReadyRef.current) fitView();
+    draw();
+  }, [dirView]);
+
   const hint =
     mode === 'add'
       ? '添加模式 · 点空白处放一个新点'
@@ -1837,15 +2103,50 @@ export function GraphView({
         ? connectSource
           ? '连线模式 · 再选第二个节点'
           : '连线模式 · 选择第一个节点'
-        : null;
+        : dirView === 'directories'
+          ? '目录视图 · 点目录查看成员'
+          : null;
 
-  const presentKinds = NOTE_KINDS.filter((kind) => notes.some((note) => noteKind(note) === kind));
+  const directories = directoryList(notes);
+  const hasDirectories = directories.length > 0;
+  const directoryOnly = dirView === 'directories';
+  const activeNotes = notes.filter((note) => !note.archivedAt && !note.meta.plan);
+  const visibleNoteCount = activeNotes.filter((note) => !note.meta.directory).length;
+  /** Legend kinds are unassigned-only once directories drive the structure. */
+  const legendKinds = NOTE_KINDS.filter((kind) =>
+    notes.some(
+      (note) =>
+        !note.archivedAt &&
+        !note.meta.plan &&
+        !note.meta.directory &&
+        !note.dirId &&
+        noteKind(note) === kind,
+    ),
+  );
 
   // Compact node inspector data (derived from the selected note + graph edges).
   const inspectorNote = selectedNoteId ? notes.find((note) => note.id === selectedNoteId) ?? null : null;
+  const inspectorNode = selectedNoteId
+    ? graphRef.current?.nodes.find((node) => node.id === selectedNoteId)
+    : undefined;
+  const inspectorIsDirectory = Boolean(inspectorNode?.directory) || Boolean(inspectorNote && isDirectory(inspectorNote));
+  const inspectorDirectoryColor =
+    inspectorNode?.dirColor ?? (inspectorNote?.meta.directory?.color || DEFAULT_DIRECTORY_COLOR);
+  const directoryMembers =
+    inspectorIsDirectory && selectedNoteId
+      ? notes
+          .filter(
+            (note) =>
+              note.dirId === selectedNoteId &&
+              !note.archivedAt &&
+              !note.meta.plan &&
+              !isDirectory(note),
+          )
+          .sort((a, b) => b.updatedAt - a.updatedAt || a.title.localeCompare(b.title))
+      : [];
   let inspectorContacts: InspectorContact[] = [];
   let inspectorExcerpt = '';
-  if (inspectorNote) {
+  if (inspectorNote && !inspectorIsDirectory) {
     const graph = graphRef.current;
     const nodeById = new Map<string, GraphNode>();
     if (graph) for (const node of graph.nodes) nodeById.set(node.id, node);
@@ -1854,6 +2155,7 @@ export function GraphView({
     if (graph) {
       const seen = new Set<string>();
       for (const edge of graph.edges) {
+        if (edge.type === 'directory') continue;
         const outgoing = edge.source === inspectorNote.id;
         const incoming = edge.target === inspectorNote.id;
         if (!outgoing && !incoming) continue;
@@ -1907,10 +2209,34 @@ export function GraphView({
               ) : null}
             </div>
             <p className="graph-floating-meta">
-              {notes.length} 条记录
+              {directoryOnly
+                ? `${directories.length} 个目录 · 目录视图`
+                : `${visibleNoteCount} 条记录${hasDirectories ? ` · ${directories.length} 个目录` : ''}`}
               {mode === 'add' ? ' · 添加模式' : mode === 'connect' ? ' · 连线模式' : ''}
             </p>
           </div>
+          {hasDirectories ? (
+            <div className="graph-view-toggle" role="group" aria-label="图谱视图">
+              <button
+                type="button"
+                className={`graph-toggle-btn${dirView === 'all' ? ' is-active' : ''}`}
+                onClick={() => setDirectoryView('all')}
+                aria-label="记录视图"
+                aria-pressed={dirView === 'all'}
+              >
+                记录
+              </button>
+              <button
+                type="button"
+                className={`graph-toggle-btn${dirView === 'directories' ? ' is-active' : ''}`}
+                onClick={() => setDirectoryView('directories')}
+                aria-label="目录视图"
+                aria-pressed={dirView === 'directories'}
+              >
+                目录
+              </button>
+            </div>
+          ) : null}
           {hint ? (
             <div className="graph-hint" role="status">
               {hint}
@@ -1924,26 +2250,30 @@ export function GraphView({
             </div>
           ) : null}
           <div className="graph-toolbar" role="toolbar" aria-label="图谱工具">
-            <button
-              type="button"
-              className="icon-btn graph-btn"
-              onClick={toggleAddMode}
-              aria-label="添加记录"
-              title="添加记录"
-              aria-pressed={mode === 'add'}
-            >
-              <Icon name="plus" size={19} />
-            </button>
-            <button
-              type="button"
-              className="icon-btn graph-btn"
-              onClick={toggleConnectMode}
-              aria-label="连线"
-              title="连线"
-              aria-pressed={mode === 'connect'}
-            >
-              <Icon name="link" size={19} />
-            </button>
+            {!directoryOnly ? (
+              <>
+                <button
+                  type="button"
+                  className="icon-btn graph-btn"
+                  onClick={toggleAddMode}
+                  aria-label="添加记录"
+                  title="添加记录"
+                  aria-pressed={mode === 'add'}
+                >
+                  <Icon name="plus" size={19} />
+                </button>
+                <button
+                  type="button"
+                  className="icon-btn graph-btn"
+                  onClick={toggleConnectMode}
+                  aria-label="连线"
+                  title="连线"
+                  aria-pressed={mode === 'connect'}
+                >
+                  <Icon name="link" size={19} />
+                </button>
+              </>
+            ) : null}
             <button
               type="button"
               className="icon-btn graph-btn"
@@ -1999,17 +2329,34 @@ export function GraphView({
               </button>
               {legendOpen ? (
                 <div className="graph-legend" aria-label="图例">
-                  {presentKinds.map((kind) => (
-                    <span key={kind} className="graph-legend-item">
-                      <span
-                        className="graph-legend-dot"
-                        style={{ backgroundColor: `var(${KIND_COLOR_VARS[kind]})` }}
-                        aria-hidden="true"
-                      />
-                      <span>{KIND_LABELS[kind]}</span>
-                    </span>
-                  ))}
-                  {hasGhost ? (
+                  {hasDirectories
+                    ? directories.map((directory) => (
+                        <span key={directory.id} className="graph-legend-item">
+                          <span
+                            className="graph-legend-dot"
+                            style={{
+                              backgroundColor:
+                                directory.meta.directory?.color || DEFAULT_DIRECTORY_COLOR,
+                            }}
+                            aria-hidden="true"
+                          />
+                          <span>{truncateLabel(directory.title, 10)}</span>
+                        </span>
+                      ))
+                    : null}
+                  {!directoryOnly
+                    ? legendKinds.map((kind) => (
+                        <span key={kind} className="graph-legend-item">
+                          <span
+                            className="graph-legend-dot"
+                            style={{ backgroundColor: `var(${KIND_COLOR_VARS[kind]})` }}
+                            aria-hidden="true"
+                          />
+                          <span>{KIND_LABELS[kind]}</span>
+                        </span>
+                      ))
+                    : null}
+                  {hasGhost && !directoryOnly ? (
                     <span className="graph-legend-item">
                       <span
                         className="graph-legend-dot graph-legend-dot--ghost"
@@ -2023,7 +2370,69 @@ export function GraphView({
             </div>
           ) : null}
           {inspectorNote ? (
-            <section className="graph-inspector" aria-label="节点详情">
+            inspectorIsDirectory ? (
+              <section className="graph-inspector graph-inspector--directory" aria-label="目录详情">
+                <header className="graph-inspector-head">
+                  <span className="graph-inspector-kind">
+                    <span
+                      className="graph-inspector-dot"
+                      style={{ backgroundColor: inspectorDirectoryColor }}
+                      aria-hidden="true"
+                    />
+                    目录
+                  </span>
+                  <h3 className="graph-inspector-title">{inspectorNote.title}</h3>
+                  <button
+                    type="button"
+                    className="graph-inspector-close"
+                    aria-label="关闭节点详情"
+                    onClick={() => onSelectNote(null)}
+                  >
+                    <Icon name="close" size={16} />
+                  </button>
+                </header>
+                <p className="graph-inspector-meta">{directoryMembers.length} 条记录</p>
+                <div className="graph-inspector-connections">
+                  <span className="graph-inspector-label">目录内记录</span>
+                  {directoryMembers.length > 0 ? (
+                    <div className="graph-inspector-chips">
+                      {directoryMembers.slice(0, 6).map((member) => (
+                        <button
+                          key={member.id}
+                          type="button"
+                          className="graph-chip"
+                          onClick={() => {
+                            if (onOpenRef.current) onOpenRef.current(member.id);
+                            else onSelectRef.current(member.id);
+                          }}
+                        >
+                          {member.title}
+                        </button>
+                      ))}
+                      {directoryMembers.length > 6 ? (
+                        <span className="graph-chip graph-chip--muted">
+                          +{directoryMembers.length - 6}
+                        </span>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <span className="graph-inspector-muted">这个目录还没有记录</span>
+                  )}
+                </div>
+                {onOpenDirectory ? (
+                  <footer className="graph-inspector-actions">
+                    <button
+                      type="button"
+                      className="graph-action"
+                      onClick={() => onOpenDirectory(inspectorNote.id)}
+                    >
+                      打开目录
+                    </button>
+                  </footer>
+                ) : null}
+              </section>
+            ) : (
+              <section className="graph-inspector" aria-label="节点详情">
               <header className="graph-inspector-head">
                 <span className="graph-inspector-kind">
                   <span
@@ -2106,6 +2515,7 @@ export function GraphView({
                 ) : null}
               </footer>
             </section>
+            )
           ) : null}
         </>
       ) : (

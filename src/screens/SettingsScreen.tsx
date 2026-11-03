@@ -17,6 +17,7 @@ import { Icon, type IconName } from '../components/Icon';
 import { AgentAvatar } from '../components/AgentAvatar';
 import { MochiNode } from '../components/MochiNode';
 import { IosInstallCard } from '../components/IosInstallCard';
+import { DEFAULT_DIGEST_SCHEDULE, getDigestSchedule, setDigestSchedule } from '../lib/digest';
 
 const APP_VERSION = '0.9.0';
 
@@ -32,6 +33,8 @@ export interface SettingsScreenProps {
   persona: AgentPersona;
   onPersonaChange: (persona: AgentPersona) => void;
   onImportHealth: (text: string) => Promise<number>;
+  /** Build + persist today's knowledge-base digest immediately. */
+  onGenerateDigest: () => void;
 }
 
 interface RowProps {
@@ -75,6 +78,7 @@ export function SettingsScreen({
   persona,
   onPersonaChange,
   onImportHealth,
+  onGenerateDigest,
 }: SettingsScreenProps) {
   const [usage, setUsage] = useState<{ usage: number; quota: number } | null>(null);
   const [nameDraft, setNameDraft] = useState(persona.name);
@@ -82,6 +86,7 @@ export function SettingsScreen({
   const [busy, setBusy] = useState(false);
   const [healthDetailsOpen, setHealthDetailsOpen] = useState(false);
   const [personaOpen, setPersonaOpen] = useState(false);
+  const [digestSchedule, setDigestScheduleState] = useState(() => getDigestSchedule());
   const healthInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -356,22 +361,56 @@ export function SettingsScreen({
         <section>
           <div className="section-label">自动化</div>
           <div className="settings-card">
-            <div className="settings-row as-static">
+            <label className="settings-row module-toggle">
               <span className="settings-row-icon">
                 <Icon name="sun" size={18} />
               </span>
               <span className="settings-row-text">
-                <span className="settings-row-label">每日复盘</span>
-                <span className="settings-row-hint">打开「今日」时自动生成，全部在本机计算</span>
+                <span className="settings-row-label">每日汇总</span>
+                <span className="settings-row-hint">按目录汇总昨天，并给出今天的建议</span>
               </span>
-            </div>
+              <input
+                type="checkbox"
+                checked={digestSchedule.enabled}
+                onChange={(event) => {
+                  const next = setDigestSchedule({ enabled: event.target.checked });
+                  setDigestScheduleState(next);
+                }}
+                aria-label="启用每日汇总"
+              />
+            </label>
             <div className="settings-row as-static">
               <span className="settings-row-icon">
                 <Icon name="clock" size={18} />
               </span>
               <span className="settings-row-text">
+                <span className="settings-row-label">汇总时间</span>
+                <span className="settings-row-hint">到达时间后，下一次打开应用自动生成</span>
+              </span>
+              <input
+                className="digest-time"
+                type="time"
+                value={digestSchedule.time || DEFAULT_DIGEST_SCHEDULE.time}
+                onChange={(event) => {
+                  const next = setDigestSchedule({ time: event.target.value });
+                  setDigestScheduleState(next);
+                }}
+                aria-label="每日汇总时间"
+              />
+            </div>
+            <button type="button" className="settings-row" onClick={onGenerateDigest}>
+              <span className="settings-row-icon"><Icon name="sparkles" size={18} /></span>
+              <span className="settings-row-text">
+                <span className="settings-row-label">立即生成今日汇总</span>
+                <span className="settings-row-hint">汇总会出现在助手的对话里</span>
+              </span>
+              <Icon name="arrowRight" size={15} />
+            </button>
+            <div className="settings-row as-static">
+              <span className="settings-row-icon"><Icon name="phone" size={18} /></span>
+              <span className="settings-row-text">
                 <span className="settings-row-label">固定时间提醒</span>
-                <span className="settings-row-hint">在「快捷指令 → 自动化」里每天打开麻薯</span>
+                <span className="settings-row-hint">在「快捷指令 → 自动化」里每天打开麻薯，就能准时看到汇总</span>
               </span>
             </div>
           </div>

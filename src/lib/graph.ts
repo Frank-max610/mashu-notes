@@ -11,7 +11,7 @@ import { buildTitleIndex, extractWikiLinks, normalizeTitle, resolveLink } from '
  * testable in Node.
  */
 
-export type GraphEdgeType = 'wiki' | 'manual' | 'day';
+export type GraphEdgeType = 'wiki' | 'manual' | 'day' | 'directory';
 
 export interface GraphNode {
   id: string;
@@ -28,6 +28,12 @@ export interface GraphNode {
   fixed: boolean;
   /** Saved normalised position copied from the note (0..1), when present. */
   position?: NotePosition;
+  /** True for directory hub nodes (user-created knowledge-base folders). */
+  directory?: boolean;
+  /** Warm directory colour assigned by the user (hubs; inherited by members). */
+  dirColor?: string;
+  /** Directory hub this note belongs to (members only). */
+  dirId?: string;
 }
 
 export interface GraphEdge {
@@ -119,6 +125,9 @@ function localDayKey(timestamp: number): string {
  * - Wiki edges from `[[links]]` (dangling targets become ghost nodes).
  * - Manual edges from `note.manualLinks` (resolved by note id, undirected).
  * - Day edges along same-day life records (`kind !== 'note'`), consecutive only.
+ * - Directory edges from each note's `dirId` to its directory hub.
+ * - Directory notes are hubs (their links never become wiki/manual edges);
+ *   archived records and plan items stay out of the graph entirely.
  * - Pairs are deduped: manual beats wiki, day never duplicates an existing pair.
  * - Self links are skipped and `degree` counts all unique incident edges.
  */
@@ -128,8 +137,15 @@ export function buildGraph(notes: Note[]): Graph {
   const seenNoteIds = new Set<string>();
   for (const note of notes) {
     if (!note || !note.id || seenNoteIds.has(note.id)) continue;
+    // Quiet notes never become graph nodes: archived records and plan items.
+    if (note.archivedAt || note.meta?.plan) continue;
     seenNoteIds.add(note.id);
     uniqueNotes.push(note);
+  }
+
+  const directoryIds = new Set<string>();
+  for (const note of uniqueNotes) {
+    if (note.meta?.directory) directoryIds.add(note.id);
   }
 
   const nodes: GraphNode[] = [];
@@ -142,6 +158,13 @@ export function buildGraph(notes: Note[]): Graph {
       note.kind ?? 'note',
       readPosition(note.position),
     );
+    node.directory = directoryIds.has(note.id);
+    if (node.directory) {
+      const color = note.meta?.directory?.color;
+      if (typeof color === 'string' && color.trim()) node.dirColor = color.trim();
+    } else if (note.dirId && note.dirId !== note.id && directoryIds.has(note.dirId)) {
+      node.dirId = note.dirId;
+    }
     nodes.push(node);
     nodeById.set(note.id, node);
   }
@@ -162,10 +185,13 @@ export function buildGraph(notes: Note[]): Graph {
   // ---- wiki edges (`[[links]]` in note content) ----
   for (const note of uniqueNotes) {
     const source = nodeById.get(note.id);
-    if (!source) continue;
+    // Directory hubs only connect through their members, never through content.
+    if (!source || source.directory) continue;
     for (const link of extractWikiLinks(note.content)) {
       const resolved = resolveLink(link.target, index);
       let target = resolved ? nodeById.get(resolved.id) : undefined;
+      // Links into quiet notes (archived / plan) stay quiet instead of ghosting.
+      if (resolved && !target) continue;
 
       if (!target) {
         const key = normalizeTitle(link.target);
@@ -182,6 +208,8 @@ export function buildGraph(notes: Note[]): Graph {
       }
 
       if (target.id === source.id) continue;
+      // Directory notes are hubs; their relations come from `dirId`, not links.
+      if (target.directory) continue;
       addEdge(source.id, target.id, 'wiki');
     }
   }
@@ -189,12 +217,12 @@ export function buildGraph(notes: Note[]): Graph {
   // ---- manual edges (hand-drawn links; they win over a wiki edge on the pair) ----
   for (const note of uniqueNotes) {
     const source = nodeById.get(note.id);
-    if (!source) continue;
+    if (!source || source.directory) continue;
     const links = Array.isArray(note.manualLinks) ? note.manualLinks : [];
     for (const targetId of links) {
       if (typeof targetId !== 'string') continue;
       const target = nodeById.get(targetId);
-      if (!target || target.id === source.id) continue;
+      if (!target || target.directory || target.id === source.id) continue;
       const key = edgeKey(source.id, target.id);
       const existing = edgeByKey.get(key);
       if (existing) {
@@ -210,7 +238,7 @@ export function buildGraph(notes: Note[]): Graph {
   for (const note of uniqueNotes) {
     if ((note.kind ?? 'note') === 'note') continue;
     const node = nodeById.get(note.id);
-    if (!node) continue;
+    if (!node || node.directory) continue;
     const timestamp = dayTimestamp(note);
     const key = localDayKey(timestamp);
     const group = dayGroups.get(key);
@@ -226,6 +254,15 @@ export function buildGraph(notes: Note[]): Graph {
       if (!previous || !current || previous.node.id === current.node.id) continue;
       addEdge(previous.node.id, current.node.id, 'day');
     }
+  }
+
+  // ---- directory edges (each assigned note hangs off its directory hub) ----
+  for (const note of uniqueNotes) {
+    const node = nodeById.get(note.id);
+    if (!node || node.directory || !node.dirId) continue;
+    const directory = nodeById.get(node.dirId);
+    if (!directory || !directory.directory) continue;
+    addEdge(node.id, directory.id, 'directory');
   }
 
   for (const ghost of ghosts.values()) nodes.push(ghost);
@@ -260,9 +297,12 @@ function fixedMarginY(height: number): number {
 }
 
 /**
- * Deterministic radial/spiral starting positions, centered in `width` × `height`.
- * Nodes with a saved position are pinned there (in normalised canvas space) and
- * marked `fixed`; the rest get the deterministic spiral and stay free.
+ * Deterministic directory-aware starting positions, centered in `width` × `height`.
+ *
+ * Directory hubs sit on a ring (one branch per directory), members start around
+ * their directory, and everything else falls back to the even golden spiral.
+ * Nodes with a saved position are pinned there (normalised canvas space) and
+ * marked `fixed`; the rest stay free. No randomness, so layouts are stable.
  */
 export function seedPositions(graph: Graph, width: number, height: number): void {
   const count = graph.nodes.length;
@@ -281,37 +321,83 @@ export function seedPositions(graph: Graph, width: number, height: number): void
   const pad = Math.min(28, w / 4, domainY / 4);
   const radiusX = Math.max(0, w / 2 - pad);
   const radiusY = Math.max(0, domainY / 2 - pad);
+  const clampX = (x: number): number => clamp(x, pad, Math.max(pad, w - pad));
+  const clampLayoutY = (y: number): number => clamp(y, pad, Math.max(pad, domainY - pad));
 
-  for (let i = 0; i < count; i += 1) {
-    const node = graph.nodes[i];
-    const position = node.position;
-    if (position) {
-      // Saved positions are normalised against the canvas box (0..1 → pixels).
-      node.x = clamp(position.x * w, padX, maxX);
-      node.y = clamp(position.y * h, padY, maxY);
-      node.fixed = true;
+  // Saved positions win: pin them in canvas pixels and keep them fixed.
+  const seeded = new Set<string>();
+  for (const node of graph.nodes) {
+    if (!node.position) continue;
+    node.x = clamp(node.position.x * w, padX, maxX);
+    node.y = clamp(node.position.y * h, padY, maxY);
+    node.fixed = true;
+    node.vx = 0;
+    node.vy = 0;
+    seeded.add(node.id);
+  }
+
+  // Directory hubs on a ring: N directories read as N branches.
+  const directories = graph.nodes
+    .filter((node) => node.directory && !seeded.has(node.id))
+    .sort((a, b) => a.id.localeCompare(b.id));
+  const ringRadius = Math.max(24, Math.min(radiusX, radiusY) * 0.66);
+  directories.forEach((node, index) => {
+    node.fixed = false;
+    if (directories.length === 1) {
+      node.x = centerX;
+      node.y = centerY / scaleY;
+    } else {
+      const angle = -Math.PI / 2 + (index / directories.length) * Math.PI * 2;
+      node.x = clampX(centerX + Math.cos(angle) * ringRadius);
+      node.y = clampLayoutY(centerY + Math.sin(angle) * ringRadius) / scaleY;
+    }
+    node.vx = 0;
+    node.vy = 0;
+    seeded.add(node.id);
+  });
+
+  // Members start in a small orbit around their directory hub.
+  const membersByDirectory = new Map<string, GraphNode[]>();
+  for (const node of graph.nodes) {
+    if (!node.dirId || node.directory || seeded.has(node.id)) continue;
+    const members = membersByDirectory.get(node.dirId);
+    if (members) members.push(node);
+    else membersByDirectory.set(node.dirId, [node]);
+  }
+  const nodeById = new Map(graph.nodes.map((node) => [node.id, node]));
+  for (const [dirId, members] of membersByDirectory) {
+    const directory = nodeById.get(dirId);
+    if (!directory || !directory.directory) continue;
+    members.sort((a, b) => a.id.localeCompare(b.id));
+    const directoryLayoutY = directory.y * scaleY;
+    members.forEach((node, index) => {
+      const angle = index * GOLDEN_ANGLE + (dirId.charCodeAt(0) % 7) * 0.21;
+      const distance = 30 + Math.sqrt(index + 1) * 22;
+      node.fixed = false;
+      node.x = clampX(directory.x + Math.cos(angle) * distance);
+      node.y = clampLayoutY(directoryLayoutY + Math.sin(angle) * distance) / scaleY;
       node.vx = 0;
       node.vy = 0;
-      continue;
-    }
+      seeded.add(node.id);
+    });
+  }
 
+  // Everything else (unassigned notes, ghosts) keeps the even spiral.
+  const rest = graph.nodes.filter((node) => !seeded.has(node.id));
+  rest.forEach((node, index) => {
     node.fixed = false;
     if (count === 1) {
       node.x = centerX;
       node.y = centerY / scaleY;
     } else {
-      // sqrt() spreads the samples evenly over the disk instead of clustering
-      // at the center.
-      const fraction = Math.sqrt((i + 0.5) / count);
-      const angle = i * GOLDEN_ANGLE;
-      node.x = clamp(centerX + Math.cos(angle) * radiusX * fraction, pad, Math.max(pad, w - pad));
-      node.y =
-        clamp(centerY + Math.sin(angle) * radiusY * fraction, pad, Math.max(pad, domainY - pad)) /
-        scaleY;
+      const fraction = Math.sqrt((index + 0.5) / rest.length);
+      const angle = index * GOLDEN_ANGLE;
+      node.x = clampX(centerX + Math.cos(angle) * radiusX * fraction);
+      node.y = clampLayoutY(centerY + Math.sin(angle) * radiusY * fraction) / scaleY;
     }
     node.vx = 0;
     node.vy = 0;
-  }
+  });
 }
 
 /**
