@@ -1,32 +1,55 @@
 # 麻薯
 
-**把日子过得暖一点。**
+**记录、连接、理解。**
 
-一个本地优先的 **iPhone 生活记录与复盘 App**：饮食、健康、收支、日记和 Markdown 笔记放在一起，打开就是今日仪表盘；每晚看一眼复盘，每天做一点改进。**没有服务器，也没有账号**——装到主屏幕后，断网也能用。
+一个本地优先的 **iPhone 生活操作系统**：饮食、健康、收支、日记和 Markdown 笔记放在一起，以安静的「今日」驾驶舱开始，用生活图谱把一切连起来。**没有服务器，也没有账号**——装到主屏幕后，断网也能用。
 
 **在线试用（请用 Safari 打开）**：<https://frank-max610.github.io/mashu-notes/>
-**仓库**：[github.com/Frank-max610/mashu-notes](https://github.com/Frank-max610/mashu-notes) · 版本 **v0.8.0**
+**仓库**：[github.com/Frank-max610/mashu-notes](https://github.com/Frank-max610/mashu-notes) · 版本 **v0.9.0**
 
-[![Live demo](https://img.shields.io/badge/demo-live-e3a06a.svg)](https://frank-max610.github.io/mashu-notes/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-c9773c.svg)](LICENSE)
+[![Live demo](https://img.shields.io/badge/demo-live-c8783f.svg)](https://frank-max610.github.io/mashu-notes/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-b36a35.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19-61dafb.svg?logo=react&logoColor=1b1b24)](https://react.dev/)
 
 ---
 
-## 名字与气质
+## v0.9 LifeOS：安静一点，活一点
 
-麻薯，软糯的糯米团子，名字很日常，野心也很小：把生活里那些「今天吃了什么、睡了多久、钱花在哪、今天在想什么」的小事接住，然后每天看它一眼。
+0.9 按照《麻薯_LifeOS_UIUX重设计方案》做了一次完整的 UI/UX 重构（Warm Minimalism × Living Data）：
 
-0.8 把生活图谱改成了 Obsidian 风格：主题自适应画布、实心节点按连接数变大、每个节点都有标签、细线连线；0.7 继续保留软乎乎的语言，但把主色从粉色系换成了更暖、更中性的**暖杏色**：奶油纸底、杏色主色、暖沙/橄榄/奶油黄/灰蓝做辅助色，大圆角、蓬松暖阴影、圆润字体，还有一只暖奶油色的小麻薯吉祥物。默认浅色，夜里切到暖暖的「暖棕夜」深色主题。
+- **去掉了卡通吉祥物**，改用 **Mochi Node** 品牌符号：一颗暖色主节点 + 几颗卫星节点 + 细轨道，出现在页头、助手人设、App 图标、favicon 和启动图里；不再有脸、表情或水果帽。
+- **变小、变安静**：首屏 hero 收敛到 34–38px，只留一个高权重动作（一句话记录条）；不再用大卡片墙、渐变标题、发光或霓虹。
+- **今日是驾驶舱**：问候 + 一句话输入 + 2×2 紧凑指标 + 「1 条洞察 + 3 个数字 + 查看完整复盘」+ 轻量建议；7 日 sparkline 和时间线在下方，不抢注意力。
+- **图谱变成真正的力导向画布**：拖拽会带动邻居、松手后回弹，按连接数决定节点大小，默认只显示重要标签，悬停/选中才展开一度邻居。
+- **阅读优先的编辑器**：打开是渲染后的 Markdown，只有进入编辑才出现工具栏和原文；所有操作收进「更多」。
+- **渐进式快速记录**：一句话是主角，一行紧凑解析卡确认，结构化字段藏在「展开详情」里，固定 52px 的保存按钮。
+- **消费级设置**：助手 / 外观 / 数据与隐私 / Apple 健康 / 自动化 / 高级设置 / 关于；技术细节默认折叠在「高级设置」里。
+- **暖色调深色主题**：深色是暖炭色 `#171410` + 柔杏色高光，不是冷黑或紫黑；浅色仍是暖纸色 `#f7f3ec`。
 
-> 内部机器名统一为 `mashu`（仓库、包名、数据库与存储键）；界面和文案里只叫「麻薯」。
+设计系统（源：设计文档 §04，全部写在 `src/styles/tokens.css`）：
+
+| 维度 | 浅色 | 深色 |
+| --- | --- | --- |
+| 背景 / 表面 | `#F7F3EC` / `#FCFAF6` | `#171410` / `#211D18` |
+| 次级表面 | `#F1EAE1` | `#28221D` |
+| 正文 / 次级文字 | `#2C2925` / `#756D63` | `#F3ECE4` / `#B8ABA0` |
+| 边框 | `#E5DBCF` | `#3B332C` |
+| 主色 / 主色浅底 | `#C8783F` / `#F2DFC9` | `#E6A062` / `#463024` |
+| 危险色 | `#B34B36` | `#D56A56` |
+
+- **字体与字号**：Display 34–38 / H1 28–32 / H2 20–22 / Body 16–17 / Meta 12–13 / 数据用 mono 13–15；不再使用圆体或宋体衬线。
+- **布局**：页面左右 20px，区块间距 28–36；卡片圆角 16–20，按钮 14–16；阴影几乎不可见，没有 glow/neon。
+- **控件**：只有 chip 是胶囊；底部导航固定 66px，激活项是浅色块；一套统一线性图标。
+- **分类色**（日记 `#65788A`、饮食 `#B45D35`、健康 `#627A4E`、财务 `#9A7112`、笔记 `#7D7164`）只用于节点、标签和小面积状态，不做大面积背景。
+- **动效**：页面进入 220–320ms、按压 120–180ms、sheet ease-out、图谱 settle 1–2s；全部尊重 `prefers-reduced-motion`。
+- **空状态**：只保留一个目标 + 一个 CTA，不堆插画和口号。
 
 ## 没有服务器，也没有账号
 
 - **整个应用就是一组静态文件。** 推送到 `main` 后，GitHub Actions 自动构建并发布到 GitHub Pages；GitHub 只是**免费的静态托管**，维护者不做任何服务器运维（没有 VPS、没有数据库、没有后台进程）。
 - **装到主屏幕，就装到了手机上。** 用 Safari 打开演示链接 → 分享 → 「添加到主屏幕」。首次加载完成后，应用壳由 Service Worker 缓存，之后**断网也能打开、记录和复盘**。
-- **记录、简报、助手、图谱都在设备本地。** 记录存在 IndexedDB；「昨日复盘 / 今日改进」由本地规则即时生成；助手是纯本地启发式，不调用模型 API；图谱布局也在手机上完成——不上传、不经过任何服务器。
+- **记录、简报、助手、图谱都在设备本地。** 记录存在 IndexedDB；「昨日复盘 / 今日建议」由本地规则即时生成；助手是纯本地启发式，不调用模型 API；图谱的力导向计算也在手机上完成——不上传、不经过任何服务器。
 - **首次加载之后，运行时不需要网络**（更新时除外）。唯一的网络访问是加载应用自身的静态文件，以及你主动写入笔记的外链或网络图片。
 - **普通用户永远不需要 npm、终端或服务器。** 开发者才需要本地环境，命令统一放在「给开发者」小节。
 
@@ -36,68 +59,90 @@
 2. 点底部「分享」→「添加到主屏幕」→「添加」。
 3. 首次加载完成后，从主屏幕图标打开即可，断网也能用。
 
-第一次在 iPhone 打开时，页面会出现一行「添加到主屏幕后，断网也能记录」的提示；「我的 → 装到 iPhone 上」里有完整步骤、安装状态和在线 / 离线壳 / 无需服务器 / 数据不出设备四个状态。更新很简单：**联网时重新打开主屏幕图标**即可加载新版本，没有商店审核。
+第一次在 iPhone 打开时，页面会出现一行「添加到主屏幕后，断网也能记录」的提示；「设置 → 关于 → 装到 iPhone 上」里有完整步骤、安装状态和在线 / 离线壳 / 无需服务器 / 数据不出设备四个状态。更新很简单：**联网时重新打开主屏幕图标**即可加载新版本，没有商店审核。
 
-**备份与换机**：所有记录只保存在这台设备的浏览器存储里。定期在「我的 → 导出全部记录（JSON）」里导出，iOS 会弹出系统分享面板，选择存到「文件」或 iCloud 云盘；换手机时在新手机「导入记录」即可（合并或替换）。**清除 Safari 网站数据会删除记录**，请勿把它当作备份。
-
-## 设计语言：暖杏色，暖一点
-
-0.6 的软乎乎语言在 0.7 收暖：不再以粉色为主，改用更中性的暖杏色：
-
-- **奶油纸底**：`--bg: #faf6f0`，主色暖杏 `--accent: #e3a06a` / `--accent-strong: #c9773c` / `--accent-ink: #a85b28`；不是糖果粉，也不是冷粉。
-- **辅助色**：暖沙/焦糖 `#b98a4e`、软橄榄 `#a8bb87`、奶油黄 `#e8c07a`、灰蓝 `#9db8c4`；正文是暖棕 `#43392f`。品牌渐变是暖杏 → 焦糖（`#f3bf8f` → `#e3a06a` → `#c98a52`），用于 logo、问候标题和强调数字。
-- **圆润与蓬松**：`ui-rounded` 圆体（SF Pro Rounded / PingFang SC），超大圆角（12 / 16 / 20 / 26 / 32px），按钮和筛选是胖乎乎的胶囊；卡片浮在奶油纸上，阴影是暖色的、软软的。
-- **吉祥物与 emoji**：一只暖奶油 + 焦糖配色的小麻薯（`Mascot`）出现在首页 hero、助手页和品牌标记里；助手头像换成软萌 emoji（麻薯 / 猫猫 / 叶子 / 太阳 / 星星 / 书本 / 茶茶 / 饭碗）或自定义 emoji。
-- **浅色默认，暖棕夜相伴**：白天是奶油纸 + 暖杏；深色是暖棕夜色 `#241d18`，配杏色高光，不再是紫色调。
-- **图谱也变暖了**：暖色网格，暖杏/暖沙/橄榄/奶油黄/灰蓝节点，保留等宽标注与清晰连线；不再有硬核深色霓虹仪表盘。
-- **动效**：弹一弹的按压（spring / bounce）、面板轻轻浮入；全部尊重 `prefers-reduced-motion`。
+**备份与换机**：所有记录只保存在这台设备的浏览器存储里。定期在「设置 → 数据与隐私 → 导出完整备份（JSON）」里导出，iOS 会弹出系统分享面板，选择存到「文件」或 iCloud 云盘；换手机时在新手机「从备份恢复」即可（合并或替换）。**清除 Safari 网站数据会删除记录**，请勿把它当作备份。
 
 ## 功能
 
-### 今日：问候、复盘、改进
+### 今日：安静的驾驶舱
 
 | 功能 | 说明 |
 | --- | --- |
-| **问候与连续记录** | 顶部按时间问候，旁边是暖奶油色的小麻薯；今天有记录时显示「已记 N 笔 · 连续 N 天」。 |
-| **问问小助手** | 一块圆滚滚的 ask bar，点开就能问「今天花了多少？这周睡得怎么样？」。 |
-| **昨日复盘** | 用事实性的短句总结昨天：花了多少、吃了什么、睡了多久、走了多少步、记了几条。对比基准是「昨天之前有记录的最近 7 天」，避免稀疏记录把平均值带偏。 |
-| **今日改进** | 根据昨天的偏差给出 2–3 条具体、可执行的建议（例如提前 30 分钟睡、把支出控制在某个范围、走 20 分钟、喝够水），并优先保留做得好的部分。 |
-| **四张 7 日指标卡** | 支出 / 摄入 / 睡眠 / 记录四条 7 日趋势，带柔和的暖色卡片和极简 SVG sparkline。 |
-| **快捷记录与今日时间线** | 「记饮食 / 记健康 / 记一笔 / 问助手」快捷入口；下方按时间列出今天的记录，点开即可编辑。 |
+| **小 hero** | 「晚上好。」+「今天发生了什么？」+ 一句状态（已记录 N 件事 / 从一句话开始），最大 34–38px。 |
+| **唯一高权重动作** | 首页只有一条自然语言记录条「记下现在发生的事…」，点开进入渐进式快速记录。 |
+| **2×2 紧凑指标** | 支出 / 摄入 / 睡眠 / 记录四个数字，无卡片、无描边堆叠，只用细分隔线。 |
+| **昨日复盘** | 1 条洞察 + 3 个数字 + 「查看完整复盘」展开：默认只给结论，细节按需展开。 |
+| **轻建议** | 最多 3 条朴素建议（无数据时 1 条），不抢主视觉；不对比、不打分。 |
+| **7 日趋势与今日时间线** | sparkline 和时间线在折叠线以下；今天没有记录时只显示一句平静提示。 |
 | **完全本地** | 简报由 `src/lib/brief.ts` 的纯函数生成，同样的记录 + 同样的时间必得同样的结果；没有推送服务器，也不上传任何内容。 |
 
-### 记录
+### 记录与搜索
 
 | 功能 | 说明 |
 | --- | --- |
-| **全量记录列表** | 独立「记录」标签页：按本地日期分组的完整列表，支持类型筛选、置顶和空状态引导。 |
-| **五种记录类型** | 日记、饮食、健康、理财、普通笔记；列表与图谱按类型着色。 |
-| **结构化字段** | 饮食（餐次、热量、菜品、金额）、健康（体重/睡眠/步数/饮水/运动/心情）、理财（收支方向、金额、分类）、日记（心情）。字段参与简报、统计与助手回答。 |
-| **一句话快速记录** | 写「午饭牛肉面 32 元 620 大卡」，本地解析成一条饮食记录；也可以选类型后补填快捷字段，并查看解析置信度。 |
-| **双向链接与反向链接** | 正文里写 `[[记录名]]` 或 `[[记录名\|别名]]`；目标不存在时标记「未创建」。 |
+| **按天时间线** | 「记录」是分组时间线：类型圆点 + 标题 + 一行结构化信息 + 时间；不再是一张张卡片墙。 |
+| **紧凑置顶条** | 置顶记录收在顶部一条紧凑条里，不打断时间线。 |
+| **可滚动筛选 chips** | 类型筛选是更小的 chips，横向滚动，边缘用淡出遮罩提示还有内容。 |
+| **搜索** | 顶部 sticky 搜索头 + 复用的记录行；命中词轻量高亮；空查询显示最近编辑；无结果时显示「未找到相关记录」+「清除筛选」。 |
+| **五种记录类型** | 日记、饮食、健康、理财、普通笔记；结构化字段（餐次/热量/金额、指标/数值、收支方向/分类、心情）。 |
+| **双向链接与反向链接** | 正文里写 `[[记录名]]`；编辑器底部用「连接到 / 来自」展示关系，不创建重复副本。 |
 
-### 图谱：暖色生活地图
+### 编辑器：阅读优先
 
 | 功能 | 说明 |
 | --- | --- |
-| **暖色画布** | 图谱是一张柔软的暖色地图：浅色主题是奶油暖网格，暖棕夜是暖棕网格；节点用暖杏 / 暖沙 / 橄榄 / 奶油黄 / 灰蓝，等宽标注和 1px 连线保留。 |
-| **三类边，一眼区分** | `wiki` 边实线；手动连线更亮并带中点刻度；同日记录边虚线。幽灵节点（未创建的链接）是虚线菱形。 |
-| **完整编辑能力** | 点选节点在记录面板里改标题/类型/结构化字段/手动连线；拖动节点保存归一化位置；工具栏可「添加」（点空白处）与「连线」（依次点两个节点）；支持缩放、适应画布、重新布局。 |
+| **打开即阅读** | 进入编辑器先看到渲染后的 Markdown（标题、正文、wiki 链接、标签），不先看到原始符号。 |
+| **编辑态才出现工具栏** | 只有进入编辑才显示编辑工具栏、标题输入和原文 textarea；阅读态没有眼睛/铅笔/置顶按钮。 |
+| **操作收进「更多」** | 编辑正文、编辑记录信息、置顶、复制 Markdown、导出 .md、删除统一在 More 里；编辑时右上角只留安静的「完成」。 |
+| **连接到 / 来自** | 关系面板用「连接到」和「来自」描述出链/反链，空关系显示平静占位。 |
+
+### 图谱：真正的力导向画布
+
+| 功能 | 说明 |
+| --- | --- |
+| **活的力导向** | 拖动节点会实时带动邻居，松手后仿真回弹重排；松开后位置保存。支持拖动画布、双指/滚轮缩放、pinch。 |
+| **按连接数决定大小** | 节点半径随 degree 增大；重要节点默认保留稀疏标签，悬停/选中才展开一度邻居，其他节点变暗。 |
+| **Node Inspector** | 点击节点打开底部 inspector：类型、标题、正文摘要、连接数与前几个连接，底部「编辑 / 连线 / 删除」。 |
+| **清楚的编辑模式** | 添加、连线、重置布局都有明确模式提示；连线时逐步提示「选择第一个节点 / 再选第二个节点」。 |
+| **图例可折叠** | 类型图例默认收起，需要时展开；画布在浅色/深色都是暖色，无霓虹。 |
+| **沉浸模式** | 图谱右上角进入沉浸：隐藏底部导航，画布占满；再点退出。 |
 
 ### 助手：小麻薯
 
 | 功能 | 说明 |
 | --- | --- |
-| **默认名字「小麻薯」** | 可以改成任意名字（最多 12 字）。 |
-| **emoji 头像** | 默认是软萌麻薯；另有猫猫 / 叶子 / 太阳 / 星星 / 书本 / 茶茶 / 饭碗 7 种 emoji，也支持自定义 emoji/字符。 |
-| **本地规则引擎** | 一句话解析（饮食/健康/收支/日记）、今天/本周小结、简单建议与快捷问题；不联网、不调用模型、不是大语言模型。 |
-| **确认后才保存** | 助手解析出的记录以草稿卡片呈现，必须点「保存」才写入；对话只存在当前页面内存。 |
+| **Mochi Node 人设** | 页头是 Mochi Node + 「小麻薯」+「本地处理 · 仅你可见」；不再是控制台式聊天窗口。 |
+| **正文流消息** | 消息按正文流排布，时间 meta 是轻量 24h 时间；不再有 AGENT/YOU 这类角色标签。 |
+| **紧凑确认卡** | 助手解析出的记录以紧凑确认卡呈现，必须点「保存」才写入；草稿会显示类型、标题与结构化 facts。 |
+| **克制的入口** | 最多 3 个欢迎动作；追问 chips 只出现在最新一条消息下。 |
+| **本地规则引擎** | 一句话解析、今天/本周小结、简单建议与快捷问题；不联网、不调用模型、不是大语言模型。 |
+
+### 快速记录：渐进披露
+
+| 功能 | 说明 |
+| --- | --- |
+| **一句话是主角** | 打开只有一句 hero 和一个输入框，不先要求选类型或填表。 |
+| **紧凑解析卡** | 单行显示「类型 · 餐次 · ¥金额 · 热量」等已识别字段；置信度低于 55% 时才给一句轻提示，不显示百分比。 |
+| **展开详情** | 结构化字段藏在「展开详情」后，使用 52px 的紧凑行；再点收起。 |
+| **固定保存** | 底部固定 52px 的「保存记录」+ 取消；初始 sheet 约 46–55vh，解析后最高 72vh，展开详情后最高 88vh。 |
+
+### 设置：消费级 IA
+
+| 功能 | 说明 |
+| --- | --- |
+| **设置 tab** | 底部第五个 tab 现在是「设置」（原来的「我的」）。 |
+| **七个区块** | 助手 / 外观 / 数据与隐私 / Apple 健康 / 自动化 / 高级设置 / 关于。 |
+| **折叠的技术细节** | JSON 导出格式、`?health=` URL scheme、IndexedDB/localStorage 与容量、旧版本迁移、HealthKit 限制都收在「高级设置」的可折叠 details 里；GitHub 链接在「关于」。 |
+| **Apple 健康一行** | 「连接 Apple 健康」+「如何导入？」展开说明；不堆技术段落。 |
+| **人设可折叠** | 助手区块点开才显示名字、头像与自定义字符编辑。 |
+| **危险操作最后** | 「清空全部记录」在数据与隐私底部，带两次确认；导出备份在前。 |
 
 ### Apple 健康 / Apple Watch
 
 | 功能 | 说明 |
 | --- | --- |
-| **文件导入** | 「我的 → Apple 健康 → 导入健康数据」，支持 Apple-Health 风格的 JSON 与 CSV（步数、睡眠、心率、静息心率、体重、饮水、活动能量、运动）。 |
+| **文件导入** | 「设置 → Apple 健康 → 连接 Apple 健康」，支持 Apple-Health 风格的 JSON 与 CSV（步数、睡眠、心率、静息心率、体重、饮水、活动能量、运动）。 |
 | **快捷指令导入链接** | 「复制快捷指令导入链接」得到 `?health=` 前缀，在「快捷指令」里拼上 URL 编码后的 JSON 即可打开应用自动导入。 |
 | **单位与别名** | 自动识别 lb/磅、g、L、分钟/小时等并转成统一单位；支持中英文别名与 HealthKit 标识符。 |
 | **同日去重** | 同一本地日期 + 同一健康指标只保留一条记录：步数/饮水/活动能量按天求和，睡眠/体重/心率/运动取最新值；已有记录通过 `replaceId` 更新而不是重复创建。 |
@@ -119,30 +164,30 @@
 
 ## 截图
 
-> 默认是浅色奶油纸界面，最后一张 `dark-today.png` 是「暖棕夜」深色主题；截图由 `npm run screenshots` 驱动本机 Chrome 生成，视觉以实际运行效果为准。
+> 默认是浅色暖纸界面，`dark-today.png` 是暖炭色深色主题；截图由 `npm run screenshots` 驱动本机 Chrome 生成，视觉以实际运行效果为准。
 
 | 今日（浅色） | 记录 | 快速记录 |
 | :---: | :---: | :---: |
-| ![今日｜问候、小麻薯与指标卡](docs/screenshots/today.png) | ![记录列表](docs/screenshots/records.png) | ![快速记录](docs/screenshots/capture.png) |
+| ![今日｜安静驾驶舱与 Mochi Node](docs/screenshots/today.png) | ![记录时间线](docs/screenshots/records.png) | ![渐进式快速记录](docs/screenshots/capture.png) |
 
-| 图谱（暖色） | 助手 | 编辑器（预览） |
+| 图谱（力导向） | 助手 | 编辑器（阅读） |
 | :---: | :---: | :---: |
-| ![生活图谱](docs/screenshots/graph.png) | ![助手](docs/screenshots/agent.png) | ![编辑器预览](docs/screenshots/editor.png) |
+| ![生活图谱](docs/screenshots/graph.png) | ![助手](docs/screenshots/agent.png) | ![编辑器阅读态](docs/screenshots/editor.png) |
 
-| 编辑器（编辑） | 搜索 | 我的 |
+| 编辑器（编辑） | 搜索 | 设置 |
 | :---: | :---: | :---: |
-| ![编辑器编辑](docs/screenshots/editor-edit.png) | ![搜索](docs/screenshots/search.png) | ![我的](docs/screenshots/settings.png) |
+| ![编辑器编辑态](docs/screenshots/editor-edit.png) | ![搜索](docs/screenshots/search.png) | ![设置](docs/screenshots/settings.png) |
 
-| 装到 iPhone 上 | 今日（暖棕夜） | 空记录 |
+| 装到 iPhone 上 | 今日（深色） | 空记录 |
 | :---: | :---: | :---: |
-| ![装到 iPhone 上](docs/screenshots/install.png) | ![暖棕夜主题今日](docs/screenshots/dark-today.png) | ![空记录](docs/screenshots/empty-records.png) |
+| ![装到 iPhone 上](docs/screenshots/install.png) | ![暖炭色深色今日](docs/screenshots/dark-today.png) | ![空记录](docs/screenshots/empty-records.png) |
 
 ## 数据与隐私
 
 - **没有后端、没有账号、没有遥测。** 应用不依赖服务端接口；静态文件由 GitHub Pages 托管。运行时的网络访问只来自加载应用自身的静态文件，以及你在笔记里主动写入的外链/图片。
 - **记录保存在设备本地。** 默认 IndexedDB（数据库 `mashu`，schema v2），不可用时回退 localStorage；首次加载会请求持久化存储权限，降低被自动清理的概率。
 - **Apple 健康数据只在设备上解析。** 导入的 JSON/CSV 或快捷指令 URL 数据不会上传；解析、单位换算和同日去重都在浏览器内存中完成，随后写入本地记录。
-- **旧数据会自动迁移。** 更早版本使用过不同的内部代号与数据库名（`rixin` / `mochi` / `inkstone`），0.7 会在首次打开时把记录与偏好迁移到 `mashu`，成功写入后才删除旧副本；旧版 JSON 备份也兼容导入。迁移前仍建议先导出一份备份。
+- **旧数据会自动迁移。** 更早版本使用过不同的内部代号与数据库名（`rixin` / `mochi` / `inkstone`），0.9 会在首次打开时把记录与偏好迁移到 `mashu`，成功写入后才删除旧副本；旧版 JSON 备份也兼容导入。迁移前仍建议先导出一份备份。
 - **每台设备、每个地址都是独立的库。** 浏览器按 origin 隔离数据；固定用同一个地址访问，不要假定 Safari 页面和主屏幕应用会自动同步。
 - **应用壳缓存不含记录。** Service Worker 只缓存 HTML/CSS/JS 等静态资源（缓存 `mashu-v1`），IndexedDB / localStorage 中的记录不会被写入缓存。
 - **生活数据比较敏感。** 收支、体重、睡眠都是私人信息；浏览器存储不是端到端加密的，请像保护任何本地文件一样保护设备。导出的 JSON/Markdown 是**明文**，请妥善保管；iCloud 只是你选择的文件存放位置，应用不做 iCloud 同步。
@@ -177,40 +222,40 @@ mashu-notes/
 │   ├── PRIVACY.md                # 隐私说明
 │   └── screenshots/              # 12 张应用截图 + npm run qr 生成物
 ├── public/
-│   ├── icons/                    # 麻薯吉祥物 PWA 图标（npm run icons 生成）
+│   ├── icons/                    # Mochi Node PWA 图标（npm run icons 生成）
 │   ├── splash/                   # iPhone 启动图（npm run splash 生成）
 │   ├── favicon.ico
 │   ├── manifest.webmanifest      # PWA 清单
 │   └── sw.js                     # Service Worker（构建后注入 hash 资源清单）
 ├── scripts/
-│   ├── make_icons.py             # 生成暖色吉祥物品牌图标（Python + Pillow）
+│   ├── make_icons.py             # 生成 Mochi Node 品牌图标（Python + Pillow）
 │   ├── make_splash.py            # 生成 iPhone 启动图（Python + Pillow）
 │   ├── sw-precache.mjs           # 构建后把 hash 资源写入 sw.js 的 PRECACHE
 │   ├── qr.mjs                    # 生成局域网二维码 PNG
 │   ├── screenshots.mjs           # 用本机 Chrome 截取 README 截图
 │   └── serve.mjs                 # 局域网静态服务（仅开发者调试）
 ├── src/
-│   ├── components/               # Mascot、Sparkline、AgentAvatar（emoji 头像）、GraphView、CaptureSheet…
-│   ├── screens/                  # TodayScreen（今日）、RecordsScreen（记录）、EditorScreen、SettingsScreen（我的）
+│   ├── components/               # MochiNode、RecordRow、Sparkline、GraphView、CaptureSheet、AgentPanel…
+│   ├── screens/                  # TodayScreen（今日）、RecordsScreen（记录）、EditorScreen、SettingsScreen（设置）
 │   ├── lib/                      # 核心逻辑（纯函数 + 浏览器适配层）
 │   │   ├── types.ts              # 数据模型（Note / NoteMeta / NoteKind / AgentPersona…）
 │   │   ├── kinds.ts              # 记录类型词表、颜色、默认标题与摘要
 │   │   ├── links.ts              # wiki 链接、标签、反向链接
 │   │   ├── markdown.ts           # markdown-it 渲染管线
 │   │   ├── insights.ts           # 生活统计：日/周汇总、健康序列、分类支出
-│   │   ├── brief.ts              # 今日简报：昨日复盘 + 今日改进 + 7 日趋势
+│   │   ├── brief.ts              # 今日简报：昨日洞察 + 今日建议 + 7 日趋势
 │   │   ├── health.ts             # Apple 健康 JSON/CSV/URL 解析、单位换算与去重草稿
 │   │   ├── agent.ts              # 本地助手：解析、问答与建议（纯规则）
 │   │   ├── search.ts             # 全文搜索（纯函数）
-│   │   ├── graph.ts              # 图谱构建与力导向布局（纯函数）
+│   │   ├── graph.ts              # 图谱模型、力导向布局与确定性分布（纯函数）
 │   │   ├── db.ts                 # IndexedDB `mashu` v2 + 旧库迁移 + localStorage 回退
 │   │   ├── store.ts              # useNotes() 单一状态源
-│   │   ├── prefs.ts              # 主题、引导、助手人设/emoji 头像、安装提示
+│   │   ├── prefs.ts              # 主题、引导、助手人设/节点头像、安装提示
 │   │   ├── seed.ts               # 首次运行的演示记录
 │   │   ├── exportImport.ts       # JSON（vault v2，`app: mashu`）/ Markdown 导入导出
 │   │   ├── format.ts             # 时间 / 字节 / 数字格式化
 │   │   └── useRoute.ts           # 轻量 hash 路由
-│   ├── styles/                   # tokens.css（暖杏/奶油纸/暖棕夜/图谱）、base.css、app.css
+│   ├── styles/                   # tokens.css（语义 token）、base.css、app.css
 │   ├── App.tsx                   # 应用外壳：路由、主题、快速记录、图谱、助手、Apple 健康导入
 │   └── main.tsx                  # React 挂载入口 + Service Worker 注册
 ├── tests/                        # Vitest 单元测试（9 个文件 / 202 个用例）
@@ -235,8 +280,8 @@ mashu-notes/
 | 状态 | **单一 `useNotes()` hook** | 内存乐观更新 + 防抖写入，输入不等 I/O |
 | 简报 | **纯函数 `buildDailyBrief`** | 规则确定、可测试；昨日 vs 最近 7 个有记录日，本地生成 |
 | 健康导入 | **纯函数解析 + 草稿去重** | JSON/CSV/URL 三种输入，单位换算与同日 `replaceId` 更新 |
-| 图谱 | **Canvas 2D + 确定性力导向 + 暖色画布** | 纯函数布局；绘制与交互分离，支持完整编辑 |
-| 视觉 | **手写 CSS + 设计变量** | 暖杏、圆角、暖阴影、emoji 头像；不引入 UI 框架 |
+| 图谱 | **Canvas 2D + 真正的力导向仿真 + 暖色画布** | 纯函数模型/布局；拖拽带动邻居，绘制与交互分离 |
+| 视觉 | **手写 CSS + 语义设计 token** | 暖纸/暖炭、细边框、无阴影、chips 胶囊；不引入 UI 框架 |
 | 测试 | **Vitest（node 环境）** | brief / health / agent / graph 等纯逻辑可直接测 |
 | 托管 | **GitHub Actions → GitHub Pages** | 免费静态托管，推 `main` 自动发布；维护者零服务器运维 |
 
@@ -251,13 +296,17 @@ mashu-notes/
 
 ## FAQ
 
-### 为什么又变回可爱风？
+### 为什么去掉吉祥物？
 
-0.7 继续保留初代麻薯的软乎乎气质：圆角、暖奶油、吉祥物、emoji 头像都还在，但主色换成了更暖、更中性的**暖杏色**（不是粉/紫色调）。0.5 的深色 AI 原生视觉只是中间一版，不是这个产品最终的样子——麻薯本来就该是软的、暖的、可爱的。
+0.9 的 LifeOS 方向是 Warm Minimalism × Living Data：品牌需要一个更安静、能和「生活图谱」同构的符号，而不是一个会做表情的卡通角色。**Mochi Node**（暖色主节点 + 卫星节点 + 细轨道）同时是品牌、助手人设和图谱的隐喻；它更克制，也不会在每天打开时抢注意力。
 
-### 和 0.2 的少女风有什么不同？
+### 为什么整体变小、变安静？
 
-0.2 更糖果、更高饱和；0.7 是「温暖化」的版本：主色从粉色系换成暖杏（`#e3a06a` / `#c9773c`），底色是奶油纸 `#faf6f0`，辅助色是暖沙 `#b98a4e`、软橄榄 `#a8bb87`、奶油黄 `#e8c07a`、灰蓝 `#9db8c4`，暖阴影更轻，整体更中性。它还保留了 0.3–0.6 长出来的全部功能（生活记录、今日复盘、Apple 健康、图谱编辑、零服务器 PWA），不是回到 0.2 的功能。
+0.8 之前的信息密度和装饰偏多：大标题、渐变、卡片、吉祥物都在争夺注意力。0.9 把 hero 收小、只留一个高权重动作、指标变成 2×2 数字、复盘默认只给 1 条洞察 + 3 个数字；需要细节时再展开。目标是「打开就知道今天怎么样」，而不是「打开先看一屏 UI」。
+
+### 和 0.8 有什么区别？
+
+0.8 的生活图谱是 Obsidian 风格：主题自适应、每个节点都有标签、实心节点按连接数变大。0.9 是一次完整的 LifeOS 重构：去掉吉祥物、换成 Mochi Node；今日变成安静驾驶舱；记录变时间线；编辑器变成阅读优先；图谱变成真正的力导向画布（拖拽带动邻居、稀疏标签、悬停邻居、Node Inspector）；快速记录改成渐进披露；设置改成消费级 IA；深色变成暖炭色。功能（记录、复盘、Apple 健康、零服务器 PWA）没有减少。
 
 ### 数据迁移会丢吗？
 
@@ -265,7 +314,7 @@ mashu-notes/
 
 ### 健康能自动同步吗？
 
-不能直接自动同步。网页应用没有 HealthKit 权限，麻薯提供两条零服务器路径：①「我的 → Apple 健康 → 导入健康数据」导入 Apple 健康导出（或快捷指令生成）的 JSON/CSV；②复制 `?health=` 快捷指令导入链接，在快捷指令里拼接数据后打开应用自动导入。想真正直连 HealthKit，需要原生 iOS 壳（Xcode + HealthKit），这是路线图里的可选项，当前仓库不包含。
+不能直接自动同步。网页应用没有 HealthKit 权限，麻薯提供两条零服务器路径：①「设置 → Apple 健康 → 连接 Apple 健康」导入 Apple 健康导出（或快捷指令生成）的 JSON/CSV；②复制 `?health=` 快捷指令导入链接，在快捷指令里拼接数据后打开应用自动导入。想真正直连 HealthKit，需要原生 iOS 壳（Xcode + HealthKit），这是路线图里的可选项，当前仓库不包含。
 
 ### 真正的推送怎么办？
 
@@ -285,7 +334,7 @@ PWA 不需要 Apple 开发者账号、签名和审核，更新也简单：推代
 
 ### 换手机 / 同步怎么办？
 
-没有云同步。在旧手机「我的 → 导出全部记录（JSON）」，分享面板存到「文件」或 iCloud 云盘，再在新手机「导入记录」（合并或替换）。这是手动备份/迁移，不是实时同步；应用不接 iCloud API。
+没有云同步。在旧手机「设置 → 数据与隐私 → 导出完整备份（JSON）」，分享面板存到「文件」或 iCloud 云盘，再在新手机「从备份恢复」（合并或替换）。这是手动备份/迁移，不是实时同步；应用不接 iCloud API。
 
 ### 苹果能用吗？
 
@@ -305,16 +354,16 @@ PWA 不需要 Apple 开发者账号、签名和审核，更新也简单：推代
 | 日记 | 「今天有点累，但完成了报告」 | 心情 |
 | 笔记 | 普通 Markdown 长文、清单、计划 | 标题、正文、标签、链接 |
 
-### 图谱怎么改？
+### 图谱怎么用？
 
-- **移动**：拖动节点，松手后位置保存；「重新布局」清空手动位置。
-- **编辑 / 删除**：点节点选中，打开记录面板改标题、类型、结构化字段和手动连线，也可以删除。
-- **添加 / 连线**：工具栏「添加」后点画布空白处新建；「连线」后依次点两个节点。
-- **缩放**：双指 / 滚轮缩放、拖动画布、适应画布。
+- **看看**：拖动/缩放画布；悬停或点击节点展开一度邻居，其他节点变暗；点击节点打开 Node Inspector。
+- **编辑**：inspector 里「编辑」打开编辑器；「连线」进入连线模式，再点第二个节点；「删除」删除该记录。
+- **新建 / 重排**：工具栏「添加」点空白处新建；「连线」依次选两个节点；「重置布局」恢复推荐视图；沉浸模式隐藏底部导航。
+- **图例**：默认收起，点「图例」展开类型说明。
 
 ### 和 Obsidian 有什么区别？
 
-Obsidian 是通用 Markdown 知识库，插件生态成熟，文件存在本地文件夹；麻薯更小、更暖，iPhone-first，面向「生活记录 + 每日复盘」：有结构化字段、每日简报、Apple 健康导入和可编辑生活图谱，助手与简报完全离线。它没有插件生态、没有本地文件夹 vault、没有内置同步。需要文件级 Markdown、插件和多端同步时，Obsidian 仍然更合适。
+Obsidian 是通用 Markdown 知识库，插件生态成熟，文件存在本地文件夹；麻薯更小、更安静，iPhone-first，面向「生活记录 + 每日复盘」：有结构化字段、每日简报、Apple 健康导入和力导向生活图谱，助手与简报完全离线。它没有插件生态、没有本地文件夹 vault、没有内置同步。需要文件级 Markdown、插件和多端同步时，Obsidian 仍然更合适。
 
 ### 支持哪些 Markdown 语法？
 
@@ -322,21 +371,22 @@ Obsidian 是通用 Markdown 知识库，插件生态成熟，文件存在本地�
 
 ### 如何删除所有数据？
 
-「我的」页提供「清空全部记录」；也可以在 iOS 设置 / Safari 里清除该网站的数据。删除前请先导出 JSON 备份，操作不可恢复。
+「设置 → 数据与隐私」底部提供「清空全部记录」，需要两次确认；也可以在 iOS 设置 / Safari 里清除该网站的数据。删除前请先导出 JSON 备份，操作不可恢复。
 
 ## 路线图
 
-已完成（0.7.0）：
+已完成（0.9.0）：
 
-- [x] 暖杏色设计：奶油纸 `#faf6f0`、暖杏 `#e3a06a` / `#c9773c` / `#a85b28`、暖沙/橄榄/奶油黄/灰蓝、12–32px 大圆角、暖阴影、圆润字体
-- [x] 小麻薯吉祥物与图标/启动图换成暖奶油 + 焦糖配色；8 种 emoji 头像 + 自定义 emoji，默认小麻薯
-- [x] 默认浅色 + 「暖棕夜」深色主题（`#241d18`，杏色高光），不再使用紫色调
-- [x] 暖色生活图谱：暖色网格、暖杏/暖沙/橄榄/奶油黄/灰蓝节点，保留完整编辑
-- [x] 今日仪表盘保留：问候 + 小麻薯 + 连续记录 + ask bar + 昨日复盘 + 今日改进 + 4 张暖色指标卡 + 快捷记录 + 时间线
-- [x] Apple 健康导入与每日简报保持行为不变（JSON/CSV/快捷指令、同日去重）
-- [x] 存储统一为 `mashu`：旧数据库/旧键自动迁移，旧备份兼容导入
-- [x] Service Worker 缓存 `mashu-v1`，构建自动注入 hash 资源清单
-- [x] iPhone 主屏幕安装、Web Share 导出、离线/联网提示、零服务器部署
+- [x] LifeOS 视觉重构：语义 token（浅色暖纸 / 深色暖炭）、34–38px Display、20px 页边距、16–20px 卡片、几乎无阴影、chips 胶囊、66px 底部导航
+- [x] Mochi Node 品牌替换卡通吉祥物；App 图标、favicon、启动图与助手人设同步
+- [x] 今日安静驾驶舱：小 hero、单一记录条、2×2 指标、1 洞察 + 3 数字 + 可展开复盘、轻建议
+- [x] 记录时间线、置顶条、边缘淡出 chips；sticky 搜索 + 复用记录行 + 空状态
+- [x] 阅读优先编辑器：渲染 Markdown、编辑态工具栏、More 操作、连接到/来自
+- [x] 助手去控制台化：Mochi Node、正文流、紧凑确认卡、克制的欢迎与追问
+- [x] 真正的力导向图谱：拖拽带动邻居、度数大小、稀疏标签、hover 邻居、Node Inspector、连线模式提示、可折叠图例、沉浸全屏
+- [x] 渐进式快速记录：单行解析卡、展开详情 52px 行、固定 52px 保存
+- [x] 设置 IA：助手/外观/数据与隐私/Apple 健康/自动化/高级设置/关于；技术细节折叠
+- [x] 平静空状态与暖炭色深色主题；减少动效尊重 `prefers-reduced-motion`
 
 计划中：
 
@@ -366,15 +416,18 @@ npm run typecheck && npm test && npm run build
 
 ## English
 
-**Mashu (麻薯)** is a local-first life journal and Markdown notebook for iPhone. Meals, health, spending, diaries and notes live together behind a daily dashboard: a greeting with the little mochi mascot, a streak line, a round "ask the assistant" bar, yesterday's review, today's suggestions, four warm seven-day sparklines, quick captures and today's timeline.
+**Mashu (麻薯)** is a local-first **life operating system** for iPhone: meals, health, spending, diaries and notes live together behind a quiet daily cockpit, connected by a living life graph. Version 0.9.0 is the LifeOS redesign (Warm Minimalism × Living Data).
 
 - **No server, no account.** The whole app is a static site auto-deployed by GitHub Actions to GitHub Pages (free static hosting; the maintainer runs zero server operations). Open it in Safari, Share → Add to Home Screen, and it works offline after the first load.
-- **Warm apricot design (v0.7).** Cream paper `#faf6f0`, warm apricot `#e3a06a` / `#c9773c` / `#a85b28`, warm sand `#b98a4e`, olive `#a8bb87`, butter `#e8c07a`, dusty blue `#9db8c4`, and warm brown text `#43392f`; an apricot → caramel brand gradient, oversized rounded corners (12–32px), soft warm shadows, a rounded typeface, and a warm-cream mochi mascot. Light by default, with a warm brown night theme (`#241d18`) and apricot highlights.
-- **Dashboard first, floating warm navigation**: Today / Records / Graph / Agent / Me. The full record list lives in Records; search opens from the header.
-- **A warm life graph**: a soft warm grid, apricot / sand / olive / butter / dusty-blue nodes, monospaced chrome, clear edges (wiki solid, manual brighter with a midpoint tick, same-day dashed) and dashed-diamond ghost notes. Full editing: select, edit, add, drag, connect, reset layout, fit, pinch-zoom. Both light and warm-brown-night themes.
-- **A local agent named 小麻薯** with the mochi mascot or seven cute emoji avatars (cat, leaf, sun, star, book, tea, rice bowl) plus a custom emoji/character. Fully local rule-based heuristics — not an LLM, no model API, no telemetry.
-- **Apple Health / Watch import**: parse Apple-Health-style JSON, CSV or a `?health=` Shortcuts payload, with unit conversion (lb/g/L/min), HealthKit aliases, and same-day deduplication. Honest limit: a web app cannot read HealthKit directly — the current paths are file import and Shortcuts; a native iOS shell is a roadmap option, not included.
-- **Storage migration**: the database is now `mashu`; old local data is adopted once and removed after a successful write, and old JSON backups still import. Service worker cache `mashu-v1`.
-- **Daily brief with no push server**: in-app deterministic heuristics; real scheduled reminders are an iOS Shortcut personal automation that opens the app.
+- **Warm Minimalism, semantic tokens.** Light: warm paper `#F7F3EC` / `#FCFAF6` surface / `#2C2925` text / `#C8783F` accent. Dark: warm charcoal `#171410` / `#211D18` surface / `#F3ECE4` text / `#E6A062` accent. Display 34–38, H1 28–32, body 16–17, meta 12–13, mono data 13–15; 20px page padding, 28–36px section gaps, 16–20px cards, near-invisible shadows, no glow/neon; chips are the only pills; 66px bottom nav with a light active block and a 设置 tab.
+- **Mochi Node brand.** A warm centre dot with a few satellite nodes on thin orbits, used in headers, the assistant persona, app icons, favicon and splash screens. No cartoon mascot.
+- **Quiet cockpit Today**: small hero greeting, one natural-language capture bar, 4 compact 2×2 metrics, yesterday review as 1 insight + 3 numbers + expandable full review, at most 3 plain suggestions, 7-day sparklines and today's timeline below the fold.
+- **Records & search**: day-grouped timeline rows, compact pinned strip, edge-faded filter chips; sticky search with reusable record rows, light highlights, recent items when idle and a calm no-results state.
+- **Reading-first editor**: rendered Markdown by default, raw text and toolbar only in edit mode, all actions in More, quiet Done, Connections worded as 连接到 / 来自.
+- **Assistant without the console**: Mochi Node + 小麻薯 + 本地处理 · 仅你可见; body-flow messages, plain time meta, compact confirm cards, at most 3 welcome actions, follow-up chips only on the latest message. Fully local rule-based — not an LLM, no model API, no telemetry.
+- **True force-directed graph**: drag affects neighbours live and re-balances on release; pan/zoom/pinch; node size by degree; sparse default labels with first-degree reveal on hover/select; hover dims others; Node Inspector with 编辑 / 连线 / 删除; Add/Link/Reset modes with step hints; collapsible legend; immersive fullscreen hides the bottom nav.
+- **Progressive quick capture**: one-sentence hero, compact one-line parse card, structured fields behind 展开详情 in lean 52px rows, fixed 52px save; confidence percentage only shown below 55%.
+- **Consumer settings IA**: 助手 / 外观 / 数据与隐私 / Apple 健康 / 自动化 / 高级设置 / 关于; technical details (JSON format, URL scheme, storage engine, migration, HealthKit limits) collapsed under 高级设置; GitHub in 关于.
+- **Apple Health import** (JSON/CSV/`?health=` Shortcuts), **daily brief** with no push server, **storage migration** to `mashu`, service worker cache `mashu-v1`, and a **zero-server iPhone PWA** delivery.
 
 Try the [live demo](https://frank-max610.github.io/mashu-notes/) in Safari and add it to your Home Screen. MIT licensed — read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the design and [CONTRIBUTING.md](CONTRIBUTING.md) to get involved.

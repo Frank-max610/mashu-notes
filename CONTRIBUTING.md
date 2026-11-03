@@ -1,6 +1,6 @@
 # 贡献指南
 
-感谢你愿意为麻薯出一份力。这是一个小而专注的项目：记录生活、每天复盘、把数据留在自己手里。我们更看重「每天愿意打开、看着舒服」而不是堆功能，请先花几分钟读完这份指南。
+感谢你愿意为麻薯出一份力。麻薯是一个本地优先的生活操作系统：记录、连接、理解。我们更看重「安静、清楚、每天愿意打开」而不是堆功能，请先花几分钟读完这份指南。
 
 ## 命名约定
 
@@ -48,7 +48,7 @@ npm run dev        # http://localhost:5173
 | `npm run typecheck` | 只跑 `tsc --noEmit` |
 | `npm test` | 运行一次 Vitest（当前 202 个用例 / 9 个文件） |
 | `npm run test:watch` | Vitest watch 模式 |
-| `npm run icons` | 重新生成 `public/icons/` 下的麻薯吉祥物图标（需要 Python 3 + Pillow） |
+| `npm run icons` | 重新生成 `public/icons/` 下的 Mochi Node 品牌图标（需要 Python 3 + Pillow） |
 | `npm run splash` | 重新生成 `public/splash/` 下的 iPhone 启动图（需要 Python 3 + Pillow） |
 | `npm run qr` | 生成局域网访问地址的二维码 PNG（`docs/screenshots/lan-qr.png` + `lan-url.txt`） |
 | `npm run screenshots` | 驱动本机 Chrome 无头模式重新截取 README 截图（需要 Chrome；产物在 `docs/screenshots/`） |
@@ -88,47 +88,65 @@ npm run typecheck && npm test && npm run build
 - 命名：文件用 camelCase（`exportImport.ts`）或 PascalCase（`GraphView.tsx`）；变量/函数 camelCase；类型/组件 PascalCase；常量 UPPER_SNAKE_CASE。
 - 优先**具名导出**；目前只有入口组件 `App.tsx` 使用默认导出（供 `main.tsx` 挂载）。
 - 纯函数放在 `src/lib`，UI 组件放在 `src/components`，页面级组合放在 `src/screens`。
-- 样式统一手写 CSS + `src/styles/tokens.css` 里的设计变量，不要硬编码颜色、渐变、圆角、阴影或动效曲线。组件样式文件与组件同名（`GraphView.css`），类名加组件前缀。
-- **视觉约定（v0.7 暖杏色，暖一点）**：
-  - **浅色默认**：`:root` 是奶油纸（`--bg: #faf6f0`）+ 暖杏主色 `--accent: #e3a06a` / `--accent-strong: #c9773c` / `--accent-ink: #a85b28`；`:root[data-theme='dark']` 是暖棕夜 `#241d18`，配杏色高光。两个主题都要检查。
-  - **暖色辅助色**：暖沙/焦糖 `#b98a4e`（`--taro`）、软橄榄 `#a8bb87`（`--mint`）、奶油黄 `#e8c07a`（`--butter`）、灰蓝 `#9db8c4`（`--breeze`）；品牌渐变只用 `--grad-brand`（暖杏 → 焦糖 `#f3bf8f → #e3a06a → #c98a52`），不要自己拼第二个品牌渐变。
-  - **圆润与蓬松**：`--font-sans` 使用 `ui-rounded` 圆体；圆角只用 token（`--radius-xs` 12 → `--radius-xl` 32，`--radius-full` 胶囊）；阴影用 `--shadow-1/2/pop/glow` 的暖色阴影，不要把阴影写成纯黑重投影。
-  - **吉祥物与 emoji**：`Mascot` 只做小麻薯（variant：happy/wink/sleepy/love，暖奶油+焦糖配色）；助手头像用 emoji 预设（麻薯/猫猫/叶子/太阳/星星/书本/茶茶/饭碗）+ 自定义 emoji；**不要**引入别的吉祥物、贴纸或插画资源。
-  - **动效**：按压/浮入用 `--spring` / `--ease-bounce`，时长用 `--dur-*`；必须尊重 `prefers-reduced-motion`。
-  - **图谱是暖色画布**：始终使用 `--graph-*` token；浅色是奶油暖网格、暖棕夜是暖棕网格；节点取暖杏/暖沙/橄榄/奶油黄/灰蓝；保留 mono 标注与 1px 清晰连线，不做霓虹/发光边框。
-  - **禁止回归旧设计**：不要引入 0.5 的深色 AI 原生/极光霓虹/玻璃悬浮那套语言，也不要引入宋体/朱砂印章的编辑器风格；不要在正文里堆 emoji 装饰。
-  - **不要糖果化**：主色是暖杏而不是高饱和糖果粉或冷粉，背景是奶油纸而不是纯白/纯粉；大面积暖色要留白和足够对比度。
-- 文案克制、准确、可操作：按钮写清动作（「记一笔」「保存记录」），错误提示写清下一步（「请导出备份」），不要卖萌或制造焦虑。
-- 触控目标不小于 40px（主要按钮与底部导航 44px+），适配安全区；正文与控件对比度至少 WCAG AA。
-- 保持运行时依赖精简：目前只有 `react`、`react-dom`、`markdown-it`。新增运行时依赖需要先在 issue 里讨论。
-- **不允许**引入遥测、分析、CDN 字体/脚本或任何运行时网络请求；助手、简报不允许接入云端模型——隐私是项目的核心承诺。
+- 样式统一手写 CSS + `src/styles/tokens.css` 里的**语义 token**，页面/组件不写死颜色、间距、圆角或阴影。组件样式文件与组件同名（`GraphView.css`），类名加组件前缀。
+
+### LifeOS 视觉规则（v0.9，源：设计文档 §04）
+
+- **只用语义 token**：`--bg` / `--surface` / `--surface-2` / `--text` / `--text-muted` / `--border` / `--accent` / `--accent-soft` / `--danger` / `--kind-*`；浅色与深色映射同一批名字，禁止按页面手写颜色。
+- **两套主题**：浅色暖纸 `#F7F3EC`（surface `#FCFAF6`、surface-2 `#F1EAE1`、正文 `#2C2925`、次级 `#756D63`、边框 `#E5DBCF`、主色 `#C8783F`、主色浅底 `#F2DFC9`、danger `#B34B36`）；深色暖炭 `#171410`（surface `#211D18`、surface-2 `#28221D`、正文 `#F3ECE4`、次级 `#B8ABA0`、边框 `#3B332C`、主色 `#E6A062`、主色浅底 `#463024`、danger `#D56A56`）。默认浅色。
+- **字号只用 scale**：Display 34–38 / H1 28–32 / H2 20–22 / Body 16–17 / Meta 12–13 / Data mono 13–15；不要用圆体或衬线标题。
+- **布局**：页面左右 20px；区块间距 28–36；卡片圆角 16–20；按钮 14–16；阴影几乎不可见（`--shadow-1/2`），**禁止 glow/neon/渐变光晕**；`--grad-brand` 不是装饰渐变。
+- **控件**：只有 chip 是胶囊；按钮是普通圆角矩形；底部导航固定 66px，激活项是浅色块，第五个 tab 是「设置」；图标统一一套线性图标（`Icon`，约 2px 视觉线条）。
+- **分类色只用于节点/标签/小面积状态**：日记 `#65788A`、饮食 `#B45D35`、健康 `#627A4E`、财务 `#9A7112`、笔记 `#7D7164`；不要拿它们铺大面积背景。
+- **品牌符号**：只用 `MochiNode`（暖色主节点 + 卫星节点 + 细轨道），一屏最多出现一次；**不要**再引入卡通吉祥物、脸、贴纸或 emoji 装饰。
+- **动效**：页面进入 220–320ms、按压 120–180ms、sheet ease-out、图谱 settle 1–2s；必须尊重 `prefers-reduced-motion`（tokens 会把时长归零）。
+- **空状态**：一个目标 + 一个 CTA，不堆插画或口号；文案平静、具体。
+- **触控与对比度**：主要按钮与底部导航至少 44px；正文/控件对比度至少 WCAG AA；适配安全区与 16px 表单。
+
+### 组件级约定
+
+- `TodayScreen` 是安静驾驶舱：小 hero（问候 + 一个问题）、单一自然语言记录条、2×2 紧凑指标、1 条洞察 + 3 个数字 + 可展开复盘、≤3 条朴素建议；**不要**加大卡片墙、渐变标题或第二个高权重按钮。
+- `RecordsScreen` 用时间线行（`RecordRow`：类型点 + 标题 + 一行摘要 + 时间），置顶收在紧凑条里；筛选 chips 可横向滚动并有边缘淡出；不要回到卡片墙。
+- `SearchScreen` 的 header sticky；结果复用 `RecordRow`；`<mark>` 只做轻高亮；空查询显示最近编辑；无结果显示「未找到相关记录」+「清除筛选」。
+- `EditorScreen` 阅读优先：默认渲染 Markdown，只有编辑态才显示工具栏和原始 textarea；操作统一进 More（编辑正文/编辑记录信息/置顶/复制 Markdown/导出 .md/删除）；编辑时右上角只留「完成」；关系文案用「连接到 / 来自」。
+- `AgentPanel` 去控制台化：`MochiNode` + 小麻薯 + 「本地处理 · 仅你可见」；正文流消息、纯时间 meta、紧凑确认卡；最多 3 个欢迎动作，追问 chips 只在最新消息下。
+- `GraphView` 是真正的力导向画布：拖动节点实时影响邻居、松手回弹；pan/zoom/pinch；按 degree 决定节点大小；默认稀疏标签，悬停/选中展开一度邻居并变暗其他节点；Node Inspector 提供编辑/连线/删除；添加/连线/重置有明确模式与步骤提示；图例可折叠；沉浸模式隐藏底部导航。
+- `CaptureSheet` 渐进披露：一句话 hero、单行解析卡、置信度 <55% 才提示、展开详情用 52px 行、底部固定 52px 保存/取消。
+- `SettingsScreen` 用消费级 IA：助手 / 外观 / 数据与隐私 / Apple 健康 / 自动化 / 高级设置 / 关于；技术细节折叠在「高级设置」里；危险操作放最后并二次确认。
+- `MochiNode` 是品牌符号，不是装饰插画：保持 1px 细轨道、暖色主节点与 3–4 个卫星点；不要给它加表情或鼠标动画。
 
 ## 模块地图与归属
 
 | 位置 | 职责 | 修改注意 |
 | --- | --- | --- |
 | `src/lib/types.ts` | 数据模型与公共类型（`Note`、`NoteKind`、`NoteMeta`、`NotePosition`、`RecordDraft`、`AgentPersona`…） | 改 `Note` 字段要考虑存储 schema、导入导出与旧数据兼容 |
-| `src/lib/kinds.ts` | 记录类型词表：标签、颜色变量、快捷动作、餐次/健康指标/收支分类、`describeMeta`、默认标题 | 新增类型要同时更新 `NOTE_KINDS`、`KIND_INFO` 与 tokens 里的 `--kind-*` |
+| `src/lib/kinds.ts` | 记录类型词表：标签、分类色 token、快捷动作、餐次/健康指标/收支分类、`describeMeta`、默认标题 | 新增类型要同时更新 `NOTE_KINDS`、`KIND_INFO` 与 tokens 里的 `--kind-*` |
 | `src/lib/links.ts` | 从 Markdown 派生关系：wiki 链接、标签、反向链接、标题索引 | 纯函数；忽略代码块/行内代码 |
 | `src/lib/markdown.ts` | markdown-it 配置、wiki 链接预处理、渲染与纯文本工具 | 安全性关键路径：保持 `html: false` |
 | `src/lib/insights.ts` | 生活记录统计：日/周汇总、分类支出、健康序列；只统计生活记录，忽略普通笔记 | 纯函数；日期按本地时区算，时间戳取 `meta.occurredAt ?? createdAt` |
-| `src/lib/brief.ts` | 今日简报：`buildDailyBrief(notes, now)` 生成 summary / 昨日复盘 / 今日改进 / 4 个趋势卡 | 纯函数、确定性；对比基准是「昨天之前有记录的最近 7 天」；改规则要补 `tests/brief.test.ts` |
+| `src/lib/brief.ts` | 今日简报：`buildDailyBrief(notes, now)` 生成 summary / 昨日复盘 / 今日建议 / 4 个趋势 | 纯函数、确定性；对比基准是「昨天之前有记录的最近 7 天」；改规则要补 `tests/brief.test.ts` |
 | `src/lib/health.ts` | Apple 健康导入：JSON / CSV / `?health=` URL 载荷解析、单位换算、别名、同日聚合与 `replaceId` 去重 | 纯函数；支持 HealthKit 标识符；改解析/单位要补 `tests/health.test.ts` 样例 |
 | `src/lib/agent.ts` | 本地助手：一句话解析、问候、问答与建议、快捷问题 | 纯规则、确定性、不联网；改动要补 `tests/agent.test.ts` 用例 |
 | `src/lib/search.ts` | 全文搜索与标题补全 | 纯函数，便于测试 |
-| `src/lib/graph.ts` | 图谱构建（wiki / 手动 / 同日边、幽灵节点）与力导向布局 | 纯函数，布局需确定性（不依赖随机）；保存位置要归一化 0..1 |
+| `src/lib/graph.ts` | 图谱模型（wiki / 手动 / 同日边、幽灵节点）与确定性力导向分布 | 纯函数；`GraphView` 负责真正的实时仿真；保存位置归一化 0..1 |
 | `src/lib/db.ts` | IndexedDB（数据库 `mashu`，schema v2）/ localStorage 适配、旧库（`rixin` / `mochi` / `inkstone`）一次性迁移 | 改数据结构时升级 `DB_VERSION` 并在 upgrade 中就地补字段；旧备份必须仍能导入 |
 | `src/lib/store.ts` | `useNotes()` 单一状态源：记录 CRUD、图谱位置、手动连线、flush | 写入路径、防抖、`settleWrites` 与删除级联要谨慎 |
-| `src/lib/prefs.ts` | 主题（默认浅色）、引导、助手人设与 emoji 头像（`mashu.agent.v1`）、安装提示（`mashu.installHint.v1`）、`normalizeNote` / `makeNote` | 只碰 localStorage，失败要静默降级；旧助手名/旧头像 id 要映射到新默认 |
+| `src/lib/prefs.ts` | 主题（默认浅色）、引导、助手人设与节点式头像（`mashu.agent.v1`）、安装提示（`mashu.installHint.v1`）、`normalizeNote` / `makeNote` | 只碰 localStorage，失败要静默降级；旧助手名/旧头像 id 要映射到新默认 |
 | `src/lib/seed.ts` | 首次运行的演示记录（生活记录 + 笔记） | 保持小而精，不要伪装成真实数据 |
 | `src/lib/exportImport.ts` | JSON（vault v2，`app: 'mashu'`）/ Markdown 导出、JSON 导入（含旧 `rixin` / `mochi` / `inkstone` 备份兼容）、合并 / 替换、`shareOrDownload` | 改格式时同步升 `VAULT_VERSION`，并保证旧版本仍可导入 |
 | `src/lib/format.ts` | 相对时间、日期、字节数等展示格式化 | 纯函数 |
-| `src/lib/useRoute.ts` | 轻量 hash 路由（`#/today`、`#/records`、`#/graph`、`#/agent`、`#/search`、`#/settings`、`#/note/:id`） | 导航统一用 `navigate` / `replaceRoute`；底部 5 个标签文案在 `TabBar.tsx` |
-| `src/components/` | 可复用 UI：`Mascot`（小麻薯吉祥物，happy/wink/sleepy/love；`MashuMark` 品牌标记）、`Sparkline`、`TabBar`（暖色悬浮 5 标签导航）、`GraphView`（暖色图谱画布）、`CaptureSheet`、`AgentPanel`、`AgentAvatar`（麻薯/猫猫/叶子/太阳/星星/书本/茶茶/饭碗 + 自定义 emoji）、`NodeEditorSheet`、`IosInstallCard` 等 | 通过 props / callback 拿数据，不直接访问 `db.ts`；图谱触点较多，改交互要测触摸与鼠标 |
-| `src/screens/` | 页面级组件：`TodayScreen`（今日：问候 + 小麻薯 + 连续记录 + ask bar + 复盘/改进 + 指标卡）、`RecordsScreen`（记录）、`EditorScreen`、`SettingsScreen`（我的/Apple 健康/安装卡片） | 负责布局与交互，数据由上层注入，不直接访问 `db.ts` |
-| `src/styles/` | `tokens.css` 设计变量（奶油纸、暖杏、暖棕夜、暖色、圆角、软阴影、`--graph-*`）、`base.css` 基础样式与 iOS 16px 规则、`app.css` 外壳样式 | 新颜色/渐变/圆角/阴影先加 token；不要写死品牌色；不要在这里写组件私有样式 |
+| `src/lib/useRoute.ts` | 轻量 hash 路由（`#/today`、`#/records`、`#/graph`、`#/agent`、`#/search`、`#/settings`、`#/note/:id`） | 导航统一用 `navigate` / `replaceRoute`；底部 5 个标签文案在 `TabBar.tsx`（第五个是「设置」） |
+| `src/components/MochiNode.tsx` | 品牌符号：暖色主节点 + 卫星节点 + 细轨道；`breath` 慢呼吸动画 | 一屏最多一次；只读 token 颜色；不加入脸/表情/插画 |
+| `src/components/RecordRow.tsx` | 可复用记录行：类型点 + 标题 + 一行摘要 + 时间 + More；支持搜索 snippet、置顶样式 | Records 与 Search 共用，改字段要同时检查两处 |
+| `src/components/GraphView.tsx` | 真正的力导向画布：仿真、拖拽/邻居响应、pan/zoom/pinch、度数大小、稀疏标签、hover 邻居、Node Inspector、添加/连线/重置、图例、沉浸模式 | 交互多，改行为要测鼠标+触摸+减少动效；`FORCE` 参数在文件顶部 |
+| `src/components/TabBar.tsx` | 66px 底部导航：今日/记录/图谱/助手/设置；等宽英文小字 | 第五个 tab 文案必须是「设置」，不要回到「我的」 |
+| `src/components/CaptureSheet.tsx` | 渐进式快速记录：一句话解析、紧凑卡、展开详情、固定 52px 保存 | 置信度只在 <55% 提示；sheet 高度用 CSS token |
+| `src/components/AgentPanel.tsx` | 助手正文流：Mochi Node + 小麻薯 + 本地处理说明、紧凑确认卡、欢迎动作、最新消息追问 | 不要恢复控制台/AGENT-YOU 样式 |
+| `src/components/SearchScreen.tsx` | sticky 搜索头、标签 chips、复用 RecordRow、命中高亮、最近编辑、空态 | 空查询才显示最近；无结果给「清除筛选」 |
+| `src/screens/` | 页面级组件：`TodayScreen`（安静驾驶舱）、`RecordsScreen`（时间线）、`EditorScreen`（阅读优先）、`SettingsScreen`（设置 IA） | 负责布局与交互，数据由上层注入，不直接访问 `db.ts` |
+| `src/styles/` | `tokens.css` 语义 token（浅色暖纸/深色暖炭/分类色/图谱）、`base.css` 基础样式与 iOS 16px 规则、`app.css` 外壳样式 | 新颜色/间距/圆角/动效先加 token；不要写死品牌色；不要写组件私有样式 |
 | `tests/` | Vitest 单元测试（202 个用例 / 9 个文件：agent、brief、exportImport、graph、health、insights、links、markdown、search） | 文件命名为 `*.test.ts`，不要提交调试用的临时测试文件 |
-| `scripts/` | Node/Python 工具脚本（吉祥物图标、启动图、SW 预缓存注入、局域网托管、截图、二维码） | 不参与前端构建；`sw-precache.mjs` 必须在 `vite build` 之后运行 |
+| `scripts/` | Node/Python 工具脚本（Mochi Node 图标、启动图、SW 预缓存注入、局域网托管、截图、二维码） | 不参与前端构建；`sw-precache.mjs` 必须在 `vite build` 之后运行 |
 | `public/` | 静态资源、PWA manifest 与图标、favicon、iPhone 启动图（`splash/`）、`sw.js` | manifest 需与 `index.html` 保持一致；改离线壳资源时同步更新 `sw.js` 的 `CACHE` 版本（当前 `mashu-v1`） |
 | `.github/workflows/` | `ci.yml`（typecheck + test + build）、`deploy-pages.yml`（推 main 自动发布 GitHub Pages，维护者无需服务器） | 改构建命令时两个 workflow 都要同步 |
 
@@ -142,10 +160,10 @@ npm run typecheck && npm test && npm run build
 - 健康导入（`health.test.ts`）请覆盖：JSON / CSV / base64url 三种输入；HealthKit 标识符与中英文别名；lb / g / L / 分钟 / 小时换算；同日求和 vs 取最新；已有记录时 `replaceId` 去重；无效输入跳过计数。
 - 助手相关改动请用固定 `now`，覆盖：一句话解析、金额/热量/单位抽取、问句不误判为记录、今天/本周小结与空数据。
 - 统计相关改动请覆盖：本地时区跨天、`occurredAt` 缺省回退、多种记录混合、收入不计入支出。
-- 图谱相关改动请覆盖：wiki / 手动 / 同日三种边、去重优先级、幽灵节点、保存位置与固定节点布局。
+- 图谱相关改动请覆盖：wiki / 手动 / 同日三种边、去重优先级、幽灵节点、确定性分布与保存位置；实时力导向交互（拖拽邻居、pan/zoom、inspector）目前主要靠手动/截图验证。
 - 测试里请覆盖：空输入、中文文本、代码块内的「假链接」、大小写与空白差异、旧版备份兼容。
 - 不要为了测试引入新的运行时依赖；如果确实需要新测试工具（例如 DOM 测试环境），先在 issue 里讨论。
-- UI 交互目前没有自动化测试，修改 UI 时请在 PR 里附上真机/窄屏截图或录屏，并确认浅色 / 暖棕夜 / 图谱画布都正常。
+- UI 交互目前没有自动化测试，修改 UI 时请在 PR 里附上真机/窄屏截图或录屏，并确认浅色 / 深色 / 图谱画布和 `prefers-reduced-motion` 都正常。
 
 ## 如何新增一个功能
 
@@ -154,7 +172,7 @@ npm run typecheck && npm test && npm run build
 1. **想清楚数据从哪来。** 优先从 `Note.content` 或已有的 `NoteMeta` 派生，不要新增需要手动同步的冗余字段。
 2. **写纯逻辑模块。** 在 `src/lib/` 新建 `myFeature.ts`（或扩展已有模块），输入输出都是普通数据，不碰 React 和 DOM。
 3. **先写测试。** 在 `tests/myFeature.test.ts` 写失败用例，`npm run test:watch` 看着它变绿。
-4. **做组件。** 在 `src/components/` 新建 `MyFeature.tsx` + `MyFeature.css`，道具驱动、具名导出、样式加前缀；触控目标 40px+，适配安全区、浅色/暖棕夜、`prefers-reduced-motion`；只使用 tokens 里的暖色、圆角、阴影与动效。
+4. **做组件。** 在 `src/components/` 新建 `MyFeature.tsx` + `MyFeature.css`，道具驱动、具名导出、样式加前缀；触控目标 44px+，适配安全区、浅色/深色、`prefers-reduced-motion`；只用语义 token。
 5. **接线。** 在页面级组件或 `App.tsx` 里把 store 的数据和 callback 传进去；需要新增页面时，在 `src/lib/useRoute.ts` 的 `Route` / `parseRoute` / `routeToHash` 中登记路由，并在 `TabBar.tsx` 补导航。需要新增 store 方法时，在 `store.ts` 的 `NotesApi` 里补充并考虑持久化。
 6. **考虑存储兼容。** 如果新增持久化字段：升级 `db.ts` 的 `DB_VERSION` 并在 upgrade 中就地补默认值、同步更新 `prefs.ts` 的 `normalizeNote`、必要时升 `VAULT_VERSION` 并写迁移测试；旧版（含更早品牌的）JSON 备份必须仍能导入。
 7. **考虑离线壳。** 新增顶层静态资源时确认构建后 `sw-precache.mjs` 会把它写入 `PRECACHE`（`splash/` 由 iOS 直接读取，被有意排除）；手改缓存策略时递增 `sw.js` 的 `CACHE` 版本（当前 `mashu-v1`）。
@@ -162,12 +180,12 @@ npm run typecheck && npm test && npm run build
 
 ### 常见改动的落点
 
-- **新增记录类型**：`types.ts` 的 `NoteKind` → `kinds.ts` 的 `NOTE_KINDS` / `KIND_INFO` → `tokens.css` 的 `--kind-*` 与图谱 `--graph-node-*` → `normalizeNote` 的 kind 校验 → 列表/筛选/图谱/统计/简报/助手/节点编辑面板。
-- **新增简报规则**：`brief.ts` 的规则与阈值 → `tests/brief.test.ts` → 必要时在 `TodayScreen` 增补展示；保持 deterministic。
+- **新增记录类型**：`types.ts` 的 `NoteKind` → `kinds.ts` 的 `NOTE_KINDS` / `KIND_INFO` → `tokens.css` 的 `--kind-*` 与图谱节点色 → `normalizeNote` 的 kind 校验 → 列表/筛选/图谱/统计/简报/助手/节点编辑面板。
+- **新增简报规则**：`brief.ts` 的规则与阈值 → `tests/brief.test.ts` → 必要时在 `TodayScreen` 复盘/建议区增补展示；保持 deterministic。
 - **新增健康别名 / 单位**：`health.ts` 的 `TYPE_ALIASES` / `convertValue` → `tests/health.test.ts` 样例；不要让解析器产生重复记录（同日靠 `replaceId`）。
-- **新增 emoji 头像 / 吉祥物表情**：`prefs.ts` 的 `AGENT_AVATARS` → `AgentAvatar.tsx` 的 emoji 映射 / `Mascot.tsx` 的 variant；保持暖色、圆角与软阴影，不引入外部图片。
-- **新增图谱交互**：`GraphView` 的 props 回调 → `App.tsx` 接线 → `store.ts` 的持久化方法 → `tests/graph.test.ts`。
-- **调整视觉**：只改 `tokens.css` 与组件 CSS，避免在组件里写死颜色/渐变；浅色主题、暖棕夜主题与暖色图谱三套都要检查。
+- **新增节点式头像 / Mochi Node 细节**：`prefs.ts` 的 `AGENT_AVATARS` → `AgentAvatar.tsx` 的 glyph / `MochiNode.tsx` 的主/卫星节点；保持语义 token 颜色，不引入图片资源。
+- **新增图谱交互**：`GraphView` 的 props 回调 → `App.tsx` 接线 → `store.ts` 的持久化方法 → `tests/graph.test.ts`；同时手动验证拖拽邻居、pan/zoom 与 inspector。
+- **调整视觉**：只改 `tokens.css` 与组件 CSS，避免在组件里写死颜色/圆角/阴影；浅色、深色与图谱暖色画布三套都要检查。
 
 ## 提交信息规范
 
@@ -193,14 +211,13 @@ npm run typecheck && npm test && npm run build
 - `chore` 杂项（依赖、工具）
 - `ci` CI 配置
 
-`scope` 用模块名，例如 `brief`、`health`、`today`、`records`、`graph`、`agent`、`avatar`、`mascot`、`design`、`store`、`a11y`、`readme`、`ci`。示例：
+`scope` 用模块名，例如 `today`、`records`、`graph`、`agent`、`editor`、`capture`、`settings`、`brand`、`tokens`、`store`、`a11y`、`readme`、`ci`。示例：
 
 ```text
-feat(today): add the mochi mascot to the hero greeting
-feat(avatar): add warm emoji presets for the assistant
-fix(health): keep same-day dedupe when the file repeats a metric
-style(tokens): warm the apricot accent and soft shadows
-docs(readme): explain the v0.7 warm apricot palette
+feat(graph): inspector actions and link step hints
+style(tokens): switch to LifeOS semantic tokens
+docs(readme): explain the v0.9 LifeOS redesign
+fix(editor): keep reading mode before first edit
 ```
 
 一个 PR 尽量只做一件事；逻辑改动和格式化改动分开提交。
@@ -216,9 +233,14 @@ docs(readme): explain the v0.7 warm apricot palette
 - [ ] 没有新增未讨论的运行时依赖
 - [ ] 没有引入遥测、分析、运行时网络请求或云端模型调用，也没有引入服务器/账号/云函数（零服务器交付约束）
 - [ ] iOS/PWA 改动验证过：Safari 标签页 + 添加到主屏幕、断网重载、安装卡片与首次提示、16px 输入框不被放大、导出到「文件」
-- [ ] UI 改动在 375px 宽度下检查过，并在浅色 / 暖棕夜 / 图谱画布三种外观下检查过
-- [ ] 视觉改动只使用 token：没有写死品牌色/渐变/阴影；没有回归深色 AI 原生霓虹、宋体衬线或朱砂印章等旧设计；尊重 `prefers-reduced-motion`
-- [ ] 吉祥物 / emoji 头像改动保持暖色和圆角，没有引入外部图片资源
+- [ ] UI 改动在 375px 宽度下检查过，并在浅色 / 深色 / 图谱画布三种外观下检查过
+- [ ] 视觉改动只使用语义 token：没有写死颜色/圆角/阴影；没有渐变光晕、neon、卡通吉祥物或 emoji 装饰；没有回到大卡片墙或大 hero
+- [ ] 导航第五个 tab 仍是「设置」；chips 是唯一胶囊；底部导航保持 66px
+- [ ] 图谱改动验证过：拖拽带动邻居、松手回弹、pan/zoom/pinch、稀疏标签、hover 邻居、Node Inspector、连线步骤提示、沉浸模式
+- [ ] 编辑器改动验证过：默认阅读态、编辑态工具栏、More 操作、连接到/来自
+- [ ] 快速记录改动验证过：紧凑解析卡、置信度 <55% 才提示、展开详情 52px 行、固定 52px 保存
+- [ ] 空状态保持「一个目标 + 一个 CTA」，文案平静
+- [ ] 吉祥物已彻底移除；品牌只使用 Mochi Node
 - [ ] Apple 健康相关改动验证过：JSON/CSV/URL 三种入口、单位换算、同日去重；测试数据使用脱敏样例
 - [ ] 涉及存储格式的改动：版本号、迁移（含更早品牌的旧库/旧键）、旧备份导入与 `normalizeNote` 都已覆盖
 - [ ] 涉及离线壳/静态资源的改动，已确认 `sw-precache.mjs` 或 `CACHE` 版本正确
@@ -229,7 +251,7 @@ docs(readme): explain the v0.7 warm apricot palette
 
 ## Issue 与沟通
 
-- 提 bug 前先搜索已有 issue；请附上浏览器/系统版本、复现步骤、期望行为，以及**当前使用的存储方式**（IndexedDB 还是 localStorage 回退，「我的」页可见）。
+- 提 bug 前先搜索已有 issue；请附上浏览器/系统版本、复现步骤、期望行为，以及**当前使用的存储方式**（IndexedDB 还是 localStorage 回退，「设置 → 高级设置」可见）。
 - **不要在公开 issue 里粘贴真实生活记录、Apple 健康导出或完整备份文件**——收支、体重、睡眠、心率等信息很私人。需要提供数据时请使用演示记录或自行脱敏的样例 JSON/CSV。
 - 新功能建议先开 issue 讨论范围，避免写完 PR 才发现方向不一致。特别大的改动（同步、插件系统、存储格式、Apple Health 直连方案、视觉体系）请先达成共识。
 - 安全或隐私问题请不要公开提交 issue，先通过维护者的 GitHub 主页联系方式私下沟通。
