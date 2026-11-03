@@ -2110,8 +2110,8 @@ export function GraphView({
         </>
       ) : (
         <div className="graph-empty">
-          <div className="graph-empty-title">还没有记录</div>
-          <div className="graph-empty-text">记一笔后再回来看看它们怎么连在一起</div>
+          <div className="graph-empty-title">记下第一件事</div>
+          <div className="graph-empty-text">图谱会从这里长出来</div>
         </div>
       )}
     </div>
