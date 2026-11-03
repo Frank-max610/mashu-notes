@@ -48,7 +48,7 @@ npm run dev        # http://localhost:5173
 | `npm run typecheck` | 只跑 `tsc --noEmit` |
 | `npm test` | 运行一次 Vitest（当前 202 个用例 / 9 个文件） |
 | `npm run test:watch` | Vitest watch 模式 |
-| `npm run icons` | 重新生成 `public/icons/` 下的渐变品牌图标（需要 Python 3 + Pillow） |
+| `npm run icons` | 重新生成 `public/icons/` 下的麻薯吉祥物图标（需要 Python 3 + Pillow） |
 | `npm run splash` | 重新生成 `public/splash/` 下的 iPhone 启动图（需要 Python 3 + Pillow） |
 | `npm run qr` | 生成局域网访问地址的二维码 PNG（`docs/screenshots/lan-qr.png` + `lan-url.txt`） |
 | `npm run screenshots` | 驱动本机 Chrome 无头模式重新截取 README 截图（需要 Chrome；产物在 `docs/screenshots/`） |
@@ -88,14 +88,16 @@ npm run typecheck && npm test && npm run build
 - 命名：文件用 camelCase（`exportImport.ts`）或 PascalCase（`GraphView.tsx`）；变量/函数 camelCase；类型/组件 PascalCase；常量 UPPER_SNAKE_CASE。
 - 优先**具名导出**；目前只有入口组件 `App.tsx` 使用默认导出（供 `main.tsx` 挂载）。
 - 纯函数放在 `src/lib`，UI 组件放在 `src/components`，页面级组合放在 `src/screens`。
-- 样式统一手写 CSS + `src/styles/tokens.css` 里的设计变量，不要硬编码颜色、渐变、圆角或动效曲线。组件样式文件与组件同名（`GraphView.css`），类名加组件前缀。
-- **视觉约定（v0.5 vibrant AI-native）**：
-  - **深色优先**：`:root` 是近黑画布（`--bg: #08090c`）+ 极光辉光；`:root[data-theme='light']` 是完整浅色主题。两个主题都要检查。
-  - **只用 token 的渐变与色**：品牌渐变 `--grad-brand`（sunset `#ff7a17` → magenta `#ff4d8d` → dusk `#8b5cf6`）、`--grad-soft`、`--grad-aurora`，辅助色 breeze `#a0c3ec` / lime `#b6f09c`；不要自己拼第二个品牌渐变。
-  - **药丸 + 玻璃 + 大圆角**：按钮/筛选/状态用 `--radius-full` 胶囊；卡片用 `--glass` + 大圆角（`--radius-l` / `--radius-xl`，14–24px）；悬浮导航用 backdrop blur；高光/阴影用 `--shadow-*` / `--shadow-glow`。
-  - **动效**：按压/弹出用 `--spring` / `--ease-bounce`，时长用 `--dur-*`；必须尊重 `prefers-reduced-motion`。
-  - **禁止回归旧设计语言**：不要引入宋体衬线标题、纸纹/纸质底色、朱砂印章式视觉；不要用 emoji 作为主要装饰；不要硬编码旧品牌色。
-  - **图谱是独立语言**：始终深色仪表盘，只从 `--graph-*` token 取色（sunset / violet / lime / breeze），28px 网格、1px 锐利连线、等宽标注。
+- 样式统一手写 CSS + `src/styles/tokens.css` 里的设计变量，不要硬编码颜色、渐变、圆角、阴影或动效曲线。组件样式文件与组件同名（`GraphView.css`），类名加组件前缀。
+- **视觉约定（v0.6 soft pastel，调淡一点）**：
+  - **浅色默认**：`:root` 是奶油纸（`--bg: #fdf8f6`）+ 雾玫瑰主色 `--accent: #ea8fa8` / `--accent-strong: #d9557f`；`:root[data-theme='dark']` 是柔和芋泥夜 `#201a27`。两个主题都要检查。
+  - **粉彩辅助色**：薰衣草/芋泥 `#a98bd6`（`--taro`）、薄荷 `#8fd4b6`（`--mint`）、奶油黄 `#f4c97a`（`--butter`）、微风蓝 `#a9c6e8`（`--breeze`）；品牌渐变只用 `--grad-brand`（粉 → 薰衣草），不要自己拼第二个品牌渐变。
+  - **圆润与蓬松**：`--font-sans` 使用 `ui-rounded` 圆体；圆角只用 token（`--radius-xs` 12 → `--radius-xl` 32，`--radius-full` 胶囊）；阴影用 `--shadow-1/2/pop/glow` 的粉彩阴影，不要把阴影写成纯黑重投影。
+  - **吉祥物与 emoji**：`Mascot` 只做小麻薯（variant：happy/wink/sleepy/love）；助手头像用 emoji 预设（麻薯/猫猫/叶子/太阳/星星/书本/茶茶/饭碗）+ 自定义 emoji；**不要**引入别的吉祥物、贴纸或插画资源。
+  - **动效**：按压/浮入用 `--spring` / `--ease-bounce`，时长用 `--dur-*`；必须尊重 `prefers-reduced-motion`。
+  - **图谱是粉彩画布**：始终使用 `--graph-*` token；浅色是奶油粉网格、芋泥夜是深芋网格；节点取玫瑰/薰衣草/薄荷/奶油黄/微风蓝；保留 mono 标注与 1px 清晰连线，不做霓虹/发光边框。
+  - **禁止回归旧设计**：不要引入 0.5 的深色 AI 原生/极光霓虹/玻璃悬浮那套语言，也不要引入宋体/朱砂印章的编辑器风格；不要在正文里堆 emoji 装饰。
+  - **不要糖果化**：主色是雾玫瑰而不是高饱和糖果粉，背景是奶油纸而不是纯白/纯粉；大面积粉彩要留白和足够对比度。
 - 文案克制、准确、可操作：按钮写清动作（「记一笔」「保存记录」），错误提示写清下一步（「请导出备份」），不要卖萌或制造焦虑。
 - 触控目标不小于 40px（主要按钮与底部导航 44px+），适配安全区；正文与控件对比度至少 WCAG AA。
 - 保持运行时依赖精简：目前只有 `react`、`react-dom`、`markdown-it`。新增运行时依赖需要先在 issue 里讨论。
@@ -117,16 +119,16 @@ npm run typecheck && npm test && npm run build
 | `src/lib/graph.ts` | 图谱构建（wiki / 手动 / 同日边、幽灵节点）与力导向布局 | 纯函数，布局需确定性（不依赖随机）；保存位置要归一化 0..1 |
 | `src/lib/db.ts` | IndexedDB（数据库 `mashu`，schema v2）/ localStorage 适配、旧库（`rixin` / `mochi` / `inkstone`）一次性迁移 | 改数据结构时升级 `DB_VERSION` 并在 upgrade 中就地补字段；旧备份必须仍能导入 |
 | `src/lib/store.ts` | `useNotes()` 单一状态源：记录 CRUD、图谱位置、手动连线、flush | 写入路径、防抖、`settleWrites` 与删除级联要谨慎 |
-| `src/lib/prefs.ts` | 主题、引导、助手人设与渐变头像（`mashu.agent.v1`）、安装提示（`mashu.installHint.v1`）、`normalizeNote` / `makeNote` | 只碰 localStorage，失败要静默降级；旧助手名/旧头像 id 要映射到新默认 |
+| `src/lib/prefs.ts` | 主题（默认浅色）、引导、助手人设与 emoji 头像（`mashu.agent.v1`）、安装提示（`mashu.installHint.v1`）、`normalizeNote` / `makeNote` | 只碰 localStorage，失败要静默降级；旧助手名/旧头像 id 要映射到新默认 |
 | `src/lib/seed.ts` | 首次运行的演示记录（生活记录 + 笔记） | 保持小而精，不要伪装成真实数据 |
 | `src/lib/exportImport.ts` | JSON（vault v2，`app: 'mashu'`）/ Markdown 导出、JSON 导入（含旧 `rixin` / `mochi` / `inkstone` 备份兼容）、合并 / 替换、`shareOrDownload` | 改格式时同步升 `VAULT_VERSION`，并保证旧版本仍可导入 |
 | `src/lib/format.ts` | 相对时间、日期、字节数等展示格式化 | 纯函数 |
 | `src/lib/useRoute.ts` | 轻量 hash 路由（`#/today`、`#/records`、`#/graph`、`#/agent`、`#/search`、`#/settings`、`#/note/:id`） | 导航统一用 `navigate` / `replaceRoute`；底部 5 个标签文案在 `TabBar.tsx` |
-| `src/components/` | 可复用 UI：BrandMark（渐变品牌标记）、Sparkline、TabBar（悬浮玻璃 5 标签导航）、GraphView（深色仪表盘）、CaptureSheet、AgentPanel、AgentAvatar（渐变头像：光晕/首字/圆环/方块/三角/星芒/水波/网格 + 自定义 emoji）、NodeEditorSheet、IosInstallCard 等 | 通过 props / callback 拿数据，不直接访问 `db.ts`；图谱触点较多，改交互要测触摸与鼠标 |
-| `src/screens/` | 页面级组件：TodayScreen（今日）、RecordsScreen（记录）、EditorScreen、SettingsScreen（我的/Apple 健康/安装卡片） | 负责布局与交互，数据由上层注入，不直接访问 `db.ts` |
-| `src/styles/` | `tokens.css` 设计变量（深色优先、渐变、玻璃、圆角、`--graph-*`）、`base.css` 基础样式与 iOS 16px 规则、`app.css` 外壳样式 | 新颜色/渐变/圆角/动效先加 token；不要写死品牌色；不要在这里写组件私有样式 |
+| `src/components/` | 可复用 UI：`Mascot`（小麻薯吉祥物，happy/wink/sleepy/love；`MashuMark` 品牌标记）、`Sparkline`、`TabBar`（粉彩悬浮 5 标签导航）、`GraphView`（粉彩图谱画布）、`CaptureSheet`、`AgentPanel`、`AgentAvatar`（麻薯/猫猫/叶子/太阳/星星/书本/茶茶/饭碗 + 自定义 emoji）、`NodeEditorSheet`、`IosInstallCard` 等 | 通过 props / callback 拿数据，不直接访问 `db.ts`；图谱触点较多，改交互要测触摸与鼠标 |
+| `src/screens/` | 页面级组件：`TodayScreen`（今日：问候 + 小麻薯 + 连续记录 + ask bar + 复盘/改进 + 指标卡）、`RecordsScreen`（记录）、`EditorScreen`、`SettingsScreen`（我的/Apple 健康/安装卡片） | 负责布局与交互，数据由上层注入，不直接访问 `db.ts` |
+| `src/styles/` | `tokens.css` 设计变量（奶油纸、雾玫瑰、芋泥夜、粉彩、圆角、软阴影、`--graph-*`）、`base.css` 基础样式与 iOS 16px 规则、`app.css` 外壳样式 | 新颜色/渐变/圆角/阴影先加 token；不要写死品牌色；不要在这里写组件私有样式 |
 | `tests/` | Vitest 单元测试（202 个用例 / 9 个文件：agent、brief、exportImport、graph、health、insights、links、markdown、search） | 文件命名为 `*.test.ts`，不要提交调试用的临时测试文件 |
-| `scripts/` | Node/Python 工具脚本（渐变图标、启动图、SW 预缓存注入、局域网托管、截图、二维码） | 不参与前端构建；`sw-precache.mjs` 必须在 `vite build` 之后运行 |
+| `scripts/` | Node/Python 工具脚本（吉祥物图标、启动图、SW 预缓存注入、局域网托管、截图、二维码） | 不参与前端构建；`sw-precache.mjs` 必须在 `vite build` 之后运行 |
 | `public/` | 静态资源、PWA manifest 与图标、favicon、iPhone 启动图（`splash/`）、`sw.js` | manifest 需与 `index.html` 保持一致；改离线壳资源时同步更新 `sw.js` 的 `CACHE` 版本（当前 `mashu-v1`） |
 | `.github/workflows/` | `ci.yml`（typecheck + test + build）、`deploy-pages.yml`（推 main 自动发布 GitHub Pages，维护者无需服务器） | 改构建命令时两个 workflow 都要同步 |
 
@@ -143,7 +145,7 @@ npm run typecheck && npm test && npm run build
 - 图谱相关改动请覆盖：wiki / 手动 / 同日三种边、去重优先级、幽灵节点、保存位置与固定节点布局。
 - 测试里请覆盖：空输入、中文文本、代码块内的「假链接」、大小写与空白差异、旧版备份兼容。
 - 不要为了测试引入新的运行时依赖；如果确实需要新测试工具（例如 DOM 测试环境），先在 issue 里讨论。
-- UI 交互目前没有自动化测试，修改 UI 时请在 PR 里附上真机/窄屏截图或录屏，并确认深色 / 浅色 / 图谱仪表盘都正常。
+- UI 交互目前没有自动化测试，修改 UI 时请在 PR 里附上真机/窄屏截图或录屏，并确认浅色 / 芋泥夜 / 图谱画布都正常。
 
 ## 如何新增一个功能
 
@@ -152,7 +154,7 @@ npm run typecheck && npm test && npm run build
 1. **想清楚数据从哪来。** 优先从 `Note.content` 或已有的 `NoteMeta` 派生，不要新增需要手动同步的冗余字段。
 2. **写纯逻辑模块。** 在 `src/lib/` 新建 `myFeature.ts`（或扩展已有模块），输入输出都是普通数据，不碰 React 和 DOM。
 3. **先写测试。** 在 `tests/myFeature.test.ts` 写失败用例，`npm run test:watch` 看着它变绿。
-4. **做组件。** 在 `src/components/` 新建 `MyFeature.tsx` + `MyFeature.css`，道具驱动、具名导出、样式加前缀；触控目标 40px+，适配安全区、深色/浅色、`prefers-reduced-motion`；只使用 tokens 里的渐变、玻璃、圆角与动效。
+4. **做组件。** 在 `src/components/` 新建 `MyFeature.tsx` + `MyFeature.css`，道具驱动、具名导出、样式加前缀；触控目标 40px+，适配安全区、浅色/芋泥夜、`prefers-reduced-motion`；只使用 tokens 里的粉彩、圆角、阴影与动效。
 5. **接线。** 在页面级组件或 `App.tsx` 里把 store 的数据和 callback 传进去；需要新增页面时，在 `src/lib/useRoute.ts` 的 `Route` / `parseRoute` / `routeToHash` 中登记路由，并在 `TabBar.tsx` 补导航。需要新增 store 方法时，在 `store.ts` 的 `NotesApi` 里补充并考虑持久化。
 6. **考虑存储兼容。** 如果新增持久化字段：升级 `db.ts` 的 `DB_VERSION` 并在 upgrade 中就地补默认值、同步更新 `prefs.ts` 的 `normalizeNote`、必要时升 `VAULT_VERSION` 并写迁移测试；旧版（含更早品牌的）JSON 备份必须仍能导入。
 7. **考虑离线壳。** 新增顶层静态资源时确认构建后 `sw-precache.mjs` 会把它写入 `PRECACHE`（`splash/` 由 iOS 直接读取，被有意排除）；手改缓存策略时递增 `sw.js` 的 `CACHE` 版本（当前 `mashu-v1`）。
@@ -163,9 +165,9 @@ npm run typecheck && npm test && npm run build
 - **新增记录类型**：`types.ts` 的 `NoteKind` → `kinds.ts` 的 `NOTE_KINDS` / `KIND_INFO` → `tokens.css` 的 `--kind-*` 与图谱 `--graph-node-*` → `normalizeNote` 的 kind 校验 → 列表/筛选/图谱/统计/简报/助手/节点编辑面板。
 - **新增简报规则**：`brief.ts` 的规则与阈值 → `tests/brief.test.ts` → 必要时在 `TodayScreen` 增补展示；保持 deterministic。
 - **新增健康别名 / 单位**：`health.ts` 的 `TYPE_ALIASES` / `convertValue` → `tests/health.test.ts` 样例；不要让解析器产生重复记录（同日靠 `replaceId`）。
-- **新增渐变头像**：`prefs.ts` 的 `AGENT_AVATARS` → `AgentAvatar.tsx` 的渐变与 glyph；只使用品牌/辅助色，保持圆角与玻璃质感一致。
+- **新增 emoji 头像 / 吉祥物表情**：`prefs.ts` 的 `AGENT_AVATARS` → `AgentAvatar.tsx` 的 emoji 映射 / `Mascot.tsx` 的 variant；保持粉彩、圆角与软阴影，不引入外部图片。
 - **新增图谱交互**：`GraphView` 的 props 回调 → `App.tsx` 接线 → `store.ts` 的持久化方法 → `tests/graph.test.ts`。
-- **调整视觉**：只改 `tokens.css` 与组件 CSS，避免在组件里写死颜色/渐变；深色主题、浅色主题与图谱仪表盘三套都要检查。
+- **调整视觉**：只改 `tokens.css` 与组件 CSS，避免在组件里写死颜色/渐变；浅色主题、芋泥夜主题与粉彩图谱三套都要检查。
 
 ## 提交信息规范
 
@@ -191,14 +193,14 @@ npm run typecheck && npm test && npm run build
 - `chore` 杂项（依赖、工具）
 - `ci` CI 配置
 
-`scope` 用模块名，例如 `brief`、`health`、`today`、`records`、`graph`、`agent`、`avatar`、`brand`、`design`、`store`、`a11y`、`readme`、`ci`。示例：
+`scope` 用模块名，例如 `brief`、`health`、`today`、`records`、`graph`、`agent`、`avatar`、`mascot`、`design`、`store`、`a11y`、`readme`、`ci`。示例：
 
 ```text
-feat(today): add a streak pill to the greeting header
-feat(avatar): add gradient wave preset for the assistant
+feat(today): add the mochi mascot to the hero greeting
+feat(avatar): add pastel emoji presets for the assistant
 fix(health): keep same-day dedupe when the file repeats a metric
-style(tokens): refresh the midnight glass palette
-docs(readme): explain the vibrant AI-native redesign
+style(tokens): soften the rose accent and puffy shadows
+docs(readme): explain the v0.6 pastel return
 ```
 
 一个 PR 尽量只做一件事；逻辑改动和格式化改动分开提交。
@@ -214,8 +216,9 @@ docs(readme): explain the vibrant AI-native redesign
 - [ ] 没有新增未讨论的运行时依赖
 - [ ] 没有引入遥测、分析、运行时网络请求或云端模型调用，也没有引入服务器/账号/云函数（零服务器交付约束）
 - [ ] iOS/PWA 改动验证过：Safari 标签页 + 添加到主屏幕、断网重载、安装卡片与首次提示、16px 输入框不被放大、导出到「文件」
-- [ ] UI 改动在 375px 宽度下检查过，并在深色 / 浅色 / 图谱仪表盘三种外观下检查过
-- [ ] 视觉改动只使用 token：没有写死品牌色/渐变；没有回归宋体衬线、纸纹、朱砂印章等旧设计语言；尊重 `prefers-reduced-motion`
+- [ ] UI 改动在 375px 宽度下检查过，并在浅色 / 芋泥夜 / 图谱画布三种外观下检查过
+- [ ] 视觉改动只使用 token：没有写死品牌色/渐变/阴影；没有回归深色 AI 原生霓虹、宋体衬线或朱砂印章等旧设计；尊重 `prefers-reduced-motion`
+- [ ] 吉祥物 / emoji 头像改动保持粉彩和圆角，没有引入外部图片资源
 - [ ] Apple 健康相关改动验证过：JSON/CSV/URL 三种入口、单位换算、同日去重；测试数据使用脱敏样例
 - [ ] 涉及存储格式的改动：版本号、迁移（含更早品牌的旧库/旧键）、旧备份导入与 `normalizeNote` 都已覆盖
 - [ ] 涉及离线壳/静态资源的改动，已确认 `sw-precache.mjs` 或 `CACHE` 版本正确
