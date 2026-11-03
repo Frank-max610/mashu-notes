@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """Generate iOS Home Screen splash screens for 麻薯 (apple-touch-startup-image).
 
-Dark canvas with an aurora glow, the gradient brand mark and the wordmark.
+Soft strawberry-milk background, the mochi mascot and the wordmark.
 Run with: npm run splash
 """
 from __future__ import annotations
 
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 OUT = Path(__file__).resolve().parent.parent / "public" / "splash"
 OUT.mkdir(parents=True, exist_ok=True)
@@ -23,9 +23,10 @@ SIZES = [
     (750, 1334, "iphone-se"),
 ]
 
-BG = (8, 9, 12)
-CREAM = (255, 247, 242)
-MUTED = (154, 161, 176)
+TOP = (255, 249, 247)
+BOTTOM = (255, 238, 244)
+INK = (74, 58, 66)
+MUTED = (138, 106, 121)
 
 FONT_CANDIDATES = [
     ("/System/Library/Fonts/PingFang.ttc", 2),
@@ -54,60 +55,72 @@ def vertical_gradient(image, top, bottom):
         draw.line([(0, y), (image.width, y)], fill=color)
 
 
-def glow(image, center, radius, color):
+def soft_glow(image, center, radius, color, blur=90):
     layer = Image.new("RGBA", image.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(layer)
-    draw.ellipse(
-        (center[0] - radius, center[1] - radius, center[0] + radius, center[1] + radius),
-        fill=color,
-    )
-    from PIL import ImageFilter
-
-    layer = layer.filter(ImageFilter.GaussianBlur(radius * 0.55))
+    cx, cy = center
+    draw.ellipse((cx - radius, cy - radius, cx + radius, cy + radius), fill=color)
+    layer = layer.filter(ImageFilter.GaussianBlur(blur))
     return Image.alpha_composite(image.convert("RGBA"), layer).convert("RGB")
 
 
-def gradient_mark(size):
-    mark = Image.new("RGB", (size, size))
-    draw = ImageDraw.Draw(mark)
-    stops = [(0.0, (255, 122, 23)), (0.55, (255, 77, 141)), (1.0, (139, 92, 246))]
-    for y in range(size):
-        for x in range(size):
-            t = (x / size) * 0.5 + (y / size) * 0.5
-            color = stops[-1][1]
-            for i in range(len(stops) - 1):
-                left, right = stops[i], stops[i + 1]
-                if left[0] <= t <= right[0]:
-                    local = (t - left[0]) / (right[0] - left[0] or 1)
-                    color = tuple(round(left[1][k] + (right[1][k] - left[1][k]) * local) for k in range(3))
-                    break
-            mark.putpixel((x, y), color)
-    mask = Image.new("L", (size, size), 0)
-    ImageDraw.Draw(mask).rounded_rectangle((0, 0, size - 1, size - 1), radius=int(size * 0.22), fill=255)
-    out = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    out.paste(mark, (0, 0), mask)
-    return out
+def draw_mascot(image, cx, cy, size):
+    draw = ImageDraw.Draw(image, "RGBA")
+    body_w, body_h = size * 0.82, size * 0.74
+    # body + top highlight
+    draw.ellipse((cx - body_w / 2, cy - body_h / 2 + size * 0.08, cx + body_w / 2, cy + body_h / 2 + size * 0.08),
+                 fill=(255, 228, 238, 255))
+    draw.ellipse((cx - body_w * 0.34, cy - body_h * 0.16, cx + body_w * 0.34, cy + body_h * 0.2),
+                 fill=(255, 245, 249, 235))
+    # ears / blush
+    for side in (-1, 1):
+        draw.ellipse((cx + side * body_w * 0.33 - size * 0.05, cy + size * 0.04,
+                      cx + side * body_w * 0.33 + size * 0.05, cy + size * 0.13),
+                     fill=(255, 166, 188, 180))
+    # eyes
+    eye = size * 0.026
+    for side in (-1, 1):
+        ex = cx + side * size * 0.16
+        ey = cy - size * 0.03
+        draw.ellipse((ex - eye, ey - eye, ex + eye, ey + eye), fill=(90, 59, 70, 255))
+        draw.ellipse((ex - eye * 0.35, ey - eye * 0.65, ex + eye * 0.2, ey - eye * 0.05), fill=(255, 255, 255, 230))
+    # smile
+    draw.arc((cx - size * 0.07, cy + size * 0.02, cx + size * 0.07, cy + size * 0.12), 15, 165, fill=(150, 90, 105, 255), width=max(2, int(size * 0.012)))
+    # strawberry hat
+    berry_r = size * 0.155
+    bx, by = cx + size * 0.17, cy - size * 0.34
+    draw.ellipse((bx - berry_r, by - berry_r * 0.85, bx + berry_r, by + berry_r * 0.9), fill=(255, 143, 171, 255))
+    draw.ellipse((bx - berry_r * 0.7, by - berry_r * 0.55, bx + berry_r * 0.1, by - berry_r * 0.15), fill=(255, 190, 205, 220))
+    # leaf
+    leaf = size * 0.09
+    draw.polygon(
+        [(bx - leaf * 0.9, by - berry_r * 0.7), (bx - leaf * 0.2, by - berry_r * 0.45),
+         (bx - leaf * 0.35, by - berry_r * 0.15), (bx - leaf * 1.15, by - berry_r * 0.4)],
+        fill=(143, 220, 189, 255),
+    )
+    draw.polygon(
+        [(bx + leaf * 0.9, by - berry_r * 0.7), (bx + leaf * 0.2, by - berry_r * 0.45),
+         (bx + leaf * 0.35, by - berry_r * 0.15), (bx + leaf * 1.15, by - berry_r * 0.4)],
+        fill=(121, 208, 174, 255),
+    )
 
 
 def render(width, height):
-    image = Image.new("RGB", (width, height), BG)
-    vertical_gradient(image, BG, (13, 15, 20))
-    image = glow(image, (width * 0.2, height * 0.12), width * 0.55, (255, 122, 23, 60))
-    image = glow(image, (width * 0.9, height * 0.18), width * 0.55, (139, 92, 246, 70))
-    image = glow(image, (width * 0.55, height * 0.95), width * 0.7, (160, 195, 236, 26))
+    image = Image.new("RGB", (width, height), TOP)
+    vertical_gradient(image, TOP, BOTTOM)
+    image = soft_glow(image, (width * 0.12, height * 0.1), width * 0.55, (255, 190, 210, 80), blur=int(width * 0.09))
+    image = soft_glow(image, (width * 0.9, height * 0.12), width * 0.5, (196, 176, 234, 70), blur=int(width * 0.09))
+    image = soft_glow(image, (width * 0.55, height * 0.96), width * 0.7, (255, 231, 178, 40), blur=int(width * 0.1))
 
     draw = ImageDraw.Draw(image)
     cx, cy = width / 2, height * 0.44
-    mark_size = int(width * 0.3)
-    mark = gradient_mark(mark_size)
-    image.paste(mark, (int(cx - mark_size / 2), int(cy - mark_size / 2)), mark)
-    draw = ImageDraw.Draw(image)
+    draw_mascot(image, cx, cy, width * 0.34)
 
-    title_font = load_font(int(width * 0.115))
+    title_font = load_font(int(width * 0.11))
     title = "麻薯"
     box = draw.textbbox((0, 0), title, font=title_font)
-    title_y = cy + mark_size * 0.62
-    draw.text((cx - (box[2] - box[0]) / 2 - box[0], title_y), title, font=title_font, fill=CREAM)
+    title_y = cy + width * 0.25
+    draw.text((cx - (box[2] - box[0]) / 2 - box[0], title_y), title, font=title_font, fill=INK)
 
     sub_font = load_font(int(width * 0.028))
     sub = "记录 · 复盘 · 改进"

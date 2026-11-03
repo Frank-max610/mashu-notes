@@ -98,11 +98,11 @@ const SHOTS = [
     scrollTo: '.install-card',
   },
   {
-    file: 'light-today.png',
+    file: 'dark-today.png',
     hash: '#/today',
     waitFor: '.brief-block',
     delay: 800,
-    theme: 'light',
+    theme: 'dark',
   },
   {
     file: 'empty-records.png',

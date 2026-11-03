@@ -214,7 +214,7 @@
   height: 7px;
   border-radius: 50%;
   background: var(--grad-brand);
-  box-shadow: 0 0 10px rgba(255, 122, 23, 0.7);
+  box-shadow: 0 0 10px rgba(232, 143, 168, 0.7);
 }
 
 .ask-bar {
@@ -277,9 +277,9 @@
   padding: 1px;
   background: linear-gradient(
     135deg,
-    rgba(255, 122, 23, 0.55),
-    rgba(255, 77, 141, 0.35) 45%,
-    rgba(139, 92, 246, 0.55)
+    rgba(232, 143, 168, 0.55),
+    rgba(217, 106, 146, 0.35) 45%,
+    rgba(169, 139, 214, 0.55)
   );
   box-shadow: var(--shadow-glow);
 }
@@ -295,7 +295,7 @@
   position: absolute;
   inset: auto -20% -60% -20%;
   height: 120px;
-  background: radial-gradient(50% 100% at 50% 0%, rgba(139, 92, 246, 0.2), transparent 70%);
+  background: radial-gradient(50% 100% at 50% 0%, rgba(169, 139, 214, 0.2), transparent 70%);
   pointer-events: none;
 }
 
@@ -418,16 +418,16 @@
 }
 
 .metric-card.kind-finance {
-  background: linear-gradient(160deg, rgba(255, 209, 102, 0.14), var(--surface) 60%);
+  background: linear-gradient(160deg, rgba(244, 201, 122, 0.2), var(--surface) 60%);
 }
 .metric-card.kind-food {
-  background: linear-gradient(160deg, rgba(255, 178, 107, 0.16), var(--surface) 60%);
+  background: linear-gradient(160deg, rgba(242, 173, 143, 0.22), var(--surface) 60%);
 }
 .metric-card.kind-health {
-  background: linear-gradient(160deg, rgba(182, 240, 156, 0.14), var(--surface) 60%);
+  background: linear-gradient(160deg, rgba(143, 212, 182, 0.22), var(--surface) 60%);
 }
 .metric-card.kind-diary {
-  background: linear-gradient(160deg, rgba(160, 195, 236, 0.14), var(--surface) 60%);
+  background: linear-gradient(160deg, rgba(169, 198, 232, 0.2), var(--surface) 60%);
 }
 
 .metric-label {
@@ -1757,4 +1757,47 @@ button.settings-row:active {
     background: var(--surface-2);
     color: var(--text);
   }
+}
+
+
+/* ---------- v0.6 pastel additions ---------- */
+
+.hero-mascot {
+  flex: none;
+  width: 74px;
+  height: 74px;
+  margin: -4px -2px 0 0;
+  filter: drop-shadow(0 8px 14px rgba(226, 130, 155, 0.22));
+}
+
+.today-hero .hero-top {
+  align-items: flex-start;
+}
+
+.hero-greeting {
+  font-size: 28px;
+  line-height: 1.25;
+}
+
+.ag-avatar {
+  overflow: hidden;
+  box-shadow: var(--shadow-1);
+}
+
+.ag-avatar-custom {
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+}
+
+.ag-avatar-emoji {
+  background: linear-gradient(150deg, #fff6fa, #ffe6ee);
+  border: 1.5px solid var(--border);
+  font-size: 55% !important;
+}
+
+.graph-host {
+  border-radius: var(--radius-l);
+  border: 1.5px solid var(--border);
+  box-shadow: var(--shadow-2);
+  background: var(--graph-panel);
 }

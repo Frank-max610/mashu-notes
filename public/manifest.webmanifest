@@ -1,15 +1,15 @@
 {
   "name": "麻薯",
   "short_name": "麻薯",
-  "description": "麻薯 — 本地优先的生活记录与复盘 App：饮食、健康、收支、日记连成可编辑图谱，每日复盘与改进建议都在本机生成。",
+  "description": "麻薯 — 软乎乎的本地生活记录与复盘 App：饮食、健康、收支、日记连成可编辑图谱，每日复盘与改进建议都在本机生成。",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "lang": "zh-CN",
   "dir": "ltr",
-  "background_color": "#08090c",
-  "theme_color": "#08090c",
+  "background_color": "#fdf8f6",
+  "theme_color": "#fdf8f6",
   "categories": [
     "productivity",
     "utilities",

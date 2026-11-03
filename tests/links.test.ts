@@ -51,8 +51,8 @@ describe('extractWikiLinks', () => {
   });
 
   it('handles CJK targets', () => {
-    expect(extractWikiLinks('去[[欢迎来到 Mochi]]看看')).toEqual([
-      { target: '欢迎来到 Mochi', alias: null },
+    expect(extractWikiLinks('去[[欢迎来到 麻薯]]看看')).toEqual([
+      { target: '欢迎来到 麻薯', alias: null },
     ]);
   });
 

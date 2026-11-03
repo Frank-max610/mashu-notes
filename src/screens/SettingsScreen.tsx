@@ -15,10 +15,10 @@ import { formatBytes } from '../lib/format';
 import { AGENT_AVATARS } from '../lib/prefs';
 import { Icon, type IconName } from '../components/Icon';
 import { AgentAvatar } from '../components/AgentAvatar';
-import { BrandMark } from '../components/BrandMark';
+import { MashuMark } from '../components/Mascot';
 import { IosInstallCard } from '../components/IosInstallCard';
 
-const APP_VERSION = '0.5.0';
+const APP_VERSION = '0.6.0';
 
 export interface SettingsScreenProps {
   notes: Note[];
@@ -200,7 +200,7 @@ export function SettingsScreen({
     <div className="screen settings-screen">
       <header className="screen-header settings-header">
         <div className="brand-row">
-          <BrandMark size={34} />
+          <MashuMark size={36} />
           <div className="brand-copy">
             <h1 className="page-title display">我的</h1>
             <p className="brand-date mono">麻薯 v{APP_VERSION}</p>

@@ -1,4 +1,4 @@
-/* 麻薯 life graph — always-dark "instrument panel".
+/* 麻薯 life graph — soft pastel canvas (taro night in dark theme).
    Scoped under .graph-view; the paper app shell stays outside the panel frame. */
 
 .graph-view {
@@ -24,8 +24,8 @@
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(120% 92% at 50% 0%, transparent 42%, rgba(2, 4, 8, 0.55) 100%),
-    linear-gradient(180deg, rgba(56, 189, 248, 0.05), transparent 26%);
+    radial-gradient(120% 92% at 50% 0%, transparent 52%, rgba(255, 255, 255, 0.5) 100%),
+    linear-gradient(180deg, rgba(232, 143, 168, 0.08), transparent 30%);
 }
 
 .graph-view .graph-canvas {
@@ -129,7 +129,7 @@
 
 .graph-view .graph-btn:hover,
 .graph-view .graph-btn:active {
-  background: rgba(148, 163, 184, 0.14);
+  background: rgba(205, 138, 158, 0.14);
   color: var(--graph-text);
 }
 

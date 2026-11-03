@@ -27,7 +27,7 @@ export function getStoredTheme(): 'dark' | 'light' | 'system' {
   } catch {
     /* ignore */
   }
-  return 'dark';
+  return 'light';
 }
 
 export function setStoredTheme(theme: 'dark' | 'light' | 'system'): void {
@@ -180,25 +180,23 @@ export interface AgentAvatarOption {
   label: string;
 }
 
-/** Abstract gradient avatars for the local agent (no mascots, no emoji defaults). */
+/** Cute pastel avatar set for the local helper. */
 export const AGENT_AVATARS: readonly AgentAvatarOption[] = [
-  { id: 'orb', label: '光晕' },
-  { id: 'initial', label: '首字' },
-  { id: 'ring', label: '圆环' },
-  { id: 'square', label: '方块' },
-  { id: 'triad', label: '三角' },
-  { id: 'spark', label: '星芒' },
-  { id: 'wave', label: '水波' },
-  { id: 'grid', label: '网格' },
+  { id: 'mochi', label: '麻薯' },
+  { id: 'cat', label: '猫猫' },
+  { id: 'leaf', label: '叶子' },
+  { id: 'sun', label: '太阳' },
+  { id: 'star', label: '星星' },
+  { id: 'book', label: '书本' },
+  { id: 'tea', label: '茶茶' },
+  { id: 'bowl', label: '饭碗' },
 ];
 
-/** Avatars/names from earlier releases map onto the new defaults. */
-const LEGACY_AVATAR_IDS = new Set([
-  'mochi', 'cat', 'leaf', 'sun', 'star', 'book', 'tea', 'bowl', 'seal',
-]);
-const LEGACY_AGENT_NAMES = new Set(['小麻薯', '麻薯', '知几']);
+/** Gradient-signil ids from the 0.5 release map back to the mascot. */
+const LEGACY_AVATAR_IDS = new Set(['orb', 'initial', 'ring', 'square', 'triad', 'spark', 'wave', 'grid', 'seal']);
+const LEGACY_AGENT_NAMES = new Set(['小助手', '知几']);
 
-export const DEFAULT_AGENT_PERSONA: AgentPersona = { name: '小助手', avatar: 'orb' };
+export const DEFAULT_AGENT_PERSONA: AgentPersona = { name: '小麻薯', avatar: 'mochi' };
 
 function personaFromRaw(raw: string | null): AgentPersona | null {
   if (!raw) return null;

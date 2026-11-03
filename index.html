@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no"
     />
-    <meta name="theme-color" content="#08090c" />
+    <meta name="theme-color" content="#fdf8f6" />
     <meta
       name="description"
       content="麻薯 —— 本地优先、AI 原生的生活记录与复盘 App：吃得怎样、花了多少、睡得好不好，都记在一起。"
@@ -24,15 +24,14 @@
             localStorage.getItem('rixin.theme.v1') ||
             localStorage.getItem('mochi.theme.v1') ||
             localStorage.getItem('inkstone.theme.v1');
-          // 麻薯 defaults to its dark theme until the user explicitly picks light.
-          var dark;
-          if (!stored || stored === 'dark') dark = true;
-          else if (stored === 'light') dark = false;
-          else dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          // 麻薯 defaults to the soft light theme; explicit dark/system prefs win.
+          var dark =
+            stored === 'dark' ||
+            (stored !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
           if (dark) {
             document.documentElement.dataset.theme = 'dark';
             var meta = document.querySelector('meta[name="theme-color"]');
-            if (meta) meta.setAttribute('content', '#08090c');
+            if (meta) meta.setAttribute('content', '#201a27');
           }
         } catch (error) {
           /* private mode / blocked storage: keep the light default */
@@ -57,8 +56,8 @@
       }
       body {
         margin: 0;
-        background: #08090c;
-        color: #9aa1b0;
+        background: #fdf8f6;
+        color: #7a626e;
         font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', system-ui, sans-serif;
       }
       .boot {
