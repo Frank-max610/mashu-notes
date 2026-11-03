@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent }
 import type { AgentPersona, Note, NoteKind, NoteMeta, RecordDraft } from '../lib/types';
 import { KIND_INFO, formatAmount } from '../lib/kinds';
 import { AGENT_SUGGESTIONS, agentGreeting, agentReply } from '../lib/agent';
-import { AgentAvatar } from './AgentAvatar';
+import { MochiNode } from './MochiNode';
 import { Icon } from './Icon';
 import './AgentPanel.css';
 
@@ -219,10 +219,10 @@ export function AgentPanel({
     <div className="screen agent-screen">
       <header className="agent-screen__header">
         <div className="agent-screen__identity">
-          <AgentAvatar avatar={persona.avatar} name={persona.name} size={44} />
+          <MochiNode size={26} />
           <div className="agent-screen__title-block">
             <h1 className="agent-screen__name">{persona.name}</h1>
-            <p className="agent-screen__subtitle">LOCAL · OFFLINE</p>
+            <p className="agent-screen__subtitle">本地处理 · 仅你可见</p>
           </div>
         </div>
         <button
@@ -246,7 +246,7 @@ export function AgentPanel({
         {messages.map((message) => (
           <div className={`agent-screen__row agent-screen__row--${message.role}`} key={message.id}>
             <p className={`agent-screen__meta agent-screen__meta--${message.role}`}>
-              {message.role === 'bot' ? 'AGENT' : 'YOU'} {clock(message.at)}
+              {clock(message.at)}
             </p>
             <div className="agent-screen__body">
               {message.role === 'user' ? (

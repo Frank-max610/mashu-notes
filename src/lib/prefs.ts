@@ -180,23 +180,26 @@ export interface AgentAvatarOption {
   label: string;
 }
 
-/** Cute pastel avatar set for the local helper. */
+/** Abstract node marks for the local helper (design doc §09: no cartoon avatar). */
 export const AGENT_AVATARS: readonly AgentAvatarOption[] = [
-  { id: 'mochi', label: '麻薯' },
-  { id: 'cat', label: '猫猫' },
-  { id: 'leaf', label: '叶子' },
-  { id: 'sun', label: '太阳' },
-  { id: 'star', label: '星星' },
-  { id: 'book', label: '书本' },
-  { id: 'tea', label: '茶茶' },
-  { id: 'bowl', label: '饭碗' },
+  { id: 'node', label: '节点' },
+  { id: 'orbit', label: '轨道' },
+  { id: 'ring', label: '圆环' },
+  { id: 'square', label: '方点' },
+  { id: 'triad', label: '三点' },
+  { id: 'spark', label: '星点' },
+  { id: 'wave', label: '波纹' },
+  { id: 'grid', label: '网格' },
 ];
 
-/** Gradient-signil ids from the 0.5 release map back to the mascot. */
-const LEGACY_AVATAR_IDS = new Set(['orb', 'initial', 'ring', 'square', 'triad', 'spark', 'wave', 'grid', 'seal']);
+/** Any earlier avatar (emoji mascot or gradient sigil) maps to the Mochi Node. */
+const LEGACY_AVATAR_IDS = new Set([
+  'mochi', 'cat', 'leaf', 'sun', 'star', 'book', 'tea', 'bowl',
+  'orb', 'initial', 'seal',
+]);
 const LEGACY_AGENT_NAMES = new Set(['小助手', '知几']);
 
-export const DEFAULT_AGENT_PERSONA: AgentPersona = { name: '小麻薯', avatar: 'mochi' };
+export const DEFAULT_AGENT_PERSONA: AgentPersona = { name: '小麻薯', avatar: 'node' };
 
 function personaFromRaw(raw: string | null): AgentPersona | null {
   if (!raw) return null;

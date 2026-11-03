@@ -1,4 +1,6 @@
-/* Reset + primitives for 麻薯 v0.6: soft pastel, rounded, puffy shadows. */
+/* Base + shared primitives for 麻薯 v0.9 — Warm Minimalism × Living Data.
+   Typography, buttons, chips, inputs and icons follow §04–§05 of the design doc.
+   No glow, no neon, shadows are almost invisible; pills are reserved for chips. */
 
 *,
 *::before,
@@ -22,7 +24,7 @@ body {
   color: var(--text);
   font-family: var(--font-sans);
   font-size: var(--text-base);
-  line-height: 1.6;
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overscroll-behavior-y: none;
@@ -67,7 +69,7 @@ a {
 }
 
 ::selection {
-  background: rgba(227, 160, 106, 0.32);
+  background: var(--accent-soft);
 }
 
 ::-webkit-scrollbar {
@@ -79,12 +81,28 @@ a {
   border-radius: var(--radius-full);
 }
 
-/* ---------- type helpers ---------- */
+/* ---------- typography ---------- */
 
 .display {
   font-family: var(--font-display);
   font-weight: 700;
+  letter-spacing: -0.02em;
+  font-size: var(--text-3xl);
+  line-height: 1.2;
+}
+
+.h1 {
+  font-weight: 700;
+  font-size: var(--text-2xl);
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+}
+
+.h2 {
+  font-weight: 600;
+  font-size: var(--text-xl);
   letter-spacing: -0.01em;
+  line-height: 1.35;
 }
 
 .mono {
@@ -97,12 +115,12 @@ a {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 3px 0;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text-faint);
+  padding: 2px 0;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  text-transform: none;
 }
 
 .muted {
@@ -124,10 +142,7 @@ a {
 }
 
 .gradient-text {
-  background: var(--grad-brand);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--accent);
 }
 
 /* ---------- buttons ---------- */
@@ -136,13 +151,13 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
-  border-radius: var(--radius-full);
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-s);
   color: var(--text-muted);
   border: 1px solid transparent;
   transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease),
-    transform var(--dur-fast) var(--ease-bounce);
+    transform var(--dur-fast) var(--ease);
   flex: none;
 }
 
@@ -153,7 +168,7 @@ a {
 }
 
 .icon-btn:active {
-  transform: scale(0.92);
+  transform: scale(0.96);
 }
 
 .icon-btn[aria-pressed='true'],
@@ -167,45 +182,45 @@ a {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 46px;
-  padding: 0 20px;
-  border-radius: var(--radius-full);
-  border: 1px solid var(--border-strong);
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: var(--radius-m);
+  border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
   font-size: var(--text-base);
-  font-weight: 600;
+  font-weight: 500;
   white-space: nowrap;
-  box-shadow: var(--shadow-1);
-  transition: transform var(--dur-fast) var(--ease-bounce), filter var(--dur-fast) var(--ease);
+  transition: background var(--dur-fast) var(--ease), opacity var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease);
 }
 
 .btn:active {
-  transform: scale(0.95);
-  filter: brightness(1.03);
+  transform: scale(0.98);
 }
 
 .btn-primary {
-  background: var(--grad-brand);
-  border-color: transparent;
-  color: #fff;
-  box-shadow: var(--shadow-pop);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fffaf3;
 }
 
 .btn-ghost {
-  background: var(--surface);
+  background: transparent;
+  border-color: var(--border);
 }
 
 .btn-danger {
   color: var(--danger-ink);
-  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
+  border-color: var(--border);
   background: var(--danger-soft);
 }
 
 .btn-small {
   min-height: 36px;
-  padding: 0 14px;
+  padding: 0 12px;
   font-size: var(--text-sm);
+  border-radius: var(--radius-s);
 }
 
 .btn-block {
@@ -217,40 +232,38 @@ a {
   pointer-events: none;
 }
 
-/* ---------- chips ---------- */
+/* ---------- chips / pills (only for chips, filters, quick actions) ---------- */
 
 .chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 38px;
-  padding: 7px 15px;
+  min-height: 34px;
+  padding: 6px 13px;
   border-radius: var(--radius-full);
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text-muted);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: 500;
   white-space: nowrap;
-  box-shadow: var(--shadow-1);
-  transition: transform var(--dur-fast) var(--ease-bounce), background var(--dur-fast) var(--ease),
-    color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
-}
-
-.chip:active {
-  transform: scale(0.94);
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease);
 }
 
 .chip.is-active {
-  border-color: transparent;
+  border-color: var(--accent);
   color: var(--accent-ink);
-  background: var(--grad-soft), var(--surface);
-  box-shadow: 0 6px 16px rgba(226, 130, 155, 0.18);
+  background: var(--accent-soft);
+}
+
+.chip:active {
+  background: var(--surface-2);
 }
 
 .chip-count {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--text-faint);
 }
 
@@ -261,11 +274,11 @@ a {
   min-width: 18px;
   height: 18px;
   padding: 0 6px;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-xs);
   border: 1px solid var(--border);
   color: var(--text-muted);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
 }
 
 /* ---------- form fields ---------- */
@@ -273,31 +286,27 @@ a {
 .field-label {
   display: block;
   margin: 14px 0 6px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-faint);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--text-muted);
 }
 
 .field-input {
   display: block;
   width: 100%;
   min-height: 48px;
-  padding: 12px 16px;
+  padding: 12px 14px;
   border-radius: var(--radius-m);
-  border: 1.5px solid var(--border);
+  border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
   font-size: var(--text-base);
   outline: none;
-  box-shadow: var(--shadow-1);
-  transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+  transition: border-color var(--dur-fast) var(--ease);
 }
 
 .field-input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 4px var(--accent-soft);
 }
 
 .field-input::placeholder {
@@ -343,30 +352,30 @@ a {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 44px 24px 52px;
+  gap: 10px;
+  padding: 48px 24px 56px;
   color: var(--text-muted);
   text-align: center;
 }
 
 .empty-title {
-  font-size: var(--text-base);
-  font-weight: 700;
+  font-size: var(--text-lg);
+  font-weight: 600;
   color: var(--text);
 }
 
 .empty-text {
   font-size: var(--text-sm);
-  max-width: 280px;
-  line-height: 1.7;
+  max-width: 300px;
+  line-height: 1.65;
 }
 
 .spinner {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  border: 2px solid var(--border-strong);
-  border-top-color: var(--accent-strong);
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
   animation: spin 800ms linear infinite;
 }
 
@@ -376,32 +385,12 @@ a {
   }
 }
 
-/* ---------- mascot ---------- */
-
-.mochi-mascot {
-  display: block;
-}
-
-.mochi-mascot.is-bobbing {
-  animation: mascot-bob 3.4s var(--ease) infinite;
-}
-
-@keyframes mascot-bob {
-  0%,
-  100% {
-    transform: translateY(0) rotate(-1deg);
-  }
-  50% {
-    transform: translateY(-4px) rotate(1deg);
-  }
-}
-
-/* ---------- motion ---------- */
+/* ---------- motion (spec §12) ---------- */
 
 @keyframes rise-in {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -409,20 +398,8 @@ a {
   }
 }
 
-@keyframes aurora-drift {
-  0% {
-    transform: translate3d(-3%, -2%, 0) scale(1);
-  }
-  50% {
-    transform: translate3d(4%, 2%, 0) scale(1.06);
-  }
-  100% {
-    transform: translate3d(-3%, -2%, 0) scale(1);
-  }
-}
-
 .rise-in {
-  animation: rise-in 460ms var(--ease-bounce) both;
+  animation: rise-in 260ms var(--ease) both;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -99,7 +99,7 @@ export default function App() {
       document.documentElement.dataset.theme = resolved;
       document.title = APP_TITLE;
       const meta = document.querySelector('meta[name="theme-color"]');
-      meta?.setAttribute('content', resolved === 'light' ? '#faf6f0' : '#241d18');
+      meta?.setAttribute('content', resolved === 'light' ? '#f7f3ec' : '#171410');
     };
     apply();
     setStoredTheme(theme);

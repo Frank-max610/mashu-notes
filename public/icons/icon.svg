@@ -1,39 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="麻薯">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#fff6ec"/>
-      <stop offset="100%" stop-color="#fbe3c8"/>
-    </linearGradient>
-    <radialGradient id="glow" cx="50%" cy="52%" r="52%">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity=".95"/>
-      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="body" x1="30%" y1="10%" x2="70%" y2="100%">
-      <stop offset="0%" stop-color="#fffaf3"/>
-      <stop offset="62%" stop-color="#ffe9d5"/>
-      <stop offset="100%" stop-color="#f5cfaa"/>
-    </linearGradient>
-    <linearGradient id="berry" x1="20%" y1="0%" x2="80%" y2="100%">
-      <stop offset="0%" stop-color="#e89b54"/>
-      <stop offset="100%" stop-color="#c97a3c"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-  <ellipse cx="256" cy="300" rx="230" ry="196" fill="url(#glow)"/>
-  <ellipse cx="256" cy="292" rx="150" ry="132" fill="url(#body)"/>
-  <ellipse cx="250" cy="266" rx="112" ry="70" fill="#fffaf3" opacity=".9"/>
-  <ellipse cx="256" cy="310" rx="122" ry="86" fill="#f5cfaa" opacity=".35"/>
-  <circle cx="196" cy="292" r="7" fill="#5b4636"/>
-  <circle cx="316" cy="292" r="7" fill="#5b4636"/>
-  <circle cx="198" cy="289" r="2.4" fill="#ffffff"/>
-  <circle cx="318" cy="289" r="2.4" fill="#ffffff"/>
-  <ellipse cx="176" cy="314" rx="20" ry="12" fill="#e8b98c" opacity=".7"/>
-  <ellipse cx="336" cy="314" rx="20" ry="12" fill="#e8b98c" opacity=".7"/>
-  <path d="M236 322c6 9 24 9 30 0" stroke="#5b4636" stroke-width="6" stroke-linecap="round" fill="none"/>
-  <path d="M330 196c-18-6-34-4-44 4 10 20 32 30 52 22 18-8 22-24 18-34-6 4-16 9-26 8Z" fill="#a8bb87"/>
-  <ellipse cx="348" cy="222" rx="30" ry="26" fill="url(#berry)"/>
-  <path d="M348 248c-4 16-2 26 2 34 6-10 6-22 2-34Z" fill="#b8642d"/>
-  <circle cx="340" cy="216" r="2.6" fill="#ffe6ee"/>
-  <circle cx="356" cy="220" r="2.2" fill="#ffe6ee"/>
-  <circle cx="346" cy="232" r="2.2" fill="#ffe6ee"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="麻薯">
+  <rect width="64" height="64" rx="15" fill="#f7f3ec"/>
+  <rect x="3.5" y="3.5" width="57" height="57" rx="12" fill="none" stroke="#e5dbcf" stroke-width="0.6"/>
+  <g fill="none" stroke="#756d63" stroke-opacity=".42" stroke-width="0.7">
+    <ellipse cx="32" cy="32" rx="16" ry="10" transform="rotate(-24 32 32)"/>
+    <ellipse cx="32" cy="32" rx="10.5" ry="15.5" transform="rotate(32 32 32)"/>
+  </g>
+  <circle cx="32" cy="32" r="6.6" fill="#c8783f"/>
+  <circle cx="43.5" cy="26" r="2.4" fill="#65788a"/>
+  <circle cx="21" cy="39" r="2.1" fill="#627a4e"/>
+  <circle cx="41.5" cy="43" r="1.9" fill="#9a7112"/>
+  <circle cx="20.5" cy="25" r="1.4" fill="#b45d35"/>
 </svg>

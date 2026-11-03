@@ -1,224 +1,216 @@
-/* 麻薯 design tokens v0.7 — soft pastel with a warm apricot primary.
-   The cute language returns (rounded corners, puffy shadows, blush tints) with
-   a little less pink: cream paper, muted rose accent, lavender/mint/butter
-   secondaries. Dark theme is a soft "taro night". */
+/* 麻薯 design tokens v0.9 — Warm Minimalism × Living Data.
+   Source of truth: 《麻薯_LifeOS_UIUX重设计方案》§04 Design System.
+   Semantic tokens only; light/dark map the same names, never hand-written per page.
+   Type scale: Display 34–38 / H1 28–32 / H2 20–22 / Body 16–17 / Meta 12–13 / Data 13–15 mono.
+   Cards are 16–20px, pages pad 20px, chips are the only pills, shadows are nearly absent. */
 :root {
   color-scheme: light;
 
-  --font-sans: ui-rounded, -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'SF Pro Text',
-    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', system-ui, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', system-ui, sans-serif;
   --font-display: var(--font-sans);
   --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 
-  --text-xs: 11px;
+  --text-xs: 12px;
   --text-sm: 13px;
-  --text-base: 15px;
+  --text-base: 16px;
   --text-lg: 18px;
-  --text-xl: 22px;
+  --text-xl: 21px;
   --text-2xl: 28px;
-  --text-3xl: 34px;
+  --text-3xl: 36px;
 
-  /* warm cream + blush */
-  --bg: #faf6f0;
-  --bg-subtle: #f5ede3;
-  --surface: #fffdfa;
-  --surface-2: #f7efe5;
-  --surface-3: #efe2d2;
-  --glass: rgba(255, 253, 250, 0.82);
-  --border: rgba(160, 120, 85, 0.18);
-  --border-strong: rgba(160, 120, 85, 0.32);
-  --text: #43392f;
-  --text-muted: #7a6857;
-  --text-faint: #7e6c5b;
+  /* semantic colour — light */
+  --bg: #f7f3ec;
+  --bg-subtle: #f1eae1;
+  --surface: #fcfaf6;
+  --surface-2: #f1eae1;
+  --surface-3: #e8dfd4;
+  --glass: rgba(252, 250, 246, 0.86);
+  --text: #2c2925;
+  --text-muted: #756d63;
+  --text-faint: #6e665c;
+  --border: #e5dbcf;
+  --border-strong: #d7cabd;
 
-  /* muted rose (less saturated than the original candy pink) */
-  --sunset: #e3a06a;
-  --sunset-soft: rgba(227, 160, 106, 0.18);
-  --magenta: #cf8452;
-  --dusk: #b98a4e;
-  --dusk-soft: rgba(185, 138, 78, 0.18);
-  --twilight: #e2c9a4;
-  --breeze: #a9bfc9;
-  --lime: #a8bb87;
-  --grad-brand: linear-gradient(120deg, #f3bf8f 0%, #e3a06a 48%, #c98a52 100%);
-  --grad-soft: linear-gradient(120deg, rgba(243, 191, 143, 0.24), rgba(201, 138, 82, 0.16));
-  --grad-aurora: radial-gradient(52% 62% at 12% 6%, rgba(255, 214, 173, 0.55), transparent 62%),
-    radial-gradient(50% 64% at 88% 2%, rgba(240, 205, 160, 0.45), transparent 66%),
-    radial-gradient(54% 54% at 55% 100%, rgba(255, 236, 196, 0.34), transparent 72%);
+  --accent: #c8783f;
+  --accent-strong: #b36a35;
+  --accent-ink: #9d5a2b;
+  --accent-soft: #f2dfc9;
+  --accent-contrast: #fffaf3;
+  --danger: #b34b36;
+  --danger-ink: #a3432f;
+  --danger-soft: #f4e0d8;
+  --success: #5f7a4c;
+  --warning: #9a7112;
 
-  --accent: #e3a06a;
-  --accent-strong: #c9773c;
-  --accent-ink: #a85b28;
-  --accent-soft: rgba(227, 160, 106, 0.18);
-  --accent-contrast: #ffffff;
-
-  --taro: #a8895a;
-  --taro-strong: #8a6a3c;
-  --taro-ink: #7d5c2e;
-  --taro-soft: rgba(168, 137, 90, 0.16);
-  --butter: #d9a84e;
-  --butter-soft: rgba(244, 201, 122, 0.24);
-  --mint: #6f8452;
-  --mint-soft: rgba(168, 187, 135, 0.2);
-
-  --danger: #c96f56;
-  --danger-ink: #a5452c;
-  --danger-soft: rgba(201, 111, 86, 0.12);
-  --success: #6f8a4f;
-  --warning: #a87a2e;
-
-  /* life-record accents (pastel, desaturated) */
+  /* category — only nodes / tags / small state */
   --kind-diary: #5c6f80;
-  --kind-diary-soft: rgba(150, 165, 178, 0.18);
-  --kind-food: #a9522b;
-  --kind-food-soft: rgba(227, 160, 106, 0.2);
-  --kind-health: #5d753f;
-  --kind-health-soft: rgba(168, 187, 135, 0.2);
-  --kind-finance: #8a6417;
-  --kind-finance-soft: rgba(240, 207, 143, 0.24);
-  --kind-note: #7e6c5b;
-  --kind-note-soft: rgba(176, 155, 132, 0.18);
+  --kind-diary-soft: #e6ecf0;
+  --kind-food: #a8522c;
+  --kind-food-soft: #f2dfd4;
+  --kind-health: #556e43;
+  --kind-health-soft: #e6eade;
+  --kind-finance: #85611a;
+  --kind-finance-soft: #f1e7d2;
+  --kind-note: #6e6357;
+  --kind-note-soft: #ece7e0;
 
-  --btn-a: #c9773c;
-  --btn-b: #a85b28;
+  /* compatibility aliases used by existing components */
+  --taro: #65788a;
+  --taro-strong: #556877;
+  --taro-ink: #556877;
+  --taro-soft: #e6ecf0;
+  --butter: #9a7112;
+  --butter-soft: #f1e7d2;
+  --mint: #627a4e;
+  --mint-soft: #e6eade;
+  --sunset: #c8783f;
+  --sunset-soft: #f2dfc9;
+  --magenta: #b34b36;
+  --dusk: #65788a;
+  --dusk-soft: #e6ecf0;
+  --twilight: #b8ac9f;
+  --breeze: #65788a;
+  --lime: #627a4e;
 
-  --tabbar-bg: rgba(255, 253, 250, 0.85);
-  --overlay: rgba(74, 58, 66, 0.26);
-  --shadow-1: 0 4px 14px rgba(176, 122, 78, 0.12);
-  --shadow-2: 0 16px 40px rgba(176, 122, 78, 0.18);
-  --shadow-pop: 0 8px 22px rgba(201, 119, 60, 0.26);
-  --shadow-glow: 0 10px 34px rgba(227, 160, 106, 0.2);
-  --glow-a: rgba(255, 208, 164, 0.5);
-  --glow-b: rgba(240, 205, 160, 0.38);
-  --glow-c: rgba(255, 236, 196, 0.34);
-  --dot: rgba(176, 138, 98, 0.16);
+  --btn-a: #c8783f;
+  --btn-b: #b36a35;
+  --grad-brand: linear-gradient(90deg, #c8783f, #c8783f);
+  --grad-soft: linear-gradient(90deg, rgba(200, 120, 63, 0.08), rgba(200, 120, 63, 0.04));
+  --grad-aurora: none;
 
-  /* life graph — soft pastel canvas */
-  --graph-panel: #fdf7f0;
-  --graph-panel-2: #f8efe3;
-  --graph-grid: rgba(176, 138, 98, 0.2);
-  --graph-node-1: #9db0a8;
-  --graph-node-2: #d69a6a;
-  --graph-node-3: #a8bb87;
-  --graph-node-4: #e8c07a;
-  --graph-node-5: #9db8c4;
-  --graph-node: #d69a6a;
-  --graph-node-2: #9db0a8;
-  --graph-node-ghost: #d9c9b6;
-  --graph-edge: rgba(214, 154, 106, 0.42);
-  --graph-text: #6b5a4a;
-  --graph-text-dim: #7a6757;
+  --tabbar-bg: rgba(252, 250, 246, 0.94);
+  --overlay: rgba(44, 41, 37, 0.28);
+  --shadow-1: 0 1px 2px rgba(44, 41, 37, 0.04);
+  --shadow-2: 0 8px 24px rgba(44, 41, 37, 0.08);
+  --shadow-pop: 0 2px 8px rgba(200, 120, 63, 0.16);
+  --shadow-glow: none;
+  --glow-a: transparent;
+  --glow-b: transparent;
+  --glow-c: transparent;
+  --dot: rgba(117, 109, 99, 0.12);
 
-  --radius-xs: 12px;
-  --radius-s: 16px;
-  --radius-m: 20px;
-  --radius-l: 26px;
-  --radius-xl: 32px;
+  /* graph — warm canvas, category nodes (spec §10) */
+  --graph-panel: #fcfaf6;
+  --graph-panel-2: #f7f3ec;
+  --graph-grid: rgba(117, 109, 99, 0.1);
+  --graph-node-1: #65788a;
+  --graph-node-2: #b45d35;
+  --graph-node-3: #627a4e;
+  --graph-node-4: #9a7112;
+  --graph-node-5: #7d7164;
+  --graph-node: #c8783f;
+  --graph-node-2: #65788a;
+  --graph-node-ghost: #cbbfb2;
+  --graph-edge: rgba(117, 109, 99, 0.28);
+  --graph-text: #2c2925;
+  --graph-text-dim: #756d63;
+
+  --radius-xs: 8px;
+  --radius-s: 10px;
+  --radius-m: 14px;
+  --radius-l: 18px;
+  --radius-xl: 20px;
   --radius-full: 999px;
 
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
-  --tabbar-h: 64px;
+  --tabbar-h: 66px;
 
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
-  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-bounce: cubic-bezier(0.2, 0.8, 0.3, 1);
+  --spring: var(--ease);
   --dur-fast: 140ms;
-  --dur: 240ms;
+  --dur: 260ms;
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
 
-  /* taro night (soft, not pure black) */
-  --bg: #241d18;
-  --bg-subtle: #2b241d;
-  --surface: #2e2620;
-  --surface-2: #3a3029;
-  --surface-3: #463a31;
-  --glass: rgba(46, 38, 32, 0.82);
-  --border: rgba(255, 241, 226, 0.1);
-  --border-strong: rgba(255, 241, 226, 0.2);
-  --text: #f7efe7;
-  --text-muted: #cbb7a5;
-  --text-faint: #a8927e;
+  --bg: #171410;
+  --bg-subtle: #211d18;
+  --surface: #211d18;
+  --surface-2: #28221d;
+  --surface-3: #302921;
+  --glass: rgba(33, 29, 24, 0.9);
+  --text: #f3ece4;
+  --text-muted: #b8aba0;
+  --text-faint: #a89c91;
+  --border: #3b332c;
+  --border-strong: #4a4037;
 
-  --sunset: #f0b07a;
-  --sunset-soft: rgba(240, 176, 122, 0.18);
-  --magenta: #f2c08e;
-  --dusk: #d9b07a;
-  --dusk-soft: rgba(217, 176, 122, 0.18);
-  --twilight: #e8d2ad;
-  --breeze: #b7c9d2;
-  --lime: #c2d3a3;
-  --grad-brand: linear-gradient(120deg, #f7c99e 0%, #f0b07a 48%, #d9b07a 100%);
-  --grad-soft: linear-gradient(120deg, rgba(247, 201, 158, 0.2), rgba(217, 176, 122, 0.16));
-  --grad-aurora: radial-gradient(52% 62% at 12% 6%, rgba(247, 201, 158, 0.16), transparent 64%),
-    radial-gradient(50% 64% at 88% 2%, rgba(217, 176, 122, 0.14), transparent 66%),
-    radial-gradient(54% 54% at 55% 100%, rgba(255, 236, 196, 0.1), transparent 72%);
+  --accent: #e6a062;
+  --accent-strong: #e6a062;
+  --accent-ink: #f0b27c;
+  --accent-soft: #463024;
+  --accent-contrast: #241610;
+  --danger: #d56a56;
+  --danger-ink: #e58b78;
+  --danger-soft: #3a211b;
+  --success: #9dbb85;
+  --warning: #d8b36a;
 
-  --accent: #f0b07a;
-  --accent-strong: #f7c99e;
-  --accent-ink: #ffc99a;
-  --accent-soft: rgba(240, 176, 122, 0.16);
-  --accent-contrast: #2a1a10;
+  --kind-diary: #9fb3c4;
+  --kind-diary-soft: #2b3339;
+  --kind-food: #d89b78;
+  --kind-food-soft: #38271f;
+  --kind-health: #a9c18e;
+  --kind-health-soft: #2b3024;
+  --kind-finance: #d8b36a;
+  --kind-finance-soft: #352c1d;
+  --kind-note: #bcafa1;
+  --kind-note-soft: #302a24;
 
-  --taro: #d9b07a;
-  --taro-strong: #c99a62;
-  --taro-ink: #e8c9a0;
-  --taro-soft: rgba(217, 176, 122, 0.16);
-  --butter: #f0d39a;
-  --butter-soft: rgba(240, 211, 154, 0.16);
-  --mint: #c2d3a3;
-  --mint-soft: rgba(194, 211, 163, 0.16);
+  --taro: #9fb3c4;
+  --taro-strong: #b7c8d7;
+  --taro-ink: #b7c8d7;
+  --taro-soft: #2b3339;
+  --butter: #d8b36a;
+  --butter-soft: #352c1d;
+  --mint: #a9c18e;
+  --mint-soft: #2b3024;
+  --sunset: #e6a062;
+  --sunset-soft: #463024;
+  --magenta: #d56a56;
+  --dusk: #9fb3c4;
+  --dusk-soft: #2b3339;
+  --twilight: #8c8175;
+  --breeze: #9fb3c4;
+  --lime: #a9c18e;
 
-  --danger: #e8a06a;
-  --danger-ink: #ffc99a;
-  --danger-soft: rgba(232, 160, 106, 0.16);
-  --success: #c2d3a3;
-  --warning: #f4c97a;
+  --btn-a: #e6a062;
+  --btn-b: #d08a4d;
+  --grad-brand: linear-gradient(90deg, #e6a062, #e6a062);
+  --grad-soft: linear-gradient(90deg, rgba(230, 160, 98, 0.1), rgba(230, 160, 98, 0.04));
+  --grad-aurora: none;
 
-  --kind-diary: #a9c0cc;
-  --kind-diary-soft: rgba(169, 192, 204, 0.16);
-  --kind-food: #f0b07a;
-  --kind-food-soft: rgba(240, 176, 122, 0.16);
-  --kind-health: #c2d3a3;
-  --kind-health-soft: rgba(194, 211, 163, 0.16);
-  --kind-finance: #f0d39a;
-  --kind-finance-soft: rgba(240, 211, 154, 0.16);
-  --kind-note: #e0cdb8;
-  --kind-note-soft: rgba(224, 205, 184, 0.14);
+  --tabbar-bg: rgba(23, 20, 16, 0.94);
+  --overlay: rgba(0, 0, 0, 0.5);
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-pop: 0 2px 8px rgba(230, 160, 98, 0.16);
+  --shadow-glow: none;
+  --glow-a: transparent;
+  --glow-b: transparent;
+  --glow-c: transparent;
+  --dot: rgba(184, 171, 160, 0.12);
 
-  --btn-a: #f7c99e;
-  --btn-b: #f0b07a;
-
-  --tabbar-bg: rgba(46, 38, 32, 0.85);
-  --overlay: rgba(20, 14, 24, 0.55);
-  --shadow-1: 0 4px 14px rgba(0, 0, 0, 0.3);
-  --shadow-2: 0 16px 40px rgba(0, 0, 0, 0.4);
-  --shadow-pop: 0 8px 22px rgba(240, 176, 122, 0.2);
-  --shadow-glow: 0 10px 30px rgba(217, 176, 122, 0.16);
-  --glow-a: rgba(247, 201, 158, 0.12);
-  --glow-b: rgba(217, 176, 122, 0.12);
-  --glow-c: rgba(255, 236, 196, 0.1);
-  --dot: rgba(255, 241, 226, 0.08);
-
-  --graph-panel: #241c15;
-  --graph-panel-2: #2e251c;
-  --graph-grid: rgba(255, 241, 226, 0.1);
-  --graph-node-1: #b7c9d2;
-  --graph-node-2: #f0b07a;
-  --graph-node-3: #c2d3a3;
-  --graph-node-4: #f0d39a;
-  --graph-node-5: #b7c9d2;
-  --graph-node: #f0b07a;
-  --graph-node-2: #b7c9d2;
-  --graph-node-ghost: #6c5a4a;
-  --graph-edge: rgba(240, 176, 122, 0.36);
-  --graph-text: #eadccb;
-  --graph-text-dim: #a8927e;
+  --graph-panel: #211d18;
+  --graph-panel-2: #28221d;
+  --graph-grid: rgba(184, 171, 160, 0.1);
+  --graph-node-1: #9fb3c4;
+  --graph-node-2: #d89b78;
+  --graph-node-3: #a9c18e;
+  --graph-node-4: #d8b36a;
+  --graph-node-5: #bcafa1;
+  --graph-node: #e6a062;
+  --graph-node-2: #9fb3c4;
+  --graph-node-ghost: #4a4037;
+  --graph-edge: rgba(184, 171, 160, 0.26);
+  --graph-text: #f3ece4;
+  --graph-text-dim: #b8aba0;
 }
 
 @media (prefers-reduced-motion: reduce) {

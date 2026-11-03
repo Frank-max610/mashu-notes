@@ -1,144 +1,44 @@
 #!/usr/bin/env python3
-"""Generate iOS Home Screen splash screens for 麻薯 (apple-touch-startup-image).
+"""Generate warm, calm iOS splash screens for 麻薯 (Mochi Node mark).
 
-Soft strawberry-milk background, the mochi mascot and the wordmark.
 Run with: npm run splash
 """
 from __future__ import annotations
-
 from pathlib import Path
-
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 OUT = Path(__file__).resolve().parent.parent / "public" / "splash"
 OUT.mkdir(parents=True, exist_ok=True)
+SIZES = [(1290,2796,"iphone-15-pro-max"),(1284,2778,"iphone-14-plus"),(1179,2556,"iphone-15-pro"),(1170,2532,"iphone-6.1"),(1125,2436,"iphone-x"),(828,1792,"iphone-xr"),(750,1334,"iphone-se")]
+TOP=(250,246,238); BOTTOM=(241,234,225); INK=(44,41,37); MUTED=(117,109,99); ACCENT=(200,120,63)
+FONT=["/System/Library/Fonts/STHeiti Medium.ttc",1]
 
-SIZES = [
-    (1290, 2796, "iphone-15-pro-max"),
-    (1284, 2778, "iphone-14-plus"),
-    (1179, 2556, "iphone-15-pro"),
-    (1170, 2532, "iphone-6.1"),
-    (1125, 2436, "iphone-x"),
-    (828, 1792, "iphone-xr"),
-    (750, 1334, "iphone-se"),
-]
+def font(size):
+    try: return ImageFont.truetype(FONT[0], size=size, index=FONT[1])
+    except Exception: return ImageFont.load_default()
 
-TOP = (250, 246, 240)
-BOTTOM = (245, 233, 216)
-INK = (74, 58, 66)
-MUTED = (138, 106, 121)
-
-FONT_CANDIDATES = [
-    ("/System/Library/Fonts/PingFang.ttc", 2),
-    ("/System/Library/Fonts/PingFang.ttc", 1),
-    ("/System/Library/Fonts/STHeiti Medium.ttc", 0),
-    ("/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc", 0),
-]
-
-
-def load_font(size: int):
-    for path, index in FONT_CANDIDATES:
-        if Path(path).exists():
-            try:
-                return ImageFont.truetype(path, size=size, index=index)
-            except Exception:
-                continue
-    return ImageFont.load_default()
-
-
-def vertical_gradient(image, top, bottom):
-    draw = ImageDraw.Draw(image)
-    height = image.height
-    for y in range(height):
-        t = y / max(height - 1, 1)
-        color = tuple(round(top[i] + (bottom[i] - top[i]) * t) for i in range(3))
-        draw.line([(0, y), (image.width, y)], fill=color)
-
-
-def soft_glow(image, center, radius, color, blur=90):
-    layer = Image.new("RGBA", image.size, (0, 0, 0, 0))
-    draw = ImageDraw.Draw(layer)
-    cx, cy = center
-    draw.ellipse((cx - radius, cy - radius, cx + radius, cy + radius), fill=color)
-    layer = layer.filter(ImageFilter.GaussianBlur(blur))
-    return Image.alpha_composite(image.convert("RGBA"), layer).convert("RGB")
-
-
-def draw_mascot(image, cx, cy, size):
-    draw = ImageDraw.Draw(image, "RGBA")
-    body_w, body_h = size * 0.82, size * 0.74
-    # body + top highlight
-    draw.ellipse((cx - body_w / 2, cy - body_h / 2 + size * 0.08, cx + body_w / 2, cy + body_h / 2 + size * 0.08),
-                 fill=(255, 231, 210, 255))
-    draw.ellipse((cx - body_w * 0.34, cy - body_h * 0.16, cx + body_w * 0.34, cy + body_h * 0.2),
-                 fill=(255, 250, 242, 235))
-    # ears / blush
-    for side in (-1, 1):
-        draw.ellipse((cx + side * body_w * 0.33 - size * 0.05, cy + size * 0.04,
-                      cx + side * body_w * 0.33 + size * 0.05, cy + size * 0.13),
-                     fill=(232, 185, 140, 180))
-    # eyes
-    eye = size * 0.026
-    for side in (-1, 1):
-        ex = cx + side * size * 0.16
-        ey = cy - size * 0.03
-        draw.ellipse((ex - eye, ey - eye, ex + eye, ey + eye), fill=(91, 70, 54, 255))
-        draw.ellipse((ex - eye * 0.35, ey - eye * 0.65, ex + eye * 0.2, ey - eye * 0.05), fill=(255, 255, 255, 230))
-    # smile
-    draw.arc((cx - size * 0.07, cy + size * 0.02, cx + size * 0.07, cy + size * 0.12), 15, 165, fill=(154, 107, 74, 255), width=max(2, int(size * 0.012)))
-    # strawberry hat
-    berry_r = size * 0.155
-    bx, by = cx + size * 0.17, cy - size * 0.34
-    draw.ellipse((bx - berry_r, by - berry_r * 0.85, bx + berry_r, by + berry_r * 0.9), fill=(232, 155, 84, 255))
-    draw.ellipse((bx - berry_r * 0.7, by - berry_r * 0.55, bx + berry_r * 0.1, by - berry_r * 0.15), fill=(247, 210, 170, 220))
-    # leaf
-    leaf = size * 0.09
-    draw.polygon(
-        [(bx - leaf * 0.9, by - berry_r * 0.7), (bx - leaf * 0.2, by - berry_r * 0.45),
-         (bx - leaf * 0.35, by - berry_r * 0.15), (bx - leaf * 1.15, by - berry_r * 0.4)],
-        fill=(168, 187, 135, 255),
-    )
-    draw.polygon(
-        [(bx + leaf * 0.9, by - berry_r * 0.7), (bx + leaf * 0.2, by - berry_r * 0.45),
-         (bx + leaf * 0.35, by - berry_r * 0.15), (bx + leaf * 1.15, by - berry_r * 0.4)],
-        fill=(143, 163, 110, 255),
-    )
-
-
-def render(width, height):
-    image = Image.new("RGB", (width, height), TOP)
-    vertical_gradient(image, TOP, BOTTOM)
-    image = soft_glow(image, (width * 0.12, height * 0.1), width * 0.55, (255, 214, 173, 80), blur=int(width * 0.09))
-    image = soft_glow(image, (width * 0.9, height * 0.12), width * 0.5, (217, 176, 122, 70), blur=int(width * 0.09))
-    image = soft_glow(image, (width * 0.55, height * 0.96), width * 0.7, (255, 236, 196, 40), blur=int(width * 0.1))
-
-    draw = ImageDraw.Draw(image)
-    cx, cy = width / 2, height * 0.44
-    draw_mascot(image, cx, cy, width * 0.34)
-
-    title_font = load_font(int(width * 0.11))
-    title = "麻薯"
-    box = draw.textbbox((0, 0), title, font=title_font)
-    title_y = cy + width * 0.25
-    draw.text((cx - (box[2] - box[0]) / 2 - box[0], title_y), title, font=title_font, fill=INK)
-
-    sub_font = load_font(int(width * 0.028))
-    sub = "记录 · 复盘 · 改进"
-    box2 = draw.textbbox((0, 0), sub, font=sub_font)
-    draw.text(
-        (cx - (box2[2] - box2[0]) / 2 - box2[0], title_y + (box[3] - box[1]) * 1.25),
-        sub,
-        font=sub_font,
-        fill=MUTED,
-    )
-    return image
-
-
-def main():
-    for width, height, name in SIZES:
-        render(width, height).save(OUT / f"{name}.png", optimize=True)
-        print(f"  ✓ public/splash/{name}.png ({width}×{height})")
-
+def render(w,h):
+    img=Image.new("RGB",(w,h),TOP); d=ImageDraw.Draw(img)
+    for y in range(h):
+        t=y/max(h-1,1); d.line([(0,y),(w,y)],fill=tuple(round(TOP[i]+(BOTTOM[i]-TOP[i])*t) for i in range(3)))
+    # soft warm glow, very low contrast
+    glow=Image.new("RGBA",(w,h),(0,0,0,0)); gd=ImageDraw.Draw(glow); r=int(w*0.55)
+    gd.ellipse((w*0.5-r,h*0.42-r,w*0.5+r,h*0.42+r),fill=(255,236,213,90)); glow=glow.filter(ImageFilter.GaussianBlur(int(w*0.12)))
+    img=Image.alpha_composite(img.convert("RGBA"),glow).convert("RGB"); d=ImageDraw.Draw(img)
+    cx,cy=w/2,h*0.44; R=w*0.085
+    for rx,ry,rot in ((R*2.3,R*1.45,-24),(R*1.55,R*2.25,32)):
+        layer=Image.new("RGBA",(int(rx*2.6),int(ry*2.6)),(0,0,0,0)); ld=ImageDraw.Draw(layer)
+        ld.ellipse((layer.width/2-rx,layer.height/2-ry,layer.width/2+rx,layer.height/2+ry),outline=(117,109,99,110),width=max(1,int(R*0.12)))
+        layer=layer.rotate(rot,resample=Image.BICUBIC); img.paste(layer,(int(cx-layer.width/2),int(cy-layer.height/2)),layer)
+    d.ellipse((cx-R,cy-R,cx+R,cy+R),fill=ACCENT); d.ellipse((cx-R*0.68,cy-R*0.68,cx-R*0.1,cy-R*0.1),fill=(255,255,255,70))
+    for dx,dy,rr,color in ((R*1.9,-R*0.9,R*0.34,(101,120,138)),(-R*1.7,R*1.15,R*0.3,(98,122,78)),(R*1.5,R*1.6,R*0.26,(154,113,18)),(-R*1.6,-R*0.8,R*0.2,(180,93,53))):
+        d.ellipse((cx+dx-rr,cy+dy-rr,cx+dx+rr,cy+dy+rr),fill=color)
+    tf=font(int(w*0.1)); title="麻薯"; box=d.textbbox((0,0),title,font=tf); ty=cy+R*2.5
+    d.text((cx-(box[2]-box[0])/2-box[0],ty),title,font=tf,fill=INK)
+    sf=font(int(w*0.027)); sub="记录 · 连接 · 理解"; box2=d.textbbox((0,0),sub,font=sf)
+    d.text((cx-(box2[2]-box2[0])/2-box2[0],ty+(box[3]-box[1])*1.3),sub,font=sf,fill=MUTED)
+    return img
 
 if __name__ == "__main__":
-    main()
+    for w,h,name in SIZES:
+        render(w,h).save(OUT/f"{name}.png",optimize=True); print("✓",name)

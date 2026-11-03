@@ -3,7 +3,7 @@ import type { Note, NoteKind } from '../lib/types';
 import { KIND_INFO, describeMeta } from '../lib/kinds';
 import { dayKeyOf, noteDayKey, formatMoney, type DaySummary } from '../lib/insights';
 import type { DailyBrief } from '../lib/brief';
-import { Mascot, MashuMark } from '../components/Mascot';
+import { MochiNode } from '../components/MochiNode';
 import { Sparkline } from '../components/Sparkline';
 import { Icon } from '../components/Icon';
 import { dismissInstallHint, isInstallHintDismissed } from '../lib/prefs';
@@ -137,7 +137,7 @@ export function TodayScreen({
     <div className="screen today-screen">
       <header className="screen-header today-header">
         <div className="brand-row">
-          <MashuMark size={38} />
+          <MochiNode size={30} />
           <div className="brand-copy">
             <h1 className="brand-wordmark display">麻薯</h1>
             <p className="brand-date mono">{dateLabel()}</p>
@@ -157,16 +157,14 @@ export function TodayScreen({
         <section className="today-hero rise-in" aria-label="今日概览">
           <div className="hero-top">
             <div>
-              <h2 className="hero-greeting">
-                {greeting()}，<span className="gradient-text">今天记点什么？</span>
-              </h2>
+              <h2 className="hero-greeting">{greeting()}。</h2>
+              <p className="hero-question">今天发生了什么？</p>
               <p className="hero-sub">
                 {todayNotes.length > 0
                   ? `今天已记 ${todayNotes.length} 笔${streak > 1 ? ` · 连续 ${streak} 天` : ''}，继续保持。`
                   : '用一句话开始，剩下的交给麻薯。'}
               </p>
             </div>
-            <Mascot size={74} bob className="hero-mascot" />
           </div>
 
           <button type="button" className="ask-bar" onClick={onOpenAgent}>

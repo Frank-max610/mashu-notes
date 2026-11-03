@@ -15,10 +15,10 @@ import { formatBytes } from '../lib/format';
 import { AGENT_AVATARS } from '../lib/prefs';
 import { Icon, type IconName } from '../components/Icon';
 import { AgentAvatar } from '../components/AgentAvatar';
-import { MashuMark } from '../components/Mascot';
+import { MochiNode } from '../components/MochiNode';
 import { IosInstallCard } from '../components/IosInstallCard';
 
-const APP_VERSION = '0.8.0';
+const APP_VERSION = '0.9.0';
 
 export interface SettingsScreenProps {
   notes: Note[];
@@ -200,7 +200,7 @@ export function SettingsScreen({
     <div className="screen settings-screen">
       <header className="screen-header settings-header">
         <div className="brand-row">
-          <MashuMark size={36} />
+          <MochiNode size={28} />
           <div className="brand-copy">
             <h1 className="page-title display">我的</h1>
             <p className="brand-date mono">麻薯 v{APP_VERSION}</p>
@@ -216,7 +216,7 @@ export function SettingsScreen({
               <AgentAvatar avatar={persona.avatar} name={persona.name} size={44} />
               <div className="agent-persona-copy">
                 <div className="agent-persona-name">{persona.name}</div>
-                <div className="agent-persona-hint mono">LOCAL · OFFLINE</div>
+                <div className="agent-persona-hint">本地处理 · 仅你可见</div>
               </div>
             </div>
 
@@ -417,7 +417,7 @@ export function SettingsScreen({
           <div className="section-label">装到 iPhone / INSTALL</div>
           <IosInstallCard onCopyLink={() => void handleCopyLink()} />
           <p className="settings-note">
-            没有服务器：静态页面由 GitHub Pages 托管，装到主屏幕后断网也能用。换手机时导出 JSON，再用新手机导入。
+            装到主屏幕后断网也能用；换手机时先导出备份，再在新手机导入。所有内容只在这台设备上。
           </p>
         </section>
 
@@ -430,7 +430,7 @@ export function SettingsScreen({
               </span>
               <span className="settings-row-text">
                 <span className="settings-row-label">
-                  本地存储 · {storageMode === 'indexeddb' ? 'IndexedDB' : 'localStorage（降级）'}
+                  本地存储 · {storageMode === 'indexeddb' ? '仅本机' : '仅本机（兼容模式）'}
                 </span>
                 <span className="settings-row-hint">已用 {usedText} · 数据不离开这台设备</span>
               </span>
@@ -469,7 +469,7 @@ export function SettingsScreen({
               </span>
               <span className="settings-row-text">
                 <span className="settings-row-label">项目主页</span>
-                <span className="settings-row-hint">GitHub · MIT</span>
+                <span className="settings-row-hint">开源项目</span>
               </span>
             </a>
           </div>

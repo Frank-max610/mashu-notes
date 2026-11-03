@@ -16,16 +16,7 @@
 }
 
 .app::before {
-  content: '';
-  position: fixed;
-  inset: -10% -10% auto -10%;
-  height: 62vh;
-  z-index: -1;
-  pointer-events: none;
-  background: var(--grad-aurora);
-  filter: blur(10px);
-  animation: aurora-drift 22s var(--ease) infinite;
-  opacity: 0.9;
+  content: none;
 }
 
 @media (min-width: 760px) {
@@ -110,10 +101,10 @@
 }
 
 .brand-wordmark {
-  font-size: 24px;
-  font-weight: 800;
+  font-size: 20px;
+  font-weight: 600;
   line-height: 1.15;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.01em;
 }
 
 .brand-date {
@@ -708,20 +699,20 @@
 .tabbar {
   position: fixed;
   left: 50%;
-  bottom: calc(10px + var(--safe-bottom));
+  bottom: calc(8px + var(--safe-bottom));
   transform: translateX(-50%);
   z-index: 30;
   display: flex;
   align-items: center;
   gap: 2px;
-  width: min(calc(100% - 24px), 540px);
-  padding: 7px 8px;
-  border-radius: var(--radius-xl);
-  border: 1px solid var(--border-strong);
+  width: min(calc(100% - 24px), 560px);
+  padding: 5px 6px;
+  border-radius: var(--radius-m);
+  border: 1px solid var(--border);
   background: var(--tabbar-bg);
-  -webkit-backdrop-filter: blur(22px) saturate(1.4);
-  backdrop-filter: blur(22px) saturate(1.4);
-  box-shadow: var(--shadow-2);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  box-shadow: var(--shadow-1);
 }
 
 .tab-item {
@@ -731,11 +722,11 @@
   align-items: center;
   justify-content: center;
   gap: 2px;
-  min-height: 50px;
+  min-height: 54px;
   padding: 5px 2px;
-  border-radius: var(--radius-m);
-  color: var(--text-faint);
-  transition: transform var(--dur-fast) var(--spring), color var(--dur-fast) var(--ease),
+  border-radius: var(--radius-s);
+  color: var(--text-muted);
+  transition: transform var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease),
     background var(--dur-fast) var(--ease);
 }
 
@@ -744,17 +735,17 @@
 }
 
 .tab-item.is-active {
-  color: var(--text);
+  color: var(--accent-ink);
   background: var(--surface-2);
 }
 
 .tab-item.is-active svg {
-  color: var(--sunset);
+  color: var(--accent);
 }
 
 .tab-label {
-  font-size: 10px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 500;
   letter-spacing: 0.02em;
 }
 
@@ -1358,7 +1349,7 @@ button.settings-row:active {
   border-radius: var(--radius-full) !important;
 }
 
-/* ---------- agent avatars ---------- */
+/* ---------- agent avatars (abstract node marks) ---------- */
 
 .ag-avatar {
   display: inline-flex;
@@ -1369,32 +1360,28 @@ button.settings-row:active {
   line-height: 1;
   user-select: none;
   -webkit-user-select: none;
-  box-shadow: var(--shadow-1);
 }
 
-.ag-avatar-orb {
-  position: relative;
+.ag-avatar-node {
+  background: transparent;
 }
 
-.ag-avatar-gloss {
-  position: absolute;
-  inset: 0;
-  transform: translate(-18%, -28%);
-  width: 65%;
-  height: 65%;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.35);
-  filter: blur(7px);
+.ag-avatar-glyph {
+  color: var(--accent);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
 }
 
 .ag-avatar-glyph svg {
   display: block;
-  padding: 15%;
+  padding: 14%;
 }
 
 .ag-avatar-custom {
   background: var(--surface-2);
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+  color: var(--text);
 }
 
 /* ---------- sheets & node editor ---------- */
@@ -1800,4 +1787,22 @@ button.settings-row:active {
   border: 1.5px solid var(--border);
   box-shadow: var(--shadow-2);
   background: var(--graph-panel);
+}
+
+
+/* ---------- Mochi Node brand mark ---------- */
+
+.mochi-node {
+  display: block;
+  flex: none;
+}
+
+.mochi-node.is-breathing circle:nth-of-type(1) {
+  animation: node-breath 4.2s var(--ease) infinite;
+  transform-origin: 32px 32px;
+}
+
+@keyframes node-breath {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.82; }
 }
