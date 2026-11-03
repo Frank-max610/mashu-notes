@@ -70,6 +70,18 @@ export default function App() {
     if (routeToHash(parsed) !== window.location.hash) replaceRoute(parsed);
   }, [route]);
 
+  // Tell the user when the phone goes offline — everything keeps working.
+  useEffect(() => {
+    const onOffline = () => notify('已离线 · 记录仍然只保存在这台手机上');
+    const onOnline = () => notify('网络已恢复');
+    window.addEventListener('offline', onOffline);
+    window.addEventListener('online', onOnline);
+    return () => {
+      window.removeEventListener('offline', onOffline);
+      window.removeEventListener('online', onOnline);
+    };
+  }, [notify]);
+
   // Resolve the active theme (including the `system` preference).
   useEffect(() => {
     const apply = () => {
@@ -361,6 +373,7 @@ export default function App() {
             onOpenSearch={() => navigate({ name: 'search' })}
             onQuickCapture={openCapture}
             onOpenAgent={() => navigate({ name: 'agent' })}
+            onOpenSettings={() => navigate({ name: 'settings' })}
             storageWarning={api.storageWarning}
           />
         );

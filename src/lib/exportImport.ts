@@ -134,6 +134,33 @@ export function downloadText(filename: string, text: string, mime = 'application
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
+/**
+ * Share a generated file through the iOS share sheet (store to Files / iCloud),
+ * falling back to a normal download when Web Share files are unavailable.
+ */
+export async function shareOrDownload(
+  filename: string,
+  text: string,
+  mime = 'application/json',
+): Promise<'shared' | 'downloaded'> {
+  const navigatorWithShare = navigator as Navigator & {
+    canShare?: (data: ShareData) => boolean;
+    share?: (data: ShareData) => Promise<void>;
+  };
+  try {
+    const file = new File([text], filename, { type: `${mime};charset=utf-8` });
+    if (navigatorWithShare.share && navigatorWithShare.canShare?.({ files: [file] })) {
+      await navigatorWithShare.share({ files: [file], title: filename });
+      return 'shared';
+    }
+  } catch (error) {
+    // A user cancelled share sheet is not an error; anything else falls back.
+    if ((error as DOMException)?.name === 'AbortError') return 'shared';
+  }
+  downloadText(filename, text, mime);
+  return 'downloaded';
+}
+
 /** Open the OS file picker and resolve the chosen file's text. */
 export function pickTextFile(accept = '.json,.md,.txt,application/json,text/markdown,text/plain'): Promise<string | null> {
   return new Promise((resolve, reject) => {

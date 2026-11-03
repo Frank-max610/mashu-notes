@@ -1,7 +1,7 @@
 {
   "name": "mashu-notes",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.3.1",
   "type": "module",
   "description": "麻薯 — 本地优先的生活记录 + Markdown 笔记本：饮食、健康、收支、日记连成一张可自由编辑的图，内置不联网的本地助手。",
   "license": "MIT",
@@ -30,7 +30,8 @@
     "share": "node scripts/serve.mjs",
     "icons": "python3 scripts/make_icons.py",
     "screenshots": "node scripts/screenshots.mjs",
-    "qr": "node scripts/qr.mjs"
+    "qr": "node scripts/qr.mjs",
+    "splash": "python3 scripts/make_splash.py"
   },
   "dependencies": {
     "markdown-it": "15.0.3",

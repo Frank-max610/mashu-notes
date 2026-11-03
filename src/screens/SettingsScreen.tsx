@@ -3,18 +3,19 @@ import type { AgentPersona, Note, ThemeMode } from '../lib/types';
 import type { StorageMode } from '../lib/db';
 import { storageEstimate } from '../lib/db';
 import {
-  downloadText,
   fileStamp,
   parseVaultJson,
   pickTextFile,
   toMarkdownBundle,
   toVaultJson,
   mergeVaultNotes,
+  shareOrDownload,
 } from '../lib/exportImport';
 import { formatBytes } from '../lib/format';
 import { AGENT_AVATARS } from '../lib/prefs';
 import { Icon, type IconName } from '../components/Icon';
 import { AgentAvatar } from '../components/AgentAvatar';
+import { IosInstallCard } from '../components/IosInstallCard';
 
 const APP_VERSION = '0.3.0';
 
@@ -110,22 +111,30 @@ export function SettingsScreen({
     setEmojiDraft('');
   };
 
-  const handleExportJson = () => {
+  const handleExportJson = async () => {
     if (notes.length === 0) {
       notify('还没有记录可以导出');
       return;
     }
-    downloadText(`mashu-${fileStamp()}.json`, toVaultJson(notes));
-    notify(`已导出 ${notes.length} 条记录`);
+    const result = await shareOrDownload(`mashu-${fileStamp()}.json`, toVaultJson(notes));
+    notify(
+      result === 'shared'
+        ? '已打开分享面板，可存到「文件」或 iCloud 云盘'
+        : `已导出 ${notes.length} 条记录`,
+    );
   };
 
-  const handleExportMarkdown = () => {
+  const handleExportMarkdown = async () => {
     if (notes.length === 0) {
       notify('还没有记录可以导出');
       return;
     }
-    downloadText(`mashu-${fileStamp()}.md`, toMarkdownBundle(notes), 'text/markdown');
-    notify('已导出 Markdown');
+    const result = await shareOrDownload(
+      `mashu-${fileStamp()}.md`,
+      toMarkdownBundle(notes),
+      'text/markdown',
+    );
+    notify(result === 'shared' ? '已打开分享面板' : '已导出 Markdown');
   };
 
   const handleImport = async (mode: 'merge' | 'replace') => {
@@ -258,13 +267,13 @@ export function SettingsScreen({
               icon="download"
               label="导出全部记录（JSON）"
               hint={`${notes.length} 条 · 完整保留结构化字段`}
-              onClick={handleExportJson}
+              onClick={() => void handleExportJson()}
             />
             <SettingsRow
               icon="book"
               label="导出 Markdown 合集"
               hint="单个 .md 文件，方便迁移"
-              onClick={handleExportMarkdown}
+              onClick={() => void handleExportMarkdown()}
             />
             <SettingsRow
               icon="upload"
@@ -325,23 +334,10 @@ export function SettingsScreen({
         </section>
 
         <section>
-          <div className="section-label">在手机上使用</div>
-          <div className="settings-card">
-            <div className="settings-row as-static">
-              <span className="settings-row-icon">
-                <Icon name="external" size={19} />
-              </span>
-              <span className="settings-row-text">
-                <span className="settings-row-label">当前地址</span>
-                <span className="settings-row-hint">{window.location.host || '本地文件 (file://)'}</span>
-              </span>
-              <button type="button" className="btn btn-ghost btn-small" onClick={() => void handleCopyLink()}>
-                复制
-              </button>
-            </div>
-          </div>
+          <div className="section-label">装到 iPhone 上</div>
+          <IosInstallCard onCopyLink={() => void handleCopyLink()} />
           <p className="settings-note">
-            手机和电脑连同一个 Wi-Fi，在电脑上运行 <code>npm run share</code>，用手机扫描终端二维码即可打开。
+            没有服务器：整个应用就是一组静态文件，装到主屏幕后断网也能用。换手机时，用上面的「导出全部记录」存到「文件」或 iCloud 云盘，再在新手机里导入。
           </p>
         </section>
 

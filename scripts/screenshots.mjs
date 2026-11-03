@@ -89,6 +89,14 @@ const SHOTS = [
   },
   { file: 'settings.png', hash: '#/settings', waitFor: '.settings-card', delay: 700 },
   {
+    file: 'install.png',
+    hash: '#/settings',
+    waitFor: '.install-card',
+    delay: 800,
+    ios: true,
+    scrollTo: '.install-card',
+  },
+  {
     file: 'dark-notes.png',
     hash: '#/notes',
     waitFor: '.today-card',
@@ -211,6 +219,14 @@ async function capture(shot) {
     });
     await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
 
+    if (shot.ios) {
+      await cdp.send('Emulation.setUserAgentOverride', {
+        userAgent:
+          'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1',
+        platform: 'iPhone',
+      });
+    }
+
     const url = `${BASE}/${shot.hash}`;
     await cdp.send('Page.navigate', { url });
     await waitForExpression(cdp, 'document.readyState === "complete"', 12000);
@@ -262,6 +278,13 @@ async function capture(shot) {
         );
       }
       await sleep(shot.afterActionDelay ?? 400);
+    }
+
+    if (shot.scrollTo) {
+      await cdp.send('Runtime.evaluate', {
+        expression: `document.querySelector(${JSON.stringify(shot.scrollTo)})?.scrollIntoView({ block: 'center' })`,
+      });
+      await sleep(500);
     }
 
     // Freeze animations so captures are reproducible (the mascot bobs).

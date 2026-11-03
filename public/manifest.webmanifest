@@ -10,7 +10,11 @@
   "dir": "ltr",
   "background_color": "#f7f5f0",
   "theme_color": "#f7f5f0",
-  "categories": ["productivity", "utilities", "education"],
+  "categories": [
+    "productivity",
+    "utilities",
+    "education"
+  ],
   "icons": [
     {
       "src": "icons/icon-192.png",
@@ -35,5 +39,10 @@
       "sizes": "any",
       "type": "image/svg+xml"
     }
+  ],
+  "id": "./",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
   ]
 }

@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { Note, NoteKind } from '../lib/types';
 import { KIND_INFO, NOTE_KINDS, formatAmount } from '../lib/kinds';
 import { dayKeyOf, noteDayKey, summarizeDay } from '../lib/insights';
 import { NoteCard } from '../components/NoteCard';
 import { Icon } from '../components/Icon';
+import { isIosDevice, isStandaloneMode } from '../components/IosInstallCard';
 
 export type KindFilter = NoteKind | 'all';
 
@@ -17,6 +18,7 @@ export interface NotesScreenProps {
   onOpenSearch: () => void;
   onQuickCapture: (kind?: NoteKind) => void;
   onOpenAgent: () => void;
+  onOpenSettings: () => void;
   storageWarning: string | null;
 }
 
@@ -45,9 +47,27 @@ export function NotesScreen({
   onOpenSearch,
   onQuickCapture,
   onOpenAgent,
+  onOpenSettings,
   storageWarning,
 }: NotesScreenProps) {
   const today = useMemo(() => summarizeDay(notes), [notes]);
+  const [showInstallHint, setShowInstallHint] = useState(() => {
+    try {
+      if (localStorage.getItem('mochi.installHint.v1') === '1') return false;
+    } catch {
+      /* ignore */
+    }
+    return isIosDevice() && !isStandaloneMode();
+  });
+
+  const dismissInstallHint = () => {
+    try {
+      localStorage.setItem('mochi.installHint.v1', '1');
+    } catch {
+      /* ignore */
+    }
+    setShowInstallHint(false);
+  };
 
   const filtered = useMemo(() => {
     if (kindFilter === 'all') return notes;
@@ -129,6 +149,24 @@ export function NotesScreen({
           </div>
         </section>
       </header>
+
+      {showInstallHint ? (
+        <div className="install-hint" role="note">
+          <Icon name="external" size={15} />
+          <span className="install-hint-text">添加到主屏幕后，断网也能记</span>
+          <button type="button" className="install-hint-action" onClick={onOpenSettings}>
+            怎么装
+          </button>
+          <button
+            type="button"
+            className="install-hint-dismiss"
+            aria-label="不再提示"
+            onClick={dismissInstallHint}
+          >
+            <Icon name="close" size={14} />
+          </button>
+        </div>
+      ) : null}
 
       {storageWarning ? (
         <div className="banner banner-warn" role="status">
