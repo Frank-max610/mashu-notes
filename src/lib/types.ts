@@ -46,6 +46,8 @@ export interface NoteMeta {
   detail?: string;
   /** Plan fields (used by the 计划 module). */
   plan?: NotePlan;
+  /** Marks a directory note (user-created knowledge-base folder). */
+  directory?: { color?: string };
 }
 
 export type PlanStatus = 'todo' | 'doing' | 'done';
@@ -87,6 +89,8 @@ export interface Note {
   position?: NotePosition;
   /** Set when the user archives the note; hidden from 经历库. */
   archivedAt?: number;
+  /** User-created knowledge-base directory this note belongs to. */
+  dirId?: string;
 }
 
 /** Lightweight note projection used by lists, graphs and search results. */
@@ -133,7 +137,7 @@ export interface TagCount {
 
 /** Editable fields of a note. */
 export type NotePatch = Partial<
-  Pick<Note, 'title' | 'content' | 'pinned' | 'kind' | 'meta' | 'archivedAt'>
+  Pick<Note, 'title' | 'content' | 'pinned' | 'kind' | 'meta' | 'archivedAt' | 'dirId'>
 >;
 
 /** Input for creating a note (from the editor, quick capture or the agent). */

@@ -22,6 +22,7 @@ export type Route =
   | { name: 'search' }
   | { name: 'settings' }
   | { name: 'more' }
+  | { name: 'directories' }
   | { name: 'note'; id: string };
 
 export function parseRoute(hash: string): Route {
@@ -47,6 +48,8 @@ export function parseRoute(hash: string): Route {
       return { name: 'attachments' };
     case 'more':
       return { name: 'more' };
+    case 'directories':
+      return { name: 'directories' };
     case 'graph':
       return { name: 'graph' };
     case 'agent':

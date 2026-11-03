@@ -41,6 +41,8 @@ export interface NotesApi {
   deleteNote(id: string): Promise<boolean>;
   /** Archive or restore a note (hides it from 经历库). */
   archiveNote(id: string, archived: boolean): void;
+  /** Move a note into a user-created directory (or null for unassigned). */
+  assignDirectory(id: string, dirId: string | null): void;
   togglePin(id: string): void;
   replaceAll(notes: Note[]): Promise<void>;
   clearAll(): Promise<void>;
@@ -259,6 +261,18 @@ export function useNotes(): NotesApi {
     [commit, scheduleFlush],
   );
 
+  const assignDirectory = useCallback(
+    (id: string, dirId: string | null) => {
+      const current = notesRef.current.find((note) => note.id === id);
+      if (!current) return;
+      const next: Note = { ...current, dirId: dirId ?? undefined, updatedAt: Date.now() };
+      dirtyRef.current.set(id, next);
+      commit(sortNotes(notesRef.current.map((note) => (note.id === id ? next : note))));
+      scheduleFlush();
+    },
+    [commit, scheduleFlush],
+  );
+
   const deleteNote = useCallback(
     async (id: string): Promise<boolean> => {
       dirtyRef.current.delete(id);
@@ -429,6 +443,7 @@ export function useNotes(): NotesApi {
     resetNodePositions,
     deleteNote,
     archiveNote,
+    assignDirectory,
     togglePin,
     replaceAll,
     clearAll,

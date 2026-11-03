@@ -112,6 +112,11 @@ function normalizeMeta(raw: unknown): NoteMeta {
   if (typeof value.category === 'string') meta.category = value.category;
   if (value.direction === 'expense' || value.direction === 'income') meta.direction = value.direction;
   if (typeof value.detail === 'string') meta.detail = value.detail;
+  if (value.directory && typeof value.directory === 'object') {
+    const directory = value.directory as Record<string, unknown>;
+    const color = typeof directory.color === 'string' && /^#[0-9a-fA-F]{6}$/.test(directory.color) ? directory.color : undefined;
+    meta.directory = color ? { color } : {};
+  }
   if (value.plan && typeof value.plan === 'object') {
     const plan = value.plan as Record<string, unknown>;
     const status = plan.status;
@@ -160,6 +165,7 @@ export function normalizeNote(raw: unknown, seenIds?: Set<string>): Note | null 
     manualLinks,
     position: normalizePosition(value.position),
     archivedAt: finiteNumber(value.archivedAt),
+    dirId: typeof value.dirId === 'string' && value.dirId ? value.dirId : undefined,
   };
 }
 

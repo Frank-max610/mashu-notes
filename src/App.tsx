@@ -13,6 +13,7 @@ import { RecordsScreen } from './screens/RecordsScreen';
 import { EditorScreen, type Mode as EditorMode } from './screens/EditorScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { MoreScreen } from './screens/MoreScreen';
+import { DirectoryScreen } from './screens/DirectoryScreen';
 import { PlanScreen } from './screens/PlanScreen';
 import { ProfileScreen, HealthScreen, FinanceScreen, TemplatesScreen, ArchiveScreen, AttachmentsScreen } from './screens/ModulesScreens';
 import { getHiddenModules, setModuleHidden, type ModuleId } from './lib/modules';
@@ -466,6 +467,32 @@ export default function App() {
         );
       case 'attachments':
         return <AttachmentsScreen />;
+      case 'directories':
+        return (
+          <DirectoryScreen
+            notes={api.sortedNotes}
+            onCreate={(name, color) => {
+              void api
+                .createNote({
+                  title: name,
+                  content: '#目录',
+                  kind: 'note',
+                  meta: { directory: { color } },
+                })
+                .then((note) => api.assignDirectory(note.id, note.id))
+                .then(() => notify('目录已创建'));
+            }}
+            onAssign={(noteId, dirId) => api.assignDirectory(noteId, dirId)}
+            onDeleteDirectory={(directory) => {
+              for (const note of api.notes) {
+                if (note.dirId === directory.id) api.assignDirectory(note.id, null);
+              }
+              void api.deleteNote(directory.id);
+              notify('目录已删除，里面的记录已移出');
+            }}
+            onOpenNote={openNote}
+          />
+        );
       case 'more':
         return (
           <MoreScreen

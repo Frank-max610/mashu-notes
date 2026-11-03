@@ -2547,3 +2547,23 @@ button.settings-row:active {
 .template-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
 .template-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; text-align: left; }
 .archive-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; text-align: left; }
+
+/* ---------- knowledge directories ---------- */
+.directory-create { display: flex; flex-direction: column; gap: 10px; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius-l); background: var(--surface); }
+.directory-colors { display: flex; gap: 8px; }
+.directory-color { width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent; }
+.directory-color.is-active { border-color: var(--text); box-shadow: 0 0 0 2px var(--surface) inset; }
+.directory-list { display: flex; flex-direction: column; gap: 8px; }
+.directory-block { border: 1px solid var(--border); border-radius: var(--radius-l); background: var(--surface); overflow: hidden; }
+.directory-row { display: flex; align-items: center; gap: 10px; padding: 12px 14px; }
+.directory-dot { width: 12px; height: 12px; border-radius: 50%; flex: none; }
+.directory-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; text-align: left; }
+.directory-name { font-size: var(--text-base); font-weight: 600; }
+.directory-meta { font-size: var(--text-xs); color: var(--text-muted); }
+.directory-notes { border-top: 1px solid var(--border); padding: 2px 14px 8px; }
+.directory-note-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.directory-note-row:last-child { border-bottom: 0; }
+.directory-unassigned { display: flex; flex-direction: column; }
+.unassigned-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.unassigned-row .record-title { flex: 1; min-width: 0; font-size: var(--text-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.directory-select { max-width: 130px; min-height: 34px; border: 1px solid var(--border); border-radius: var(--radius-s); background: var(--surface); color: var(--text); padding: 4px 8px; font-size: var(--text-xs); }
