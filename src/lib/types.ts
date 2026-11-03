@@ -1,5 +1,5 @@
 /**
- * Core data model for Inkstone.
+ * Core data model for Mochi.
  *
  * A vault is just a flat set of notes. Relations are derived from note content
  * (`[[wiki links]]` and `#tags`), never stored separately — that keeps the data

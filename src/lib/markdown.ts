@@ -2,7 +2,7 @@ import MarkdownIt from 'markdown-it';
 import type { NoteSummary } from './types';
 
 /**
- * Markdown rendering for Inkstone.
+ * Markdown rendering for Mochi.
  *
  * Output is sanitised by construction: raw HTML is disabled and only
  * `http(s)`/`mailto` links are kept as external links. `[[wiki links]]` become
@@ -131,9 +131,9 @@ export function plainText(content: string): string {
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
     .replace(/^\s{0,3}#{1,6}\s+/gm, '')
     .replace(/^\s{0,3}>\s?/gm, '')
-    .replace(/^\s*[-*+]\s+\[[ xX]\]\s+/gm, '')
+    .replace(/^\s*[-*+]\s+\[([ xX])\]\s+/gm, (_m, mark: string) => (mark.toLowerCase() === 'x' ? '✓ ' : '○ '))
     .replace(/^\s*\d+\.\s+/gm, '')
-    .replace(/^\s*[-*+]\s+/gm, '')
+    .replace(/^\s*[-*+]\s+/gm, '· ')
     .replace(/^\s*\|?[\s:|-]*-{2,}[\s:|-]*\|?\s*$/gm, ' ')
     .replace(/^\s*(?:[-*_]\s*){3,}$/gm, ' ')
     .replace(/\[[ xX]\]\s?/g, '')

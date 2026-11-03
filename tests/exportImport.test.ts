@@ -25,7 +25,7 @@ describe('vault JSON round trip', () => {
       version: number;
       notes: Note[];
     };
-    expect(parsed.app).toBe('inkstone');
+    expect(parsed.app).toBe('mochi');
     expect(parsed.version).toBe(1);
     expect(parsed.notes[0].title).toBe('测试笔记');
   });

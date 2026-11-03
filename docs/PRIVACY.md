@@ -1,12 +1,12 @@
 # 隐私说明
 
-**一句话：Inkstone 不收集、不上传、不分析你的任何数据。所有笔记都留在你自己的浏览器里，没有服务器参与。**
+**一句话：Mochi 不收集、不上传、不分析你的任何数据。所有笔记（麻薯）都留在你自己的浏览器里，没有服务器参与。**
 
-本说明适用于 Inkstone（砚）及其仓库中的全部前端代码。最后更新：2026-11-03。
+本说明适用于 Mochi（麻薯）v0.2.0 及其仓库中的全部前端代码。最后更新：2026-11-03。
 
 ## 1. 我们不收集什么
 
-Inkstone 没有后端，因此**不存在**以下行为：
+Mochi 没有后端，因此**不存在**以下行为：
 
 - 没有账号、邮箱、手机号或任何身份信息；
 - 没有遥测、埋点、崩溃上报、使用统计；
@@ -16,20 +16,20 @@ Inkstone 没有后端，因此**不存在**以下行为：
 
 ## 2. 运行时的网络请求
 
-- **应用不依赖任何后端或第三方接口。** 构建产物是静态 HTML/CSS/JS，运行时的网络访问只用于加载应用自身的同源静态文件（页面、JS/CSS、图标、manifest）；没有 CDN、在线字体、远程图标或统计脚本。
+- **应用不依赖任何后端或第三方接口。** 构建产物是静态 HTML/CSS/JS，运行时的网络访问只用于加载应用自身的同源静态文件（页面、JS/CSS、图标、manifest）；没有 CDN、在线字体、远程图标或统计脚本，麻薯吉祥物也是内联 SVG。
 - **离线缓存只请求同源静态资源。** 生产构建下 Service Worker 会缓存页面、JS/CSS、图标和 manifest 等应用壳文件（同源 GET），不会请求任何第三方地址。
 - **例外：你自己写入笔记的内容。** 如果你在 Markdown 里放了网络图片或外链，预览/点击时浏览器会按你写的地址去加载，这属于你主动发起的内容请求。应用不会读取或中转这些请求。
-- **开发/分享模式。** `npm run dev` 与 `npm run share` 会在本机 / 局域网上提供静态文件，只供浏览器加载页面使用；它们不涉及笔记数据。
+- **开发/分享/截图模式。** `npm run dev` 与 `npm run share` 会在本机 / 局域网上提供静态文件，只供浏览器加载页面使用；`npm run qr` 只是把局域网 URL 画成二维码图片；`npm run screenshots` 用本机 Chrome 截取应用界面。它们都不涉及或上传笔记数据。
 
 ## 3. 数据存储在哪里
 
 | 数据 | 位置 | 说明 |
 | --- | --- | --- |
-| 全部笔记 | IndexedDB：数据库 `inkstone`，版本 1，对象仓库 `notes` | 默认存储方式，容量较大 |
-| 全部笔记（回退） | localStorage：`inkstone.notes.v1` | 仅在 IndexedDB 不可用（隐私模式、被禁用、配额不足）时使用 |
-| 主题偏好 | localStorage：`inkstone.theme.v1` | `dark` / `light` / `system` |
-| 引导标记 | localStorage：`inkstone.onboarded.v1` | 是否已写入演示笔记 |
-| 应用壳缓存 | Cache Storage：`inkstone-v1` | Service Worker 维护，只有静态资源，不含任何笔记 |
+| 全部笔记 | IndexedDB：数据库 `mochi`，版本 1，对象仓库 `notes` | 默认存储方式，容量较大 |
+| 全部笔记（回退） | localStorage：`mochi.notes.v1` | 仅在 IndexedDB 不可用（隐私模式、被禁用、配额不足）时使用 |
+| 主题偏好 | localStorage：`mochi.theme.v1` | `light`（草莓牛奶）/ `dark`（芋泥夜）/ `system` |
+| 引导标记 | localStorage：`mochi.onboarded.v1` | 是否已写入演示笔记 |
+| 应用壳缓存 | Cache Storage：`mochi-v1` | Service Worker 维护，只有静态资源，不含任何笔记 |
 
 要点：
 
@@ -37,14 +37,16 @@ Inkstone 没有后端，因此**不存在**以下行为：
 - 同一台设备的不同浏览器（Safari / Chrome）、同一浏览器的普通/隐私窗口之间也互不共享。
 - 浏览器可能清理「不常访问站点」的数据。应用启动时会调用 `navigator.storage.persist()` 请求持久化权限以降低概率，但**不能保证**；定期导出备份是唯一可靠的保护。
 - 设备上安装的「添加到主屏幕」版本与浏览器页面共享同一 origin 的存储。
+- 从 0.1.x 升级到 0.2.0 时，应用会自动把旧的 `inkstone` IndexedDB / localStorage 笔记迁移到新的 `mochi` 存储，并保留主题设置；旧版导出的 JSON 备份也可以直接导入。迁移完成后旧库才会被删除。仍建议在升级前导出一份 JSON 备份。
 
 ## 4. 局域网分享会暴露什么
 
 `npm run share` 使用一个只读的静态文件服务器，把构建产物 `dist/` 暴露在 `0.0.0.0:4173`：
 
-- 同一局域网内的设备可以打开 Inkstone 的**应用界面**；
+- 同一局域网内的设备可以打开 Mochi 的**应用界面**；
 - 服务器不读取、不转发、不存储任何笔记数据；
 - 每台设备打开后都使用**自己浏览器里的独立笔记库**，手机看不到电脑上的笔记，反之亦然；
+- `npm run qr` 生成的二维码图片（`docs/screenshots/lan-qr.png`）只包含局域网 URL，不含笔记内容；
 - 分享结束后（Ctrl+C 停止脚本），局域网暴露即消失；
 - 如果你不希望应用出现在局域网中，不要运行 `share`，改用部署好的 HTTPS 地址或本机 `localhost`。
 
@@ -52,16 +54,16 @@ Inkstone 没有后端，因此**不存在**以下行为：
 
 - 仓库内提供 `public/manifest.webmanifest`、iOS / Android 的「添加到主屏幕」meta，以及用于应用壳缓存的 `public/sw.js`。
 - 生产构建会在页面 `load` 后注册 Service Worker，但浏览器只允许在 `https://` 或 `localhost` 等安全上下文中注册；通过 HTTP 局域网地址访问时注册会失败，应用以在线模式运行（笔记数据仍保存在本地）。
-- Service Worker 只缓存应用壳：入口 HTML、manifest、图标以及同源静态资源（Cache Storage 名称 `inkstone-v1`）。它**不会读取、缓存或上传 IndexedDB / localStorage 中的笔记**。
+- Service Worker 只缓存应用壳：入口 HTML、manifest、图标以及同源静态资源（Cache Storage 名称 `mochi-v1`）。它**不会读取、缓存或上传 IndexedDB / localStorage 中的笔记**。
 - 无论是否启用离线缓存，笔记数据始终只存在本地浏览器存储中。
 
 ## 6. 如何备份、导出与删除
 
 ### 导出备份（推荐定期做）
 
-1. 打开 Inkstone 的**设置**页。
-2. 选择「导出全部笔记（JSON）」：得到包含全部笔记的 `.json` 文件，可再次导入，格式见 `src/lib/exportImport.ts` 的 `VaultFile`。
-3. 或选择「导出 Markdown 合集」：得到一份便于阅读/迁移到其他工具的 Markdown 合集（注意：该格式目前不能导回 Inkstone）。
+1. 打开 Mochi 底部导航的「**我的**」页。
+2. 选择「导出全部笔记（JSON）」：得到包含全部笔记的 `.json` 文件，可再次导入，格式见 `src/lib/exportImport.ts` 的 `VaultFile`（顶层 `app` 标识为 `mochi`）。
+3. 或选择「导出 Markdown 合集」：得到一份便于阅读/迁移到其他工具的 Markdown 合集（注意：该格式目前不能导回 Mochi）。
 4. 把文件保存到你信任的位置（本地磁盘、加密网盘等）。
 
 导出的文件包含明文笔记，请像对待任何私人文档一样妥善保管。
@@ -72,7 +74,7 @@ Inkstone 没有后端，因此**不存在**以下行为：
 
 ### 删除全部数据
 
-1. 设置页 →「清空全部笔记」——会移除 IndexedDB 与 localStorage 中的全部笔记（`inkstone.theme.v1` / `inkstone.onboarded.v1` 偏好可能保留，可一并清除站点数据）。
+1. 「我的」页 →「清空全部笔记」——会移除 IndexedDB 与 localStorage 中的全部笔记（`mochi.theme.v1` / `mochi.onboarded.v1` 偏好可能保留，可一并清除站点数据）。
 2. 或在浏览器设置中清除该站点的数据（「网站设置 → 存储 → 清除数据」）。这会一并删除笔记与偏好，且不可恢复。
 3. 卸载「添加到主屏幕」的图标本身**不会**删除数据；需要在浏览器里清除站点数据才能彻底删除。
 
@@ -80,7 +82,7 @@ Inkstone 没有后端，因此**不存在**以下行为：
 
 ## 7. 第三方组件
 
-Inkstone 的运行时依赖只有 `react`、`react-dom`、`markdown-it`，全部在你自己的浏览器中执行，不与它们的维护者通信。开发/构建工具（Vite、TypeScript、Vitest 等）只在本地开发时运行。没有接入任何第三方服务、SDK 或统计平台。
+Mochi 的运行时依赖只有 `react`、`react-dom`、`markdown-it`，全部在你自己的浏览器中执行，不与它们的维护者通信。开发/发布工具（Vite、TypeScript、Vitest、`qrcode`、`qrcode-terminal` 以及截图脚本使用的本机 Chrome）只在本地运行。没有接入任何第三方服务、SDK 或统计平台。
 
 ## 8. 政策变更
 

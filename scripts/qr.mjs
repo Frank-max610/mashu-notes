@@ -38,7 +38,7 @@ await mkdir(outDir, { recursive: true });
 await QRCode.toFile(outFile, url, {
   width: 640,
   margin: 1,
-  color: { dark: '#0e0e12ff', light: '#ffffffff' },
+  color: { dark: '#4b3a42ff', light: '#fff7f5ff' },
 });
 const ascii = await QRCode.toString(url, { type: 'terminal', small: true });
 console.log(`\n  手机访问地址: ${url}\n`);

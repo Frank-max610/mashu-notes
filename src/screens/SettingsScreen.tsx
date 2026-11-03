@@ -13,8 +13,9 @@ import {
 } from '../lib/exportImport';
 import { formatBytes } from '../lib/format';
 import { Icon, type IconName } from '../components/Icon';
+import { Mascot } from '../components/Mascot';
 
-const APP_VERSION = '0.1.0';
+const APP_VERSION = '0.2.0';
 
 export interface SettingsScreenProps {
   notes: Note[];
@@ -51,8 +52,8 @@ function SettingsRow({ icon, label, hint, onClick, danger }: RowProps) {
 }
 
 const THEMES: ReadonlyArray<{ value: ThemeMode; label: string; icon: IconName }> = [
-  { value: 'dark', label: '深色', icon: 'moon' },
-  { value: 'light', label: '浅色', icon: 'sun' },
+  { value: 'light', label: '草莓牛奶', icon: 'sun' },
+  { value: 'dark', label: '芋泥夜', icon: 'moon' },
   { value: 'system', label: '跟随系统', icon: 'info' },
 ];
 
@@ -88,7 +89,7 @@ export function SettingsScreen({
       notify('还没有笔记可以导出');
       return;
     }
-    downloadText(`inkstone-${fileStamp()}.json`, toVaultJson(notes));
+    downloadText(`mochi-${fileStamp()}.json`, toVaultJson(notes));
     notify(`已导出 ${notes.length} 条笔记（JSON）`);
   };
 
@@ -97,7 +98,7 @@ export function SettingsScreen({
       notify('还没有笔记可以导出');
       return;
     }
-    downloadText(`inkstone-${fileStamp()}.md`, toMarkdownBundle(notes), 'text/markdown');
+    downloadText(`mochi-${fileStamp()}.md`, toMarkdownBundle(notes), 'text/markdown');
     notify('已导出 Markdown 合集');
   };
 
@@ -162,47 +163,47 @@ export function SettingsScreen({
       <header className="screen-header app-header">
         <div className="app-brand">
           <span className="app-logo" aria-hidden="true">
-            砚
+            <Mascot variant="wink" size={40} />
           </span>
           <div className="app-brand-text">
-            <h1 className="app-title">设置</h1>
-            <p className="app-subtitle">数据、外观与关于</p>
+            <h1 className="app-title">我的</h1>
+            <p className="app-subtitle">数据、心情和一点小秘密</p>
           </div>
         </div>
       </header>
 
       <div className="screen-body">
         <section>
-          <div className="section-label">数据</div>
+          <div className="section-label">我的麻薯</div>
           <div className="settings-card">
             <SettingsRow
               icon="download"
               label="导出全部笔记（JSON）"
-              hint={`${notes.length} 条 · 完整保留链接与时间`}
+              hint={`把 ${notes.length} 颗麻薯装进文件里 ♡`}
               onClick={handleExportJson}
             />
             <SettingsRow
               icon="book"
               label="导出 Markdown 合集"
-              hint="单个 .md 文件，方便迁移到其他工具"
+              hint="一整碗倒成一份 .md，方便搬去别处"
               onClick={handleExportMarkdown}
             />
             <SettingsRow
               icon="upload"
               label="导入笔记（合并）"
-              hint="按标题合并，较新的版本优先"
+              hint="按名字合并，较新的那份说了算"
               onClick={() => void handleImport('merge')}
             />
             <SettingsRow
               icon="database"
               label="导入笔记（替换全部）"
-              hint="用备份完全覆盖当前笔记库"
+              hint="倒掉旧的，只留下文件里的麻薯"
               onClick={() => void handleImport('replace')}
             />
             <SettingsRow
               icon="trash"
               label="清空全部笔记"
-              hint="不可撤销，建议先导出备份"
+              hint="会全部消失哦，先导出备份吧"
               onClick={() => void handleClear()}
               danger
             />
@@ -211,7 +212,7 @@ export function SettingsScreen({
         </section>
 
         <section>
-          <div className="section-label">存储</div>
+          <div className="section-label">麻薯住在哪里</div>
           <div className="settings-card settings-static">
             <div className="settings-row as-static">
               <span className="settings-row-icon">
@@ -221,15 +222,15 @@ export function SettingsScreen({
                 <span className="settings-row-label">
                   本地存储 · {storageMode === 'indexeddb' ? 'IndexedDB' : 'localStorage（降级模式）'}
                 </span>
-                <span className="settings-row-hint">已用 {usedText} · 数据不会离开这台设备</span>
+                <span className="settings-row-hint">已用 {usedText} · 麻薯不会离开这台设备</span>
               </span>
             </div>
           </div>
         </section>
 
         <section>
-          <div className="section-label">外观</div>
-          <div className="segmented" role="group" aria-label="主题">
+          <div className="section-label">换个心情</div>
+          <div className="segmented" role="group" aria-label="主题心情">
             {THEMES.map((item) => (
               <button
                 key={item.value}
@@ -246,7 +247,7 @@ export function SettingsScreen({
         </section>
 
         <section>
-          <div className="section-label">在手机上使用</div>
+          <div className="section-label">装进手机里</div>
           <div className="settings-card settings-static">
             <div className="settings-row as-static">
               <span className="settings-row-icon">
@@ -267,13 +268,13 @@ export function SettingsScreen({
         </section>
 
         <section>
-          <div className="section-label">关于</div>
+          <div className="section-label">关于 Mochi</div>
           <div className="settings-card">
             {welcomeNote ? (
               <SettingsRow
                 icon="sparkles"
-                label="打开示例笔记"
-                hint="看看 Inkstone 能做什么"
+                label="打开欢迎页"
+                hint="先逛逛这条软乎乎的示例麻薯"
                 onClick={() => onOpenNote(welcomeNote.id)}
               />
             ) : null}
@@ -282,7 +283,7 @@ export function SettingsScreen({
                 <Icon name="info" size={19} />
               </span>
               <span className="settings-row-text">
-                <span className="settings-row-label">Inkstone 砚 · v{APP_VERSION}</span>
+                <span className="settings-row-label">Mochi 麻薯 · v{APP_VERSION}</span>
                 <span className="settings-row-hint">MIT 协议开源 · 本地优先的 Markdown 知识库</span>
               </span>
             </div>
@@ -293,14 +294,25 @@ export function SettingsScreen({
               <span className="settings-row-text">
                 <span className="settings-row-label">备份提醒</span>
                 <span className="settings-row-hint">
-                  清除浏览器数据会丢失笔记，重要内容请定期导出 JSON。
+                  清理浏览器数据会让麻薯消失，记得偶尔把它们打包带走。
                 </span>
               </span>
             </div>
           </div>
         </section>
 
-        <p className="settings-footer">用 Inkstone 写下此刻的想法 · 数据属于你</p>
+        <div className="settings-mascot">
+          <Mascot variant="love" size={88} bob />
+          <p className="settings-mascot-text">把想法揉成软乎乎的形状 ♡</p>
+          <a
+            className="settings-mascot-link"
+            href="https://github.com/Frank-max610/mochi-notes"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Icon name="external" size={14} /> GitHub · MIT 开源
+          </a>
+        </div>
       </div>
     </div>
   );

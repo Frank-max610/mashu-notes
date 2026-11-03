@@ -5,10 +5,20 @@ import type { Note } from './types';
  * blocked storage). Everything stays on the device — there is no server.
  */
 
-const DB_NAME = 'inkstone';
+const DB_NAME = 'mochi';
 const DB_VERSION = 1;
 const STORE = 'notes';
-const LS_KEY = 'inkstone.notes.v1';
+const LS_KEY = 'mochi.notes.v1';
+
+/** Pre-rebrand (0.1.x) storage, migrated once on first open. */
+const LEGACY_DB_NAME = 'inkstone';
+const LEGACY_LS = {
+  notes: 'inkstone.notes.v1',
+  theme: 'inkstone.theme.v1',
+  onboarded: 'inkstone.onboarded.v1',
+} as const;
+const THEME_KEY = 'mochi.theme.v1';
+const ONBOARDED_KEY = 'mochi.onboarded.v1';
 
 export type StorageMode = 'indexeddb' | 'localstorage';
 
@@ -68,6 +78,137 @@ function writeLocal(notes: Note[]): void {
   localStorage.setItem(LS_KEY, JSON.stringify(notes));
 }
 
+let legacyMigration: Promise<Note[]> | null = null;
+
+function readLegacyLocalNotes(): Note[] {
+  try {
+    const raw = localStorage.getItem(LEGACY_LS.notes);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed) ? (parsed as Note[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Whether the pre-rebrand database still exists on this origin. */
+function legacyDatabaseExists(): Promise<boolean> {
+  return new Promise((resolve) => {
+    const factory = indexedDB as IDBFactory & { databases?: () => Promise<IDBDatabaseInfo[]> };
+    if (typeof factory.databases !== 'function') {
+      resolve(true);
+      return;
+    }
+    factory
+      .databases()
+      .then((list) => resolve(list.some((database) => database.name === LEGACY_DB_NAME)))
+      .catch(() => resolve(true));
+  });
+}
+
+function readLegacyIndexedDbNotes(): Promise<Note[]> {
+  return new Promise((resolve) => {
+    let settled = false;
+    const done = (notes: Note[]) => {
+      if (settled) return;
+      settled = true;
+      resolve(notes);
+    };
+    try {
+      const request = indexedDB.open(LEGACY_DB_NAME);
+      request.onsuccess = () => {
+        const database = request.result;
+        if (!database.objectStoreNames.contains(STORE)) {
+          database.close();
+          done([]);
+          return;
+        }
+        try {
+          const transaction = database.transaction(STORE, 'readonly');
+          const getAll = transaction.objectStore(STORE).getAll();
+          getAll.onsuccess = () => {
+            done((getAll.result as Note[]) ?? []);
+            database.close();
+          };
+          getAll.onerror = () => {
+            done([]);
+            database.close();
+          };
+        } catch {
+          done([]);
+          database.close();
+        }
+      };
+      request.onerror = () => done([]);
+      request.onblocked = () => done([]);
+      setTimeout(() => done([]), 1500);
+    } catch {
+      done([]);
+    }
+  });
+}
+
+/**
+ * Move a 0.1.x (Inkstone) vault into the Mochi database instead of throwing it
+ * away. Notes from both old storage layers are merged by id, the old theme and
+ * onboarding flags are carried over, and the legacy database is only deleted
+ * after the copy has been written successfully.
+ */
+async function migrateLegacyVault(): Promise<Note[]> {
+  if (!legacyMigration) {
+    legacyMigration = (async () => {
+      const byId = new Map<string, Note>();
+      for (const note of readLegacyLocalNotes()) byId.set(note.id, note);
+
+      if (await legacyDatabaseExists()) {
+        for (const note of await readLegacyIndexedDbNotes()) byId.set(note.id, note);
+      }
+
+      // Adopt the old preferences (idempotent; the legacy keys are only
+      // removed below, after the notes themselves have been persisted).
+      try {
+        if (!localStorage.getItem(THEME_KEY)) {
+          const theme = localStorage.getItem(LEGACY_LS.theme);
+          if (theme) localStorage.setItem(THEME_KEY, theme);
+        }
+        if (!localStorage.getItem(ONBOARDED_KEY)) {
+          const onboarded = localStorage.getItem(LEGACY_LS.onboarded);
+          if (onboarded) localStorage.setItem(ONBOARDED_KEY, onboarded);
+        }
+      } catch {
+        /* ignore storage restrictions */
+      }
+
+      const notes = [...byId.values()];
+      let written = false;
+      if (notes.length > 0) {
+        await saveNotes(notes);
+        written = getStorageMode() === 'indexeddb';
+      }
+      // Clean up the old storage only once the copy really landed: deleting a
+      // localStorage-only vault after a failed write would lose the last copy.
+      if (notes.length === 0 || written) {
+        if (written) {
+          try {
+            indexedDB.deleteDatabase(LEGACY_DB_NAME);
+          } catch {
+            /* ignore */
+          }
+        }
+        try {
+          localStorage.removeItem(LEGACY_LS.notes);
+          localStorage.removeItem(LEGACY_LS.theme);
+          localStorage.removeItem(LEGACY_LS.onboarded);
+        } catch {
+          /* ignore storage restrictions */
+        }
+      }
+      return notes;
+    })();
+  }
+  return legacyMigration;
+}
+
 /** Whether the vault is stored in IndexedDB or fell back to localStorage. */
 export function getStorageMode(): StorageMode {
   return mode ?? (typeof indexedDB === 'undefined' ? 'localstorage' : 'indexeddb');
@@ -85,6 +226,11 @@ export async function loadNotes(): Promise<Note[]> {
     });
     await txDone(tx);
     mode = 'indexeddb';
+    if (notes.length === 0) {
+      // First run of 0.2.x on a device that may still hold 0.1.x notes.
+      const migrated = await migrateLegacyVault();
+      if (migrated.length > 0) return recoverLocalFallback(migrated);
+    }
     return recoverLocalFallback(notes);
   } catch {
     mode = 'localstorage';

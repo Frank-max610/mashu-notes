@@ -1,26 +1,50 @@
 <!doctype html>
-<html lang="zh-CN" data-theme="dark">
+<html lang="zh-CN" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no"
     />
-    <meta name="theme-color" content="#0e0e12" />
-    <meta name="description" content="Inkstone 砚 — 本地优先、手机可用的开源 Markdown 知识库，Obsidian 的轻量替代。" />
+    <meta name="theme-color" content="#fff7f5" />
+    <meta
+      name="description"
+      content="Mochi 麻薯 —— 把想法揉成一颗颗软乎乎的麻薯。软萌、本地优先、手机可用的开源 Markdown 笔记本。"
+    />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Inkstone" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Mochi" />
     <meta name="format-detection" content="telephone=no" />
     <link rel="icon" type="image/svg+xml" href="./icons/icon.svg" />
     <link rel="apple-touch-icon" href="./icons/icon-180.png" />
     <link rel="manifest" href="./manifest.webmanifest" />
-    <title>Inkstone · 砚</title>
+    <title>Mochi · 麻薯</title>
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        background:
+          radial-gradient(880px 460px at 8% -8%, rgba(255, 175, 196, 0.55), transparent 62%),
+          #fff7f5;
+        color: #8a6f7c;
+        font-family: ui-rounded, -apple-system, 'PingFang SC', system-ui, sans-serif;
+      }
+      .boot {
+        height: 100dvh;
+        display: grid;
+        place-items: center;
+        font-size: 14px;
+        letter-spacing: 0.06em;
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
-    <noscript>Inkstone 需要 JavaScript 才能运行。</noscript>
+    <div id="root"><div class="boot">🍡 正在揉麻薯…</div></div>
+    <noscript>Mochi 需要 JavaScript 才能运行哦～</noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

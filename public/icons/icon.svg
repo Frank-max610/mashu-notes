@@ -1,18 +1,39 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Inkstone 砚">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Mochi 麻薯">
   <defs>
-    <radialGradient id="glow" cx="50%" cy="44%" r="52%">
-      <stop offset="0%" stop-color="#8b5cf6" stop-opacity=".85"/>
-      <stop offset="100%" stop-color="#6d28d9" stop-opacity="0"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff1f5"/>
+      <stop offset="100%" stop-color="#ffd1e0"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="52%" r="52%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity=".95"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="stone" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#c4b5fd"/>
-      <stop offset="55%" stop-color="#8b5cf6"/>
-      <stop offset="100%" stop-color="#6d28d9"/>
+    <linearGradient id="body" x1="30%" y1="10%" x2="70%" y2="100%">
+      <stop offset="0%" stop-color="#fff6f9"/>
+      <stop offset="62%" stop-color="#ffe0eb"/>
+      <stop offset="100%" stop-color="#ffc7d7"/>
+    </linearGradient>
+    <linearGradient id="berry" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#ff8fab"/>
+      <stop offset="100%" stop-color="#e8557b"/>
     </linearGradient>
   </defs>
-  <rect width="512" height="512" rx="112" fill="#0e0e12"/>
-  <circle cx="256" cy="248" r="196" fill="url(#glow)"/>
-  <ellipse cx="256" cy="256" rx="118" ry="138" fill="url(#stone)"/>
-  <ellipse cx="232" cy="196" rx="52" ry="34" fill="#ffffff" opacity=".25"/>
-  <text x="256" y="300" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Noto Sans CJK SC', sans-serif" font-size="168" font-weight="700" fill="#ffffff">砚</text>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <ellipse cx="256" cy="300" rx="230" ry="196" fill="url(#glow)"/>
+  <ellipse cx="256" cy="292" rx="150" ry="132" fill="url(#body)"/>
+  <ellipse cx="250" cy="266" rx="112" ry="70" fill="#fff6f9" opacity=".9"/>
+  <ellipse cx="256" cy="310" rx="122" ry="86" fill="#ffc7d7" opacity=".35"/>
+  <circle cx="196" cy="292" r="7" fill="#5a3b46"/>
+  <circle cx="316" cy="292" r="7" fill="#5a3b46"/>
+  <circle cx="198" cy="289" r="2.4" fill="#ffffff"/>
+  <circle cx="318" cy="289" r="2.4" fill="#ffffff"/>
+  <ellipse cx="176" cy="314" rx="20" ry="12" fill="#ffa6bc" opacity=".7"/>
+  <ellipse cx="336" cy="314" rx="20" ry="12" fill="#ffa6bc" opacity=".7"/>
+  <path d="M236 322c6 9 24 9 30 0" stroke="#5a3b46" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <path d="M330 196c-18-6-34-4-44 4 10 20 32 30 52 22 18-8 22-24 18-34-6 4-16 9-26 8Z" fill="#7fcb9a"/>
+  <ellipse cx="348" cy="222" rx="30" ry="26" fill="url(#berry)"/>
+  <path d="M348 248c-4 16-2 26 2 34 6-10 6-22 2-34Z" fill="#ce3f66"/>
+  <circle cx="340" cy="216" r="2.6" fill="#ffe6ee"/>
+  <circle cx="356" cy="220" r="2.2" fill="#ffe6ee"/>
+  <circle cx="346" cy="232" r="2.2" fill="#ffe6ee"/>
 </svg>

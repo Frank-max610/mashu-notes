@@ -3,6 +3,7 @@ import type { Note } from '../lib/types';
 import { buildGraph, layoutSync, seedPositions, tick } from '../lib/graph';
 import type { Graph, GraphNode } from '../lib/graph';
 import { Icon } from './Icon';
+import { Mascot } from './Mascot';
 import './GraphView.css';
 
 /**
@@ -53,16 +54,30 @@ interface PinchState {
   ty: number;
 }
 
+/** Pastel palette pulled from the Mochi design tokens (see styles/tokens.css). */
 interface Palette {
-  bg: string;
   node: string;
+  node2: string;
+  butter: string;
+  mint: string;
   ghost: string;
   edge: string;
   accent: string;
-  text: string;
+  accentStrong: string;
+  accentInk: string;
   textMuted: string;
   textFaint: string;
+  surface: string;
+  border: string;
   fontSans: string;
+  theme: 'light' | 'dark';
+}
+
+interface Rgba {
+  r: number;
+  g: number;
+  b: number;
+  a: number;
 }
 
 const MIN_SCALE = 0.25;
@@ -73,23 +88,96 @@ const TAP_TIME = 350;
 const DEFAULT_TICK_BUDGET = 160;
 const TICKS_PER_FRAME = 2;
 const LABEL_FONT_SIZE = 11;
+const ACTIVE_LABEL_FONT_SIZE = 11.5;
 const MAX_LABEL_CHARS = 14;
+/** Strawberry + taro dominate; butter + mint are the sprinkles. */
+const NODE_HUE_ORDER = ['node', 'node2', 'node', 'node2', 'butter', 'mint'] as const;
+/** Offscreen mochi sprites are baked at this multiple for crisp zooming. */
+const SPRITE_SUPERSAMPLE = 2.5;
+
 const FALLBACK_PALETTE: Palette = {
-  bg: '#0e0e12',
-  node: '#a78bfa',
-  ghost: '#5b5b6b',
-  edge: 'rgba(167, 139, 250, 0.28)',
-  accent: '#a78bfa',
-  text: '#ececf2',
-  textMuted: '#9b9baa',
-  textFaint: '#6b6b7b',
-  fontSans: 'system-ui, sans-serif',
+  node: '#ff9db4',
+  node2: '#b79ced',
+  butter: '#ffd98e',
+  mint: '#8fdcbd',
+  ghost: '#d9c8d1',
+  edge: 'rgba(255, 141, 170, 0.32)',
+  accent: '#ff9db4',
+  accentStrong: '#e2557f',
+  accentInk: '#cf3d6b',
+  textMuted: '#8a6f7c',
+  textFaint: '#b79aa7',
+  surface: '#ffffff',
+  border: 'rgba(214, 138, 158, 0.18)',
+  fontSans: 'ui-rounded, -apple-system, BlinkMacSystemFont, system-ui, sans-serif',
+  theme: 'light',
 };
+const FALLBACK_RGBA: Rgba = { r: 255, g: 157, b: 180, a: 1 };
 
 function clamp(value: number, min: number, max: number): number {
   if (value < min) return min;
   if (value > max) return max;
   return value;
+}
+
+/** Parse `#rgb`, `#rrggbb`, `rgb()` and `rgba()` tokens into channels. */
+function parseColor(input: string): Rgba | null {
+  const value = input.trim();
+  const hex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(value);
+  if (hex) {
+    const raw = hex[1] ?? '';
+    const full =
+      raw.length === 3
+        ? raw
+            .split('')
+            .map((part) => part + part)
+            .join('')
+        : raw;
+    return {
+      r: parseInt(full.slice(0, 2), 16),
+      g: parseInt(full.slice(2, 4), 16),
+      b: parseInt(full.slice(4, 6), 16),
+      a: 1,
+    };
+  }
+  const rgb =
+    /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)\s*(?:[,/]\s*([\d.]+%?)\s*)?\)$/i.exec(
+      value,
+    );
+  if (rgb) {
+    const alphaRaw = rgb[4];
+    let alpha = 1;
+    if (alphaRaw) {
+      alpha = alphaRaw.endsWith('%') ? parseFloat(alphaRaw) / 100 : parseFloat(alphaRaw);
+    }
+    return {
+      r: parseFloat(rgb[1] ?? '0'),
+      g: parseFloat(rgb[2] ?? '0'),
+      b: parseFloat(rgb[3] ?? '0'),
+      a: Number.isFinite(alpha) ? clamp(alpha, 0, 1) : 1,
+    };
+  }
+  return null;
+}
+
+/** CSS `rgba()` string with an explicit alpha (works for hex and rgb tokens). */
+function colorToRgba(input: string, alpha = 1): string {
+  const color = parseColor(input) ?? FALLBACK_RGBA;
+  return `rgba(${Math.round(color.r)}, ${Math.round(color.g)}, ${Math.round(color.b)}, ${clamp(alpha, 0, 1)})`;
+}
+
+/** Blend two token colours (0 = a, 1 = b). */
+function mixColor(a: string, b: string, amount: number): string {
+  const from = parseColor(a) ?? FALLBACK_RGBA;
+  const to = parseColor(b) ?? FALLBACK_RGBA;
+  const t = clamp(amount, 0, 1);
+  return `rgb(${Math.round(from.r + (to.r - from.r) * t)}, ${Math.round(
+    from.g + (to.g - from.g) * t,
+  )}, ${Math.round(from.b + (to.b - from.b) * t)})`;
+}
+
+function lightenColor(input: string, amount: number): string {
+  return mixColor(input, '#ffffff', amount);
 }
 
 /** djb2 string hash: small and fast, only used to detect content changes. */
@@ -113,8 +201,42 @@ function fingerprintNotes(notes: Note[]): string {
 }
 
 /** Visual radius grows with citation count, per the legend. */
+function radiusForDegree(degree: number): number {
+  // Plump little mochi: bigger citation counts get visibly rounder.
+  return 5 + Math.sqrt(Math.max(0, degree)) * 2;
+}
+
 function nodeRadius(node: GraphNode): number {
-  return 4 + Math.sqrt(Math.max(0, node.degree)) * 1.8;
+  return radiusForDegree(node.degree);
+}
+
+/** Deterministic pastel hue so the same note always keeps its mochi colour. */
+function nodeBaseColor(palette: Palette, node: GraphNode): string {
+  const slot = NODE_HUE_ORDER[hashString(node.id) % NODE_HUE_ORDER.length] ?? 'node';
+  return palette[slot];
+}
+
+/** Rounded-rect path (avoids relying on the newer ctx.roundRect). */
+function roundRectPath(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+): void {
+  const r = Math.max(0, Math.min(radius, width / 2, height / 2));
+  context.beginPath();
+  context.moveTo(x + r, y);
+  context.lineTo(x + width - r, y);
+  context.quadraticCurveTo(x + width, y, x + width, y + r);
+  context.lineTo(x + width, y + height - r);
+  context.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+  context.lineTo(x + r, y + height);
+  context.quadraticCurveTo(x, y + height, x, y + height - r);
+  context.lineTo(x, y + r);
+  context.quadraticCurveTo(x, y, x + r, y);
+  context.closePath();
 }
 
 function truncateLabel(title: string): string {
@@ -133,6 +255,8 @@ export function GraphView({ notes, activeNoteId, onOpenNote, onCreateNote }: Gra
   const dprRef = useRef<number>(1);
   const paletteRef = useRef<Palette | null>(null);
   const paletteThemeRef = useRef<string>('');
+  /** Baked mochi sprites keyed by colour + degree + theme (cheap pan/zoom). */
+  const nodeSpriteCacheRef = useRef<Map<string, HTMLCanvasElement>>(new Map());
   const rafRef = useRef<number | null>(null);
   const ticksDoneRef = useRef<number>(0);
   const tickBudgetRef = useRef<number>(DEFAULT_TICK_BUDGET);
@@ -157,25 +281,34 @@ export function GraphView({ notes, activeNoteId, onOpenNote, onCreateNote }: Gra
   /** Read design tokens from the container (cached per theme). */
   function getPalette(): Palette {
     const container = containerRef.current;
-    const theme = document.documentElement.getAttribute('data-theme') ?? 'dark';
+    const theme: 'light' | 'dark' =
+      document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
     const cached = paletteRef.current;
     if (cached && paletteThemeRef.current === theme) return cached;
     if (!container) return FALLBACK_PALETTE;
+    // Theme flips re-bake the mochi sprites with different shading.
+    nodeSpriteCacheRef.current.clear();
     const styles = getComputedStyle(container);
     const read = (name: string, fallback: string): string => {
       const value = styles.getPropertyValue(name).trim();
       return value || fallback;
     };
     const palette: Palette = {
-      bg: read('--bg', FALLBACK_PALETTE.bg),
       node: read('--graph-node', FALLBACK_PALETTE.node),
+      node2: read('--graph-node-2', FALLBACK_PALETTE.node2),
+      butter: read('--butter', FALLBACK_PALETTE.butter),
+      mint: read('--mint', FALLBACK_PALETTE.mint),
       ghost: read('--graph-node-ghost', FALLBACK_PALETTE.ghost),
       edge: read('--graph-edge', FALLBACK_PALETTE.edge),
       accent: read('--accent', FALLBACK_PALETTE.accent),
-      text: read('--text', FALLBACK_PALETTE.text),
+      accentStrong: read('--accent-strong', FALLBACK_PALETTE.accentStrong),
+      accentInk: read('--accent-ink', FALLBACK_PALETTE.accentInk),
       textMuted: read('--text-muted', FALLBACK_PALETTE.textMuted),
       textFaint: read('--text-faint', FALLBACK_PALETTE.textFaint),
+      surface: read('--surface', FALLBACK_PALETTE.surface),
+      border: read('--border', FALLBACK_PALETTE.border),
       fontSans: read('--font-sans', FALLBACK_PALETTE.fontSans),
+      theme,
     };
     paletteRef.current = palette;
     paletteThemeRef.current = theme;
@@ -214,6 +347,124 @@ export function GraphView({ notes, activeNoteId, onOpenNote, onCreateNote }: Gra
     }
   }
 
+  /** Bake one mochi ball into an offscreen canvas (cached per hue + size + theme). */
+  function mochiSprite(palette: Palette, baseColor: string, degree: number): HTMLCanvasElement {
+    const cache = nodeSpriteCacheRef.current;
+    const key = `${baseColor}|${degree}|${palette.theme}`;
+    const cached = cache.get(key);
+    if (cached) return cached;
+
+    const radius = radiusForDegree(degree);
+    // Padding keeps the baked drop shadow from being clipped at the sprite edge.
+    const pad = Math.max(4, radius * 1.1 + 3);
+    const worldSize = (radius + pad) * 2;
+    const pixelSize = Math.max(8, Math.ceil(worldSize * SPRITE_SUPERSAMPLE));
+    const sprite = document.createElement('canvas');
+    sprite.width = pixelSize;
+    sprite.height = pixelSize;
+    const spriteContext = sprite.getContext('2d');
+    if (!spriteContext) return sprite;
+
+    spriteContext.scale(pixelSize / worldSize, pixelSize / worldSize);
+    spriteContext.translate(worldSize / 2, worldSize / 2);
+
+    // Soft drop shadow, baked once instead of paying shadowBlur every frame.
+    spriteContext.save();
+    spriteContext.shadowColor = colorToRgba(
+      palette.accentStrong,
+      palette.theme === 'dark' ? 0.42 : 0.3,
+    );
+    spriteContext.shadowBlur = radius * 0.9;
+    spriteContext.shadowOffsetY = radius * 0.2;
+    spriteContext.fillStyle = baseColor;
+    spriteContext.beginPath();
+    spriteContext.arc(0, 0, radius, 0, Math.PI * 2);
+    spriteContext.fill();
+    spriteContext.restore();
+
+    // Mochi body: milky highlight top-left, pastel middle, deeper rim.
+    const body = spriteContext.createRadialGradient(
+      -radius * 0.36,
+      -radius * 0.42,
+      radius * 0.12,
+      0,
+      0,
+      radius * 1.14,
+    );
+    body.addColorStop(0, lightenColor(baseColor, palette.theme === 'dark' ? 0.58 : 0.6));
+    body.addColorStop(0.38, lightenColor(baseColor, palette.theme === 'dark' ? 0.3 : 0.2));
+    body.addColorStop(0.76, baseColor);
+    body.addColorStop(
+      1,
+      mixColor(baseColor, palette.accentInk, palette.theme === 'dark' ? 0.18 : 0.34),
+    );
+    spriteContext.fillStyle = body;
+    spriteContext.beginPath();
+    spriteContext.arc(0, 0, radius, 0, Math.PI * 2);
+    spriteContext.fill();
+
+    // Glossy sheen.
+    const sheen = spriteContext.createRadialGradient(
+      -radius * 0.36,
+      -radius * 0.44,
+      0,
+      -radius * 0.36,
+      -radius * 0.44,
+      radius * 0.62,
+    );
+    sheen.addColorStop(0, 'rgba(255, 255, 255, 0.92)');
+    sheen.addColorStop(0.5, 'rgba(255, 255, 255, 0.3)');
+    sheen.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    spriteContext.fillStyle = sheen;
+    spriteContext.beginPath();
+    spriteContext.arc(0, 0, radius, 0, Math.PI * 2);
+    spriteContext.fill();
+
+    // Chubby mochi get a blush pair…
+    if (degree >= 2) {
+      const blushX = radius * 0.44;
+      const blushY = radius * 0.3;
+      spriteContext.fillStyle = colorToRgba(
+        palette.accentStrong,
+        palette.theme === 'dark' ? 0.34 : 0.26,
+      );
+      spriteContext.beginPath();
+      spriteContext.ellipse(-blushX, blushY, radius * 0.24, radius * 0.15, 0, 0, Math.PI * 2);
+      spriteContext.ellipse(blushX, blushY, radius * 0.24, radius * 0.15, 0, 0, Math.PI * 2);
+      spriteContext.fill();
+    }
+
+    // …and the popular ones get a tiny glossy sparkle.
+    if (degree >= 4) {
+      spriteContext.fillStyle = 'rgba(255, 255, 255, 0.85)';
+      spriteContext.beginPath();
+      spriteContext.arc(radius * 0.34, -radius * 0.52, Math.max(1, radius * 0.11), 0, Math.PI * 2);
+      spriteContext.fill();
+    }
+
+    // Translucent lighter rim so the ball reads as soft mochi.
+    spriteContext.strokeStyle = 'rgba(255, 255, 255, 0.72)';
+    spriteContext.lineWidth = Math.max(1.5, radius * 0.16);
+    spriteContext.beginPath();
+    spriteContext.arc(0, 0, Math.max(0.5, radius - spriteContext.lineWidth * 0.45), 0, Math.PI * 2);
+    spriteContext.stroke();
+
+    cache.set(key, sprite);
+    return sprite;
+  }
+
+  /** Draw a baked mochi ball at a node position (active balls are a touch bigger). */
+  function drawMochi(
+    context: CanvasRenderingContext2D,
+    palette: Palette,
+    node: GraphNode,
+    scaleFactor: number,
+  ): void {
+    const sprite = mochiSprite(palette, nodeBaseColor(palette, node), node.degree);
+    const worldSize = (sprite.width / SPRITE_SUPERSAMPLE) * scaleFactor;
+    context.drawImage(sprite, node.x - worldSize / 2, node.y - worldSize / 2, worldSize, worldSize);
+  }
+
   function draw(): void {
     const canvas = canvasRef.current;
     const container = containerRef.current;
@@ -240,69 +491,96 @@ export function GraphView({ notes, activeNoteId, onOpenNote, onCreateNote }: Gra
     const nodeById = new Map<string, GraphNode>();
     for (const node of graph.nodes) nodeById.set(node.id, node);
 
-    // ---- edges (world space) ----
     context.setTransform(dpr * view.scale, 0, 0, dpr * view.scale, dpr * view.tx, dpr * view.ty);
-    const hairline = 1 / view.scale;
-    context.lineWidth = hairline;
-    context.strokeStyle = palette.edge;
-    context.beginPath();
-    for (const edge of graph.edges) {
-      const source = nodeById.get(edge.source);
-      const target = nodeById.get(edge.target);
-      if (!source || !target) continue;
-      context.moveTo(source.x, source.y);
-      context.lineTo(target.x, target.y);
-    }
-    context.stroke();
+    context.lineCap = 'round';
+    context.lineJoin = 'round';
 
-    // Edges touching the active note get a brighter accent pass.
-    if (activeId) {
-      context.globalAlpha = 0.55;
-      context.strokeStyle = palette.accent;
-      context.lineWidth = 1.6 / view.scale;
+    // ---- edges: soft strawberry-milk threads (no arrowheads) ----
+    const traceEdges = (accept: (source: GraphNode, target: GraphNode) => boolean): void => {
       context.beginPath();
       for (const edge of graph.edges) {
-        if (edge.source !== activeId && edge.target !== activeId) continue;
         const source = nodeById.get(edge.source);
         const target = nodeById.get(edge.target);
-        if (!source || !target) continue;
+        if (!source || !target || !accept(source, target)) continue;
         context.moveTo(source.x, source.y);
         context.lineTo(target.x, target.y);
       }
       context.stroke();
-      context.globalAlpha = 1;
+    };
+
+    // Soft under-glow keeps edges from looking like hairlines on a phone.
+    context.globalAlpha = 0.36;
+    context.strokeStyle = palette.edge;
+    context.lineWidth = 2.8 / view.scale;
+    traceEdges(() => true);
+
+    context.globalAlpha = 1;
+    context.strokeStyle = palette.edge;
+    context.lineWidth = 1.4 / view.scale;
+    traceEdges(() => true);
+
+    // Threads attached to the active note are brighter and slightly thicker.
+    if (activeId) {
+      context.strokeStyle = colorToRgba(palette.accentStrong, 0.72);
+      context.lineWidth = 2.1 / view.scale;
+      traceEdges((source, target) => source.id === activeId || target.id === activeId);
     }
 
-    // ---- nodes (world space) ----
+    // ---- ghost notes: hollow dashed mochi outlines ----
+    const ghostStroke =
+      palette.theme === 'dark'
+        ? colorToRgba(palette.ghost, 0.85)
+        : colorToRgba(mixColor(palette.ghost, palette.textMuted, 0.42), 1);
     for (const node of graph.nodes) {
-      const radius = nodeRadius(node);
-      const isActive = node.id === activeId;
+      if (!node.ghost) continue;
+      const radius = radiusForDegree(node.degree);
       context.beginPath();
       context.arc(node.x, node.y, radius, 0, Math.PI * 2);
-      if (node.ghost) {
-        context.fillStyle = palette.bg;
-        context.fill();
-        context.setLineDash([3 / view.scale, 3 / view.scale]);
-        context.lineWidth = 1.5 / view.scale;
-        context.strokeStyle = palette.ghost;
-        context.stroke();
-        context.setLineDash([]);
-      } else {
-        context.fillStyle = isActive ? palette.accent : palette.node;
-        context.fill();
-      }
-      if (isActive) {
-        context.beginPath();
-        context.arc(node.x, node.y, radius + 4 / view.scale, 0, Math.PI * 2);
-        context.globalAlpha = 0.4;
-        context.lineWidth = 3 / view.scale;
-        context.strokeStyle = palette.accent;
-        context.stroke();
-        context.globalAlpha = 1;
-      }
+      context.setLineDash([4 / view.scale, 3.2 / view.scale]);
+      context.lineWidth = 1.7 / view.scale;
+      context.strokeStyle = ghostStroke;
+      context.stroke();
+      context.setLineDash([]);
     }
 
-    // ---- labels (screen space, so text stays crisp at any zoom) ----
+    // ---- mochi balls: small ones behind, active ball last and glowing ----
+    const activeNode = activeId ? nodeById.get(activeId) ?? null : null;
+    const drawOrder = graph.nodes
+      .filter((node) => !node.ghost && node.id !== activeId)
+      .sort((a, b) => a.degree - b.degree);
+    for (const node of drawOrder) {
+      drawMochi(context, palette, node, 1);
+    }
+
+    if (activeNode) {
+      const radius = radiusForDegree(activeNode.degree);
+      const haloRadius = radius + 10 / view.scale;
+      const halo = context.createRadialGradient(
+        activeNode.x,
+        activeNode.y,
+        radius * 0.75,
+        activeNode.x,
+        activeNode.y,
+        haloRadius,
+      );
+      halo.addColorStop(0, colorToRgba(palette.accent, 0.42));
+      halo.addColorStop(0.6, colorToRgba(palette.accent, 0.16));
+      halo.addColorStop(1, colorToRgba(palette.accent, 0));
+      context.fillStyle = halo;
+      context.beginPath();
+      context.arc(activeNode.x, activeNode.y, haloRadius, 0, Math.PI * 2);
+      context.fill();
+
+      context.strokeStyle = colorToRgba(palette.accent, 0.9);
+      context.lineWidth = 2.2 / view.scale;
+      context.beginPath();
+      context.arc(activeNode.x, activeNode.y, radius + 3.4 / view.scale, 0, Math.PI * 2);
+      context.stroke();
+
+      drawMochi(context, palette, activeNode, 1.12);
+    }
+
+    // ---- labels: pastel pills, drawn in screen space so text stays crisp ----
     // Phones get a handful of labels, desktop a few more: never a wall of text.
     const maxLabels = Math.round(clamp((width * height) / 32000, 4, 12));
     const bySignificance = [...graph.nodes].sort((a, b) => {
@@ -318,49 +596,68 @@ export function GraphView({ notes, activeNoteId, onOpenNote, onCreateNote }: Gra
     }
     if (activeId) labelled.add(activeId);
 
+    // Active label draws last so it sits above the other pills.
+    const labelOrder = bySignificance
+      .filter((node) => labelled.has(node.id))
+      .sort((a, b) => Number(a.id === activeId) - Number(b.id === activeId));
+
     context.setTransform(dpr, 0, 0, dpr, 0, 0);
-    context.font = `500 ${LABEL_FONT_SIZE}px ${palette.fontSans}`;
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     const takenLabelAreas: Array<{ left: number; right: number; top: number; bottom: number }> = [];
-    for (const node of bySignificance) {
-      if (!labelled.has(node.id)) continue;
+    for (const node of labelOrder) {
       const label = truncateLabel(node.title);
       if (!label) continue;
+      const isActive = node.id === activeId;
       const screenX = node.x * view.scale + view.tx;
       const screenY = node.y * view.scale + view.ty;
-      const radius = nodeRadius(node) * view.scale;
-      if (screenX < -120 || screenX > width + 120 || screenY < -40 || screenY > height + 40) {
+      const radius = radiusForDegree(node.degree) * view.scale;
+      if (screenX < -140 || screenX > width + 140 || screenY < -50 || screenY > height + 50) {
         continue;
       }
-      const isActive = node.id === activeId;
+
+      context.font = isActive
+        ? `700 ${ACTIVE_LABEL_FONT_SIZE}px ${palette.fontSans}`
+        : `600 ${LABEL_FONT_SIZE}px ${palette.fontSans}`;
       const textWidth = context.measureText(label).width;
-      // Keep labels inside the canvas and below/above the node, whatever the zoom.
-      const labelX = clamp(screenX, textWidth / 2 + 6, width - textWidth / 2 - 6);
-      let labelY = screenY + radius + 11;
-      if (labelY > height - 10) labelY = screenY - radius - 11;
+      const pillHeight = isActive ? 22 : 19;
+      const pillWidth = Math.min(textWidth + 16, width - 12);
+      const pillX = clamp(screenX - pillWidth / 2, 6, Math.max(6, width - pillWidth - 6));
+      let pillY = screenY + radius + 7;
+      if (pillY + pillHeight > height - 6) pillY = screenY - radius - 7 - pillHeight;
+      pillY = clamp(pillY, 6, Math.max(6, height - pillHeight - 6));
+
       if (!isActive) {
         const overlaps = takenLabelAreas.some(
           (area) =>
-            labelX - textWidth / 2 < area.right + 3 &&
-            labelX + textWidth / 2 > area.left - 3 &&
-            labelY + 7 > area.top - 3 &&
-            labelY - 7 < area.bottom + 3,
+            pillX < area.right + 3 &&
+            pillX + pillWidth > area.left - 3 &&
+            pillY < area.bottom + 3 &&
+            pillY + pillHeight > area.top - 3,
         );
         if (overlaps) continue;
       }
       takenLabelAreas.push({
-        left: labelX - textWidth / 2,
-        right: labelX + textWidth / 2,
-        top: labelY - 7,
-        bottom: labelY + 7,
+        left: pillX,
+        right: pillX + pillWidth,
+        top: pillY,
+        bottom: pillY + pillHeight,
       });
+
+      // Soft pill behind the text keeps labels readable on light and dark bg.
+      roundRectPath(context, pillX, pillY, pillWidth, pillHeight, pillHeight / 2);
+      context.fillStyle = colorToRgba(palette.surface, isActive ? 0.92 : 0.82);
+      context.fill();
+      context.lineWidth = 1;
+      context.strokeStyle = isActive ? colorToRgba(palette.accent, 0.55) : palette.border;
+      context.stroke();
+
       context.fillStyle = isActive
-        ? palette.text
+        ? palette.accentInk
         : node.ghost
           ? palette.textFaint
           : palette.textMuted;
-      context.fillText(label, labelX, labelY);
+      context.fillText(label, pillX + pillWidth / 2, pillY + pillHeight / 2 + 0.5);
     }
   }
 
@@ -812,15 +1109,13 @@ export function GraphView({ notes, activeNoteId, onOpenNote, onCreateNote }: Gra
               <Icon name="refresh" size={20} />
             </button>
           </div>
-          <div className="graph-legend">节点越大 = 被引用越多</div>
+          <div className="graph-legend">🍡 越圆越大颗</div>
         </>
       ) : (
         <div className="empty graph-empty">
-          <Icon name="graph" size={30} />
-          <div className="empty-title">还没有笔记</div>
-          <div className="empty-text">
-            写下第一条笔记后，这里会用连线展示笔记之间的 [[双向链接]]。
-          </div>
+          <Mascot variant="sleepy" size={96} bob />
+          <div className="empty-title">还没有麻薯可以串起来呀～</div>
+          <div className="empty-text">先捏一颗笔记，再回来看看它们怎么连在一起</div>
         </div>
       )}
     </div>

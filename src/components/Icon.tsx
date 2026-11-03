@@ -166,6 +166,19 @@ const ICONS = {
       <path d="M8 2.5v19" />
     </>
   ),
+  heart: (
+    <path d="M12 20.2S4.6 15.6 4.6 10.6A4.1 4.1 0 0 1 12 7.4a4.1 4.1 0 0 1 7.4 3.2c0 5-7.4 9.6-7.4 9.6Z" />
+  ),
+  flower: (
+    <>
+      <circle cx="12" cy="6.6" r="2.9" />
+      <circle cx="16.8" cy="10.2" r="2.9" />
+      <circle cx="14.9" cy="15.8" r="2.9" />
+      <circle cx="9.1" cy="15.8" r="2.9" />
+      <circle cx="7.2" cy="10.2" r="2.9" />
+      <circle cx="12" cy="12" r="2" fill="currentColor" stroke="none" />
+    </>
+  ),
   clock: (
     <>
       <circle cx="12" cy="12" r="8.2" />

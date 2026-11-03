@@ -8,13 +8,13 @@ import { makeId } from './prefs';
  */
 
 export interface VaultFile {
-  app: 'inkstone';
+  app: 'mochi';
   version: 1;
   exportedAt: string;
   notes: Note[];
 }
 
-export const VAULT_APP = 'inkstone' as const;
+export const VAULT_APP = 'mochi' as const;
 export const VAULT_VERSION = 1 as const;
 
 /** Serialise the whole vault. */
@@ -127,7 +127,7 @@ export function mergeVaultNotes(existing: Note[], incoming: Note[]): MergeResult
 export function toMarkdownBundle(notes: Note[]): string {
   const exportedAt = new Date().toLocaleString('zh-CN', { hour12: false });
   const header = [
-    '# Inkstone 笔记导出',
+    '# Mochi 笔记导出',
     '',
     `> 导出时间：${exportedAt}`,
     `> 笔记数量：${notes.length}`,

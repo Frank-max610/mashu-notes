@@ -13,6 +13,17 @@ export interface NoteCardProps {
 const LONG_PRESS_MS = 480;
 const MOVE_TOLERANCE_PX = 10;
 
+const STICKERS = ['🍓', '🍡', '🌸', '☁️', '🍰', '🎀', '🍯', '🌷', '🧸', '🫧', '🍵', '🌼'];
+
+/** Stable cute sticker per note, so the bowl stays varied but reproducible. */
+function stickerFor(seed: string): string {
+  let hash = 0;
+  for (let index = 0; index < seed.length; index += 1) {
+    hash = (hash * 31 + seed.charCodeAt(index)) % 100000;
+  }
+  return STICKERS[hash % STICKERS.length];
+}
+
 /** Note list card with tap-to-open and long-press menu (mobile friendly). */
 export function NoteCard({ note, onOpen, onMenu }: NoteCardProps) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -77,7 +88,10 @@ export function NoteCard({ note, onOpen, onMenu }: NoteCardProps) {
       }}
     >
       <div className="note-card-head">
-        <h3 className="note-card-title">{note.title || '未命名笔记'}</h3>
+        <span className="note-card-sticker" aria-hidden="true">
+          {stickerFor(note.id)}
+        </span>
+        <h3 className="note-card-title">{note.title || '未命名麻薯'}</h3>
         {note.pinned ? (
           <span className="note-card-pin" aria-label="已置顶">
             <Icon name="pin" size={15} />

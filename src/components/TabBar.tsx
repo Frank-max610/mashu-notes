@@ -4,39 +4,76 @@ import type { TabName } from '../lib/useRoute';
 export interface TabBarProps {
   active: TabName;
   onChange: (tab: TabName) => void;
-  /** Small count badge on the notes tab (all notes). */
+  /** Opens a brand-new note (mochi) from the floating centre button. */
+  onCompose: () => void;
+  /** Small count badge on the notes tab. */
   notesCount?: number;
 }
 
-const TABS: ReadonlyArray<{ name: TabName; label: string; icon: IconName; badge?: boolean }> = [
-  { name: 'notes', label: '笔记', icon: 'notes', badge: true },
+const LEFT_TABS: ReadonlyArray<{ name: TabName; label: string; icon: IconName }> = [
+  { name: 'notes', label: '笔记', icon: 'notes' },
   { name: 'graph', label: '图谱', icon: 'graph' },
-  { name: 'search', label: '搜索', icon: 'search' },
-  { name: 'settings', label: '设置', icon: 'settings' },
 ];
 
-/** Bottom navigation, safe-area aware. */
-export function TabBar({ active, onChange, notesCount }: TabBarProps) {
+const RIGHT_TABS: ReadonlyArray<{ name: TabName; label: string; icon: IconName }> = [
+  { name: 'search', label: '搜索', icon: 'search' },
+  { name: 'settings', label: '我的', icon: 'settings' },
+];
+
+function TabButton({
+  name,
+  label,
+  icon,
+  active,
+  notesCount,
+  onChange,
+}: {
+  name: TabName;
+  label: string;
+  icon: IconName;
+  active: boolean;
+  notesCount?: number;
+  onChange: (tab: TabName) => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={`tabbar-item${active ? ' is-active' : ''}`}
+      aria-current={active ? 'page' : undefined}
+      onClick={() => onChange(name)}
+    >
+      <span className="tabbar-icon">
+        <Icon name={icon} size={22} />
+        {name === 'notes' && notesCount ? <span className="tabbar-badge">{notesCount}</span> : null}
+      </span>
+      <span className="tabbar-label">{label}</span>
+    </button>
+  );
+}
+
+/** Floating pill navigation with a squishy center compose button. */
+export function TabBar({ active, onChange, onCompose, notesCount }: TabBarProps) {
   return (
     <nav className="tabbar" aria-label="主导航">
-      {TABS.map((tab) => {
-        const isActive = tab.name === active;
-        return (
-          <button
+      <div className="tabbar-inner">
+        {LEFT_TABS.map((tab) => (
+          <TabButton
             key={tab.name}
-            type="button"
-            className={`tabbar-item${isActive ? ' is-active' : ''}`}
-            aria-current={isActive ? 'page' : undefined}
-            onClick={() => onChange(tab.name)}
-          >
-            <span className="tabbar-icon">
-              <Icon name={tab.icon} size={23} />
-              {tab.badge && notesCount ? <span className="tabbar-badge">{notesCount}</span> : null}
-            </span>
-            <span className="tabbar-label">{tab.label}</span>
-          </button>
-        );
-      })}
+            {...tab}
+            active={tab.name === active}
+            notesCount={notesCount}
+            onChange={onChange}
+          />
+        ))}
+
+        <button type="button" className="tabbar-compose" aria-label="捏一颗新麻薯" onClick={onCompose}>
+          <Icon name="plus" size={26} strokeWidth={2.4} />
+        </button>
+
+        {RIGHT_TABS.map((tab) => (
+          <TabButton key={tab.name} {...tab} active={tab.name === active} onChange={onChange} />
+        ))}
+      </div>
     </nav>
   );
 }

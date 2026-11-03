@@ -1,15 +1,15 @@
 {
-  "name": "Inkstone 砚",
-  "short_name": "Inkstone",
-  "description": "本地优先、手机可用的开源 Markdown 知识库，Obsidian 的轻量替代。",
+  "name": "Mochi 麻薯",
+  "short_name": "Mochi",
+  "description": "把想法揉成一颗颗软乎乎的麻薯 —— 本地优先、手机可用的开源 Markdown 笔记本。",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "lang": "zh-CN",
   "dir": "ltr",
-  "background_color": "#0e0e12",
-  "theme_color": "#0e0e12",
+  "background_color": "#fff7f5",
+  "theme_color": "#fff7f5",
   "categories": ["productivity", "utilities", "education"],
   "icons": [
     {

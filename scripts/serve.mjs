@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Inkstone LAN share server.
+ * Mochi LAN share server.
  *
  * Serves the production build from ./dist, prints the LAN URL and a QR code so
  * a phone on the same Wi-Fi can open the app immediately.
@@ -108,7 +108,7 @@ server.listen(port, '0.0.0.0', () => {
   const lanUrl = addresses.length > 0 ? `http://${addresses[0]}:${port}` : null;
 
   console.log('');
-  console.log('  砚  Inkstone 已启动');
+  console.log('  🍡 Mochi 麻薯已启动');
   console.log('');
   console.log(`  本机访问    ${localUrl}`);
   if (lanUrl) {

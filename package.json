@@ -1,18 +1,20 @@
 {
-  "name": "inkstone",
+  "name": "mochi-notes",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
-  "description": "Inkstone（砚）— a mobile-first, local-first open-source Markdown knowledge base, a lightweight Obsidian alternative.",
+  "description": "Mochi 麻薯 — 一个软乎乎、本地优先、手机可用的开源 Markdown 笔记本（Obsidian 的轻量可爱替代）。",
   "license": "MIT",
   "keywords": [
+    "mochi",
     "markdown",
     "notes",
     "knowledge-base",
     "pkm",
     "obsidian-alternative",
     "local-first",
-    "mobile"
+    "mobile",
+    "cute"
   ],
   "engines": {
     "node": ">=22.12.0"
@@ -44,5 +46,9 @@
     "typescript": "5.9.3",
     "vite": "8.3.5",
     "vitest": "5.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Frank-max610/mochi-notes.git"
   }
 }

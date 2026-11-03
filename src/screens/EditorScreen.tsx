@@ -40,7 +40,7 @@ export function EditorScreen({
   storageWarning,
 }: EditorScreenProps) {
   const [mode, setMode] = useState<Mode>(() => (note.content.trim() ? 'preview' : 'edit'));
-  const [saveLabel, setSaveLabel] = useState('已保存');
+  const [saveLabel, setSaveLabel] = useState('已保存好 ♡');
   const [suggest, setSuggest] = useState<SuggestState | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -69,9 +69,9 @@ export function EditorScreen({
   );
 
   const markDirty = useCallback(() => {
-    setSaveLabel('保存中…');
+    setSaveLabel('正在揉…');
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = setTimeout(() => setSaveLabel('已保存'), 700);
+    saveTimerRef.current = setTimeout(() => setSaveLabel('已保存好 ♡'), 700);
   }, []);
 
   const updateContent = useCallback(
@@ -230,7 +230,7 @@ export function EditorScreen({
         </button>
         <div className="editor-header-meta">
           <span className={`editor-status${storageWarning ? ' is-error' : ''}`}>
-            {storageWarning ? '未保存到本地' : saveLabel}
+            {storageWarning ? '没保存成功' : saveLabel}
           </span>
           <span className="editor-dot" aria-hidden="true">
             ·
@@ -277,7 +277,7 @@ export function EditorScreen({
               ref={titleRef}
               className="editor-title-input"
               value={note.title}
-              placeholder="标题"
+              placeholder="给这颗麻薯起个名字…"
               aria-label="笔记标题"
               onChange={(event) => {
                 onChange({ title: event.target.value });
@@ -294,7 +294,7 @@ export function EditorScreen({
               ref={textareaRef}
               className="editor-textarea"
               value={note.content}
-              placeholder="开始写点什么……支持 Markdown，用 [[笔记名]] 建立双向链接。"
+              placeholder="写点什么都可以呀～支持 Markdown，用 [[名字]] 把麻薯串起来 ♡"
               aria-label="笔记正文"
               spellCheck={false}
               onChange={(event) => {
@@ -315,7 +315,7 @@ export function EditorScreen({
               onCreateNote={onCreateNote}
             />
             {note.content.trim() ? null : (
-              <p className="muted editor-empty-hint">这条笔记还是空的，切到编辑写点什么吧。</p>
+              <p className="muted editor-empty-hint">这颗麻薯还是空的，切到编辑写点什么吧 ♡</p>
             )}
           </>
         )}
@@ -334,7 +334,7 @@ export function EditorScreen({
         <>
           {suggest && suggestions.length > 0 ? (
             <div className="link-suggest" role="listbox" aria-label="链接建议">
-              <span className="link-suggest-label">链接到</span>
+              <span className="link-suggest-label">串到：</span>
               {suggestions.map((candidate) => (
                 <button
                   key={candidate.id}

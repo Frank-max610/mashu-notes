@@ -4,6 +4,7 @@ import { allTags } from '../lib/links';
 import { formatRelativeTime } from '../lib/format';
 import { searchNotes } from '../lib/search';
 import { Icon } from './Icon';
+import { Mascot } from './Mascot';
 import './SearchScreen.css';
 
 export interface SearchScreenProps {
@@ -48,7 +49,7 @@ function highlight(text: string, tokens: string[]): ReactNode {
   );
 }
 
-/** Full-text search screen: query box, tag chips, ranked result cards. */
+/** Full-text search screen: a pastel pill search box, tag chips and result cards. */
 export function SearchScreen({ notes, onOpenNote }: SearchScreenProps) {
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -101,16 +102,24 @@ export function SearchScreen({ notes, onOpenNote }: SearchScreenProps) {
     <div className="screen search-screen" onKeyDown={handleKeyDown}>
       <header className="screen-header search-screen__header">
         <div className="search-screen__title-row">
-          <h1 className="app-title search-screen__title">搜索</h1>
-          {!idle ? (
-            <span className="search-screen__count" aria-live="polite">
-              {hits.length} 条结果
+          <div className="search-screen__title-block">
+            <h1 className="search-screen__title">搜索</h1>
+            <p className="search-screen__subtitle">在麻薯堆里翻翻看～</p>
+          </div>
+          {idle ? (
+            <Icon name="flower" size={24} className="search-screen__header-flower" />
+          ) : (
+            <span className="search-screen__count-pill" aria-live="polite">
+              <Icon name="sparkles" size={13} />
+              {hits.length} 颗麻薯
             </span>
-          ) : null}
+          )}
         </div>
 
         <div className="search-screen__searchbar">
-          <Icon name="search" size={18} className="search-screen__search-icon" />
+          <span className="search-screen__search-badge" aria-hidden="true">
+            <Icon name="search" size={17} />
+          </span>
           <input
             ref={inputRef}
             className="search-screen__input"
@@ -133,7 +142,7 @@ export function SearchScreen({ notes, onOpenNote }: SearchScreenProps) {
               aria-label="清除搜索"
               onClick={handleClear}
             >
-              <Icon name="close" size={18} />
+              <Icon name="close" size={17} />
             </button>
           ) : null}
         </div>
@@ -151,7 +160,7 @@ export function SearchScreen({ notes, onOpenNote }: SearchScreenProps) {
                   setQuery(`#${tag.label}`);
                 }}
               >
-                <Icon name="hash" size={12} />
+                <Icon name="hash" size={11} />
                 <span>{tag.label}</span>
                 <span className="chip-count">{tag.count}</span>
               </button>
@@ -165,17 +174,18 @@ export function SearchScreen({ notes, onOpenNote }: SearchScreenProps) {
           <div className="section-label search-screen__section-label">
             <Icon name="clock" size={13} />
             <span>最近编辑</span>
+            <Icon name="heart" size={12} className="search-screen__section-heart" />
           </div>
         ) : null}
 
         {hits.length === 0 ? (
           <div className="empty search-screen__empty">
-            <Icon name={idle ? 'book' : 'search'} size={32} />
-            <p className="empty-title">{idle ? '还没有笔记' : '无匹配结果'}</p>
+            <Mascot variant={idle ? 'happy' : 'sleepy'} size={92} bob />
+            <p className="empty-title">{idle ? '还没有麻薯呢' : '没找到这颗麻薯呀～'}</p>
             <p className="empty-text">
               {idle
-                ? '创建第一条笔记后，这里会列出最近编辑的内容。'
-                : '换个关键词试试，或输入 #标签 按标签筛选。'}
+                ? '先捏一颗新麻薯，再回来搜索吧。'
+                : '换个关键词试试，或者用 #标签 找找看。'}
             </p>
           </div>
         ) : (
@@ -191,26 +201,29 @@ export function SearchScreen({ notes, onOpenNote }: SearchScreenProps) {
                     aria-label={`打开笔记：${hit.title || '未命名笔记'}`}
                     onClick={() => onOpenNote(hit.id)}
                   >
-                    <span className="search-screen__item-title">
-                      {hit.title.trim() || '未命名笔记'}
-                    </span>
-                    {hit.snippet ? (
-                      <span className="search-screen__snippet">{highlight(hit.snippet, marks)}</span>
-                    ) : null}
-                    <span className="search-screen__meta">
-                      <span className="search-screen__time">
+                    <span className="search-screen__item-top">
+                      <span className="search-screen__item-title">
+                        {hit.title.trim() || '未命名笔记'}
+                      </span>
+                      <span className="search-screen__item-time">
+                        <Icon name="clock" size={11} />
                         {note ? formatRelativeTime(note.updatedAt) : ''}
                       </span>
-                      {noteTags.length > 0 ? (
-                        <span className="search-screen__item-tags">
-                          {noteTags.map((tag) => (
-                            <span key={tag} className="search-screen__tag-pill">
-                              #{tag}
-                            </span>
-                          ))}
-                        </span>
-                      ) : null}
                     </span>
+                    {hit.snippet ? (
+                      <span className="search-screen__snippet">
+                        {highlight(hit.snippet, marks)}
+                      </span>
+                    ) : null}
+                    {noteTags.length > 0 ? (
+                      <span className="search-screen__item-tags">
+                        {noteTags.map((tag) => (
+                          <span key={tag} className="search-screen__tag-pill">
+                            #{tag}
+                          </span>
+                        ))}
+                      </span>
+                    ) : null}
                   </button>
                 </li>
               );

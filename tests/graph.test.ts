@@ -20,8 +20,8 @@ const HEIGHT = 700;
 /** A small vault with linked notes, a back-link and two dangling links. */
 function sampleVault(): Note[] {
   return [
-    makeNote('n1', '欢迎来到 Inkstone', '[[Markdown 速查]] [[双向链接]] [[未来的笔记]]'),
-    makeNote('n2', 'Markdown 速查', '[[欢迎来到 Inkstone]]'),
+    makeNote('n1', '欢迎来到 Mochi', '[[Markdown 速查]] [[双向链接]] [[未来的笔记]]'),
+    makeNote('n2', 'Markdown 速查', '[[欢迎来到 Mochi]]'),
     makeNote('n3', '双向链接', '[[未来的笔记]] [[缺失的笔记]]'),
     makeNote('n4', '关系图谱', ''),
   ];
@@ -34,7 +34,7 @@ describe('buildGraph', () => {
     expect(graph.nodes.slice(0, 4).map((node) => node.id)).toEqual(['n1', 'n2', 'n3', 'n4']);
     expect(graph.nodes.slice(0, 4).every((node) => node.ghost === false)).toBe(true);
     expect(graph.nodes.map((node) => node.title)).toEqual([
-      '欢迎来到 Inkstone',
+      '欢迎来到 Mochi',
       'Markdown 速查',
       '双向链接',
       '关系图谱',

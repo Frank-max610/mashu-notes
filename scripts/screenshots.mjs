@@ -37,7 +37,7 @@ const baseArgIndex = args.findIndex((arg) => arg === '--base' || arg === '-b');
 const BASE = (baseArgIndex !== -1 ? args[baseArgIndex + 1] : undefined) ?? 'http://127.0.0.1:4173';
 const PORT = 9333;
 const OUT_DIR = resolve(process.cwd(), 'docs/screenshots');
-const PROFILE_DIR = resolve(tmpdir(), `inkstone-chrome-${Date.now()}`);
+const PROFILE_DIR = resolve(tmpdir(), `mochi-chrome-${Date.now()}`);
 const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
 
 const SHOTS = [
@@ -69,11 +69,18 @@ const SHOTS = [
   },
   { file: 'settings.png', hash: '#/settings', waitFor: '.settings-card', delay: 500 },
   {
-    file: 'light-notes.png',
+    file: 'dark-notes.png',
     hash: '#/notes',
     waitFor: '.note-card',
     delay: 700,
-    theme: 'light',
+    theme: 'dark',
+  },
+  {
+    file: 'empty-notes.png',
+    hash: '#/notes',
+    waitFor: '.empty',
+    delay: 700,
+    resetVault: true,
   },
 ];
 
@@ -190,9 +197,28 @@ async function capture(shot) {
 
     if (shot.theme) {
       await cdp.send('Runtime.evaluate', {
-        expression: `localStorage.setItem('inkstone.theme.v1', ${JSON.stringify(shot.theme)}); location.reload();`,
+        expression: `localStorage.setItem('mochi.theme.v1', ${JSON.stringify(shot.theme)}); location.reload();`,
       });
       await sleep(500);
+      await waitForExpression(cdp, 'document.readyState === "complete"', 12000);
+    }
+
+    if (shot.resetVault) {
+      // Empty vault + light theme, so the captured empty state is reproducible.
+      await cdp.send('Runtime.evaluate', {
+        expression: `(async () => {
+          localStorage.setItem('mochi.theme.v1', 'light');
+          localStorage.setItem('mochi.onboarded.v1', '1');
+          localStorage.removeItem('mochi.notes.v1');
+          await new Promise((done) => {
+            const request = indexedDB.deleteDatabase('mochi');
+            request.onsuccess = request.onerror = request.onblocked = () => done();
+          });
+          location.reload();
+        })()`,
+        awaitPromise: true,
+      });
+      await sleep(900);
       await waitForExpression(cdp, 'document.readyState === "complete"', 12000);
     }
 
@@ -217,6 +243,16 @@ async function capture(shot) {
       }
       await sleep(shot.afterActionDelay ?? 400);
     }
+
+    // Freeze animations so captures are reproducible (the mascot bobs).
+    await cdp.send('Runtime.evaluate', {
+      expression: `(() => {
+        const style = document.createElement('style');
+        style.textContent = '*,*::before,*::after{animation-duration:0.001ms !important;animation-delay:0ms !important;animation-iteration-count:1 !important;}';
+        document.head.append(style);
+      })()`,
+    });
+    await sleep(120);
 
     const { data } = await cdp.send('Page.captureScreenshot', {
       format: 'png',

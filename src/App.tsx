@@ -12,8 +12,10 @@ import { SearchScreen } from './components/SearchScreen';
 import { TabBar } from './components/TabBar';
 import { ActionSheet, type ActionSheetItem } from './components/ActionSheet';
 import { Icon } from './components/Icon';
+import { Mascot } from './components/Mascot';
+import { HeartBurst } from './components/HeartBurst';
 
-const APP_TITLE = 'Inkstone · 砚';
+const APP_TITLE = 'Mochi · 麻薯';
 
 function safeFileName(title: string): string {
   const cleaned = title
@@ -33,6 +35,7 @@ export default function App() {
   const [toast, setToast] = useState<string | null>(null);
   const [noteMenu, setNoteMenu] = useState<Note | null>(null);
   const [editorMenuOpen, setEditorMenuOpen] = useState(false);
+  const [burstKey, setBurstKey] = useState(0);
 
   const returnToRef = useRef<TabName>('notes');
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -69,7 +72,7 @@ export default function App() {
       document.documentElement.dataset.theme = resolved;
       document.title = APP_TITLE;
       const meta = document.querySelector('meta[name="theme-color"]');
-      meta?.setAttribute('content', resolved === 'light' ? '#f6f6f8' : '#0e0e12');
+      meta?.setAttribute('content', resolved === 'light' ? '#fff7f5' : '#1f1a26');
     };
     apply();
     setStoredTheme(theme);
@@ -115,6 +118,8 @@ export default function App() {
         openedFromAppRef.current = true;
       }
       const note = await api.createNote(input);
+      setBurstKey((key) => key + 1);
+      notify('捏好一颗新麻薯 ✧');
       navigate({ name: 'note', id: note.id });
     },
     [api.createNote, route],
@@ -223,8 +228,8 @@ export default function App() {
   if (!api.ready) {
     return (
       <div className="app-loading">
-        <div className="spinner" />
-        <p>正在打开你的笔记库…</p>
+        <Mascot variant="sleepy" size={116} bob />
+        <p>正在揉麻薯…</p>
       </div>
     );
   }
@@ -239,11 +244,11 @@ export default function App() {
             <header className="screen-header app-header">
               <div className="app-brand">
                 <span className="app-logo" aria-hidden="true">
-                  砚
+                  <Mascot variant="happy" size={40} />
                 </span>
                 <div className="app-brand-text">
                   <h1 className="app-title">关系图谱</h1>
-                  <p className="app-subtitle">{api.notes.length} 个节点 · 点按节点打开笔记</p>
+                  <p className="app-subtitle">{api.notes.length} 颗麻薯 · 点小球打开笔记</p>
                 </div>
               </div>
               <button
@@ -293,6 +298,7 @@ export default function App() {
             onOpenNote={openNote}
             onNoteMenu={setNoteMenu}
             onOpenSearch={() => navigate({ name: 'search' })}
+            onCreateNote={() => void createNote()}
             storageWarning={api.storageWarning}
           />
         );
@@ -319,17 +325,12 @@ export default function App() {
       ) : (
         <>
           <main className="app-main">{renderTabScreen()}</main>
-          <TabBar active={activeTab} onChange={(tab) => navigate({ name: tab })} notesCount={api.notes.length} />
-          {activeTab === 'notes' ? (
-            <button
-              type="button"
-              className="fab"
-              aria-label="新建笔记"
-              onClick={() => void createNote()}
-            >
-              <Icon name="plus" size={26} />
-            </button>
-          ) : null}
+          <TabBar
+            active={activeTab}
+            onChange={(tab) => navigate({ name: tab })}
+            onCompose={() => void createNote()}
+            notesCount={api.notes.length}
+          />
         </>
       )}
 
@@ -345,6 +346,8 @@ export default function App() {
         items={editorMenuItems}
         onClose={() => setEditorMenuOpen(false)}
       />
+
+      <HeartBurst burstKey={burstKey} />
 
       {toast ? (
         <div className="toast" role="status" aria-live="polite">

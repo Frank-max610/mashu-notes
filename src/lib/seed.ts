@@ -2,9 +2,9 @@ import type { Note } from './types';
 import { makeNote } from './prefs';
 
 /**
- * First-run demo vault. Small on purpose: it shows wiki links, tags, graph
- * edges, task lists and a dangling link (so "create note from a broken link"
- * is discoverable) without pretending to be a real knowledge base.
+ * First-run demo vault for Mochi. Small on purpose: it shows wiki links, tags,
+ * graph edges, task lists and one dangling link (so "create a note from a broken
+ * link" is discoverable) without pretending to be a real notebook.
  */
 
 interface SeedSpec {
@@ -19,51 +19,51 @@ interface SeedSpec {
 const SEEDS: SeedSpec[] = [
   {
     id: 'seed-welcome',
-    title: '欢迎来到 Inkstone',
+    title: '欢迎来到 Mochi',
     minutesAgo: 6,
-    content: `这是 **Inkstone（砚）**，一个本地优先、手机可用的开源 Markdown 知识库。
+    content: `这里是 **Mochi（麻薯）** 呀 🍡 一个软乎乎、只属于你的 Markdown 小本子。
 
-所有笔记都保存在这台设备里，不上传、不联网也能写。试试这些入口：
+所有笔记都揉进这台设备里，不联网也能慢慢写。
 
-- [[Markdown 速查]] —— 支持哪些语法
-- [[双向链接]] —— 用 \`[[笔记名]]\` 串起想法
-- [[关系图谱]] —— 看看你的知识长什么样
-- [[本地优先]] —— 为什么数据应该属于你
+试试这些入口：
 
-> 小提示：点右下角的 **+** 新建笔记；底部标签栏切换列表、图谱、搜索和设置。
+- [[Markdown 小抄]] —— 会这几招就够啦
+- [[双向链接]] —— 用 [[名字]] 把麻薯串起来
+- [[关系图谱]] —— 看看你的一碗麻薯
+- [[本地优先]] —— 为什么数据要待在自己口袋里
 
-#开始 #使用`,
+> 小提示：点底部中间的 **＋** 捏一颗新麻薯；长按卡片可以置顶或删掉。
+
+#开始 #开心`,
   },
   {
     id: 'seed-markdown',
-    title: 'Markdown 速查',
+    title: 'Markdown 小抄',
     minutesAgo: 42,
-    content: `# 常用语法
+    content: `# 一点点就够啦
 
-**粗体**、*斜体*、~~删除线~~、\`行内代码\`
+**粗粗的**、*软软的*、~~划掉~~、\`小代码\`
 
 \`\`\`js
-const note = "代码块也支持高亮排版";
+const mochi = "软乎乎";
 \`\`\`
 
-- 无序列表
-- 第二项
-  - 支持嵌套
+- 圆圆的列表
+- 第二颗
+  - 里面还能再放一颗
 
-1. 有序列表
-2. 第二项
+1. 第一颗
+2. 第二颗
 
-| 语法 | 说明 |
+| 魔法 | 效果 |
 | --- | --- |
-| \`[[笔记名]]\` | 双向链接 |
-| \`#标签\` | 标签 |
-| \`- [ ]\` | 待办 |
+| \`[[名字]]\` | 把麻薯串起来 |
+| \`#标签\` | 给麻薯贴口味 |
+| \`- [ ]\` | 记下要做的事 |
 
-任务清单：
-
-- [x] 安装 Inkstone
-- [ ] 写下第一条笔记
-- [ ] 连上关系图谱看看
+- [x] 打开 Mochi
+- [ ] 写下今天的第一颗麻薯
+- [ ] 去图谱里转一转
 
 #写作 #语法`,
   },
@@ -71,14 +71,12 @@ const note = "代码块也支持高亮排版";
     id: 'seed-backlinks',
     title: '双向链接',
     minutesAgo: 120,
-    content: `用两个方括号就能链接另一条笔记：\`[[笔记名]]\`。
+    content: `用两个方括号 \`[[名字]]\` 就能把两颗麻薯串起来～
 
-- 链接到已存在的笔记：[[关系图谱]]
-- 链接到还不存在的笔记：[[未来的笔记]]（打开后会提示你新建）
+- 串到已经有的麻薯：[[关系图谱]]
+- 串到还没捏的麻薯：[[还没捏的麻薯]]（点一下就能捏出来）
 
-被链接的笔记底部会自动出现 **反向链接**，于是想法不再散落，而是长成一张网。
-
-如果链接目标只写了一半，编辑器会自动提示候选标题。
+被串到的麻薯底部会自动出现 **反向链接**，想法就这样慢慢连成一张网 ♡
 
 #功能 #写作`,
   },
@@ -86,114 +84,114 @@ const note = "代码块也支持高亮排版";
     id: 'seed-graph',
     title: '关系图谱',
     minutesAgo: 200,
-    content: `图谱把笔记画成节点，把 \`[[链接]]\` 画成边。
+    content: `图谱把每颗麻薯画成小球，把 \`[[链接]]\` 画成糖丝～
 
-- 节点越大，说明被引用得越多
-- 灰色的虚线圈表示 **还没创建的笔记**
-- 点节点即可跳转，点空白处拖动画布
+- 球越大，说明被串到的次数越多
+- 灰色虚线圈 = 还没捏出来的麻薯
+- 点小球打开笔记，拖空白处挪动画面
 
-它适合回答一个问题：**我的知识库里什么东西是孤岛？**
+它可以回答一个甜甜的问题：**我的小本子里，谁是孤零零的那颗？**
 
-相关：[[双向链接]]、[[本地优先]]、[[欢迎来到 Inkstone]]
+相关：[[双向链接]]、[[本地优先]]、[[欢迎来到 Mochi]]
 
 #功能`,
   },
   {
-    id: 'seed-local-first',
+    id: 'seed-local',
     title: '本地优先',
     minutesAgo: 300,
-    content: `本地优先（local-first）意味着：
+    content: `本地优先（local-first）就是：
 
-1. 数据在主设备上，断网也能读写；
-2. 不依赖任何账号或云服务；
-3. 随时可以完整导出，不被平台锁定。
+1. 麻薯放在自己口袋里，断网也能吃；
+2. 不要账号、不连云端；
+3. 随时能整个打包带走。
 
-Inkstone 把笔记存在浏览器的 IndexedDB 里，并提供 JSON / Markdown 导出。手机和电脑是各自独立的库——想同步时，导出再导入即可。
+Mochi 把笔记存在浏览器的 IndexedDB 里，还能导出 JSON / Markdown，换设备也不慌。
 
-相关：[[手机上的知识库]]、[[关于开源]]
+相关：[[手机上的小本子]]、[[关于开源]]
 
 #理念`,
   },
   {
     id: 'seed-mobile',
-    title: '手机上的知识库',
+    title: '手机上的小本子',
     minutesAgo: 480,
-    content: `在手机上记录，重点是 **快**。
+    content: `在手机上记东西，最重要的是 **快** 和 **软**。
 
-Inkstone 的界面为单手操作设计：底部导航、大按钮、浮动新建键、编辑器里贴着键盘的快捷工具栏。
+Mochi 的界面为单手设计：底部导航、圆圆的按钮、贴着键盘的快捷工具栏，还有底部中间那颗 **＋** 捏麻薯按钮。
 
-把它添加到主屏幕，看起来就和原生 App 一样：
+把它添加到主屏幕，看起来就和一个可爱的原生 App 一样：
 
 - iOS Safari：分享 → 添加到主屏幕
 - Android Chrome：菜单 → 添加到主屏幕
 
-进一步阅读：[[Inkstone 使用技巧]]
+进一步阅读：[[Mochi 使用小贴士]]
 
 #移动端 #使用`,
   },
   {
     id: 'seed-tips',
-    title: 'Inkstone 使用技巧',
+    title: 'Mochi 使用小贴士',
     minutesAgo: 720,
-    content: `**快捷键 / 操作**
+    content: `**小手势**
 
-- 编辑器顶部可切换「编辑 / 预览」
-- 工具栏插入粗体、标题、列表、代码块、链接
-- 长按笔记卡片可以置顶或删除
-- 搜索框支持标题和正文关键词
+- 编辑器右上角可以切换「编辑 / 预览」
+- 工具栏插入粗体、标题、列表、代码块、双向链接
+- 长按笔记卡片：置顶、复制、删除
+- 搜索支持标题、正文和 #标签
 
-**数据安全**
+**小保险**
 
-设置页可以随时导出全部笔记为 JSON，或导出为 Markdown 合集备份。
+设置里可以随时把全部麻薯打包导出成 JSON，或导出 Markdown 合集。
 
-相关：[[欢迎来到 Inkstone]]、[[Markdown 速查]]
+相关：[[欢迎来到 Mochi]]、[[Markdown 小抄]]
 
 #使用`,
   },
   {
     id: 'seed-inbox',
-    title: '灵感箱',
+    title: '灵感口袋',
     minutesAgo: 1500,
-    content: `随手收集，之后再整理。
+    content: `随手丢进来，之后再慢慢整理。
 
-- 一个只属于我的、能在手机上写字的开源笔记工具
+- 一个只属于我的、能在手机上写字的小本子
 - 用 \`[[链接]]\` 代替文件夹
-- [[待整理的想法]]
-- 把每天的想法连成一张网
+- [[待整理的小想法]]
+- 把每天的小开心连成一颗颗麻薯
 
 #收集`,
   },
   {
     id: 'seed-daily',
-    title: '每日笔记 · 2026-11-03',
+    title: '今日份心情',
     minutesAgo: 90,
     content: `## 今天
 
-- [x] 把 Inkstone 打开
-- [x] 写下第一条笔记
-- [ ] 试试 [[关系图谱]]
+- [x] 打开 Mochi
+- [x] 写下第一颗麻薯
+- [ ] 去 [[关系图谱]] 转一转
 - [ ] 导出一次备份
 
-## 想法
+## 一点小想法
 
-知识库的价值不在于存了多少，而在于 **重新遇到** 了多少。
+本子的价值不在于存了多少，而在于 **重新遇到** 了多少。
 
 #日记`,
   },
   {
-    id: 'seed-open-source',
+    id: 'seed-open',
     title: '关于开源',
     minutesAgo: 2400,
-    content: `Inkstone 以 MIT 协议开源：可以自由使用、修改、分发。
+    content: `Mochi 以 MIT 协议开源：可以自由使用、修改、分享，也可以自己捏一只新的。
 
-它不追求复刻 Obsidian 的全部功能，只想把最核心的几件事做好：
+它不追求复刻 Obsidian 的全部功能，只想把最核心的几件事做软、做好：
 
 - 纯本地 Markdown
 - 双向链接与反向链接
 - 图谱与搜索
-- 手机上顺畅书写
+- 手机上舒服地写
 
-相关：[[本地优先]]、[[欢迎来到 Inkstone]]
+相关：[[本地优先]]、[[欢迎来到 Mochi]]
 
 #开源`,
   },
@@ -202,7 +200,7 @@ Inkstone 的界面为单手操作设计：底部导航、大按钮、浮动新�
 /** Build the demo vault with stable relative timestamps. */
 export function createSeedNotes(): Note[] {
   const now = Date.now();
-  const notes: Note[] = SEEDS.map((seed, index) => {
+  return SEEDS.map((seed, index) => {
     const note = makeNote({ title: seed.title, content: seed.content });
     note.id = seed.id;
     const updatedAt = now - seed.minutesAgo * 60_000;
@@ -211,5 +209,4 @@ export function createSeedNotes(): Note[] {
     note.pinned = index === 0;
     return note;
   });
-  return notes;
 }
