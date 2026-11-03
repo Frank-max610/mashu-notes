@@ -16,7 +16,7 @@ const LEFT_TABS: ReadonlyArray<{ name: TabName; label: string; icon: IconName }>
 ];
 
 const RIGHT_TABS: ReadonlyArray<{ name: TabName; label: string; icon: IconName }> = [
-  { name: 'search', label: '搜索', icon: 'search' },
+  { name: 'agent', label: '助手', icon: 'sparkles' },
   { name: 'settings', label: '我的', icon: 'settings' },
 ];
 

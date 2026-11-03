@@ -28,6 +28,7 @@ export function noteSummary(note: Note): NoteSummary {
     tags: note.tags,
     updatedAt: note.updatedAt,
     pinned: note.pinned,
+    kind: note.kind ?? 'note',
   };
 }
 

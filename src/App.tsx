@@ -1,21 +1,24 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNotes } from './lib/store';
 import { navigate, parseRoute, replaceRoute, routeToHash, useRoute, type TabName } from './lib/useRoute';
-import { getStoredTheme, setStoredTheme } from './lib/prefs';
+import { getAgentPersona, getStoredTheme, setAgentPersona, setStoredTheme } from './lib/prefs';
 import { downloadText } from './lib/exportImport';
-import type { Note, ThemeMode } from './lib/types';
+import type { AgentPersona, Note, NoteKind, NotePosition, RecordDraft, ThemeMode } from './lib/types';
+import { KIND_INFO } from './lib/kinds';
+import type { KindFilter } from './screens/NotesScreen';
 import { NotesScreen } from './screens/NotesScreen';
 import { EditorScreen } from './screens/EditorScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
-import { GraphView } from './components/GraphView';
 import { SearchScreen } from './components/SearchScreen';
+import { GraphView } from './components/GraphView';
+import { AgentPanel } from './components/AgentPanel';
+import { CaptureSheet } from './components/CaptureSheet';
+import { NodeEditorSheet, type NodeEditorValues } from './components/NodeEditorSheet';
 import { TabBar } from './components/TabBar';
 import { ActionSheet, type ActionSheetItem } from './components/ActionSheet';
 import { Icon } from './components/Icon';
-import { Mascot } from './components/Mascot';
-import { HeartBurst } from './components/HeartBurst';
 
-const APP_TITLE = 'Mochi · 麻薯';
+const APP_TITLE = '麻薯';
 
 function safeFileName(title: string): string {
   const cleaned = title
@@ -25,19 +28,27 @@ function safeFileName(title: string): string {
   return cleaned.slice(0, 60) || 'note';
 }
 
-/** Application shell: routing, theme, toast and the action sheets. */
+/** Application shell: routing, theme, capture sheet, life graph and agent. */
 export default function App() {
   const api = useNotes();
   const route = useRoute();
 
   const [theme, setTheme] = useState<ThemeMode>(() => getStoredTheme());
-  const [tagFilter, setTagFilter] = useState<string | null>(null);
+  const [persona, setPersona] = useState<AgentPersona>(() => getAgentPersona());
+  const [kindFilter, setKindFilter] = useState<KindFilter>('all');
   const [toast, setToast] = useState<string | null>(null);
   const [noteMenu, setNoteMenu] = useState<Note | null>(null);
   const [editorMenuOpen, setEditorMenuOpen] = useState(false);
-  const [burstKey, setBurstKey] = useState(0);
+  const [captureOpen, setCaptureOpen] = useState(false);
+  const [captureKind, setCaptureKind] = useState<NoteKind | undefined>(undefined);
+  const [nodeEditor, setNodeEditor] = useState<{
+    open: boolean;
+    noteId: string | null;
+    position?: NotePosition;
+  }>({ open: false, noteId: null });
 
   const returnToRef = useRef<TabName>('notes');
+  const openedFromAppRef = useRef(false);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const notify = useCallback((message: string) => {
@@ -53,8 +64,7 @@ export default function App() {
     [],
   );
 
-  // Keep the URL canonical: empty hashes and unknown routes fall back to the
-  // notes list instead of rendering a stray screen with a bogus hash.
+  // Keep the URL canonical.
   useEffect(() => {
     const parsed = parseRoute(window.location.hash);
     if (routeToHash(parsed) !== window.location.hash) replaceRoute(parsed);
@@ -72,7 +82,7 @@ export default function App() {
       document.documentElement.dataset.theme = resolved;
       document.title = APP_TITLE;
       const meta = document.querySelector('meta[name="theme-color"]');
-      meta?.setAttribute('content', resolved === 'light' ? '#fff7f5' : '#1f1a26');
+      meta?.setAttribute('content', resolved === 'light' ? '#f7f5f0' : '#1c1e1c');
     };
     apply();
     setStoredTheme(theme);
@@ -98,6 +108,7 @@ export default function App() {
   useEffect(() => {
     setNoteMenu(null);
     setEditorMenuOpen(false);
+    setNodeEditor((current) => (current.open ? { open: false, noteId: null } : current));
   }, [route]);
 
   const openNote = useCallback(
@@ -111,18 +122,22 @@ export default function App() {
     [route],
   );
 
-  const createNote = useCallback(
-    async (input: { title?: string; content?: string } = {}) => {
-      if (route.name !== 'note') {
-        returnToRef.current = route.name;
-        openedFromAppRef.current = true;
-      }
-      const note = await api.createNote(input);
-      setBurstKey((key) => key + 1);
-      notify('捏好一颗新麻薯 ✧');
-      navigate({ name: 'note', id: note.id });
+  const openCapture = useCallback((kind?: NoteKind) => {
+    setCaptureKind(kind);
+    setCaptureOpen(true);
+  }, []);
+
+  const saveDraft = useCallback(
+    async (draft: RecordDraft) => {
+      const note = await api.createNote({
+        title: draft.title,
+        content: draft.content,
+        kind: draft.kind,
+        meta: draft.meta,
+      });
+      notify(`已记下：${KIND_INFO[draft.kind].label} · ${note.title}`);
     },
-    [api.createNote, route],
+    [api.createNote, notify],
   );
 
   const openOrCreateByTitle = useCallback(
@@ -138,12 +153,7 @@ export default function App() {
     [api.ensureNote, notify, route],
   );
 
-  /** True when the current editor entry was pushed from inside the app. */
-  const openedFromAppRef = useRef(false);
-
   const goBack = useCallback(() => {
-    // Pop the history entry we pushed, so the phone's back gesture does not
-    // immediately reopen the editor. Deep links fall back to the notes list.
     if (openedFromAppRef.current && window.history.length > 1) {
       openedFromAppRef.current = false;
       window.history.back();
@@ -154,14 +164,14 @@ export default function App() {
 
   const removeNote = useCallback(
     async (note: Note) => {
-      const label = note.title || '未命名笔记';
+      const label = note.title || '未命名记录';
       if (!window.confirm(`删除「${label}」？此操作不可撤销。`)) return;
       const removed = await api.deleteNote(note.id);
       if (!removed) {
-        notify('删除失败，笔记可能仍在存储中，请重试或先导出备份');
+        notify('删除失败，请重试或先导出备份');
         return;
       }
-      notify('已删除笔记');
+      notify('已删除');
       if (route.name === 'note') navigate({ name: returnToRef.current });
     },
     [api.deleteNote, notify, route],
@@ -182,54 +192,88 @@ export default function App() {
 
   const exportMarkdown = useCallback(
     (note: Note) => {
-      downloadText(
-        `${safeFileName(note.title)}.md`,
-        `# ${note.title}\n\n${note.content}`,
-        'text/markdown',
-      );
+      downloadText(`${safeFileName(note.title)}.md`, `# ${note.title}\n\n${note.content}`, 'text/markdown');
       notify('已导出 .md 文件');
     },
     [notify],
   );
 
+  const editRecord = useCallback((note: Note) => {
+    setNodeEditor({ open: true, noteId: note.id });
+  }, []);
+
   const noteMenuItems = useMemo<ActionSheetItem[]>(() => {
     if (!noteMenu) return [];
     return [
       {
-        label: noteMenu.pinned ? '取消置顶' : '置顶笔记',
+        label: noteMenu.pinned ? '取消置顶' : '置顶记录',
         icon: 'pin',
         onSelect: () => api.togglePin(noteMenu.id),
       },
+      { label: '编辑记录信息', icon: 'edit', onSelect: () => editRecord(noteMenu) },
       { label: '复制 Markdown', icon: 'book', onSelect: () => void copyMarkdown(noteMenu) },
       { label: '导出为 .md', icon: 'download', onSelect: () => exportMarkdown(noteMenu) },
-      {
-        label: '删除笔记',
-        icon: 'trash',
-        danger: true,
-        onSelect: () => void removeNote(noteMenu),
-      },
+      { label: '删除', icon: 'trash', danger: true, onSelect: () => void removeNote(noteMenu) },
     ];
-  }, [api, copyMarkdown, exportMarkdown, noteMenu, removeNote]);
+  }, [api, copyMarkdown, editRecord, exportMarkdown, noteMenu, removeNote]);
 
   const editorMenuItems = useMemo<ActionSheetItem[]>(() => {
     if (!activeNote) return [];
     return [
+      { label: '编辑记录信息', icon: 'edit', onSelect: () => editRecord(activeNote) },
       { label: '复制 Markdown', icon: 'book', onSelect: () => void copyMarkdown(activeNote) },
       { label: '导出为 .md', icon: 'download', onSelect: () => exportMarkdown(activeNote) },
-      {
-        label: '删除笔记',
-        icon: 'trash',
-        danger: true,
-        onSelect: () => void removeNote(activeNote),
-      },
+      { label: '删除', icon: 'trash', danger: true, onSelect: () => void removeNote(activeNote) },
     ];
-  }, [activeNote, copyMarkdown, exportMarkdown, removeNote]);
+  }, [activeNote, copyMarkdown, editRecord, exportMarkdown, removeNote]);
+
+  const nodeEditorNote = useMemo(
+    () => (nodeEditor.noteId ? api.notes.find((note) => note.id === nodeEditor.noteId) ?? null : null),
+    [api.notes, nodeEditor.noteId],
+  );
+
+  const handleNodeSave = useCallback(
+    (values: NodeEditorValues) => {
+      if (nodeEditorNote) {
+        api.updateNote(nodeEditorNote.id, {
+          title: values.title,
+          kind: values.kind,
+          meta: values.meta,
+        });
+        const before = new Set(nodeEditorNote.manualLinks);
+        const after = new Set(values.manualLinks);
+        for (const id of after) if (!before.has(id)) api.addManualLink(nodeEditorNote.id, id);
+        for (const id of before) if (!after.has(id)) api.removeManualLink(nodeEditorNote.id, id);
+        notify('已更新记录');
+      } else {
+        void api
+          .createNote({
+            title: values.title,
+            kind: values.kind,
+            meta: values.meta,
+            position: nodeEditor.position,
+          })
+          .then(() => notify('已添加记录'));
+      }
+      setNodeEditor({ open: false, noteId: null });
+    },
+    [api, nodeEditor.position, nodeEditorNote, notify],
+  );
+
+  const handlePersonaChange = useCallback(
+    (next: AgentPersona) => {
+      setPersona(next);
+      setAgentPersona(next);
+      notify('助手已更新');
+    },
+    [notify],
+  );
 
   if (!api.ready) {
     return (
       <div className="app-loading">
-        <Mascot variant="sleepy" size={116} bob />
-        <p>正在揉麻薯…</p>
+        <div className="spinner" />
+        <p>正在打开本地记录…</p>
       </div>
     );
   }
@@ -241,38 +285,53 @@ export default function App() {
       case 'graph':
         return (
           <div className="screen graph-screen">
-            <header className="screen-header app-header">
-              <div className="app-brand">
-                <span className="app-logo" aria-hidden="true">
-                  <Mascot variant="happy" size={40} />
-                </span>
-                <div className="app-brand-text">
-                  <h1 className="app-title">关系图谱</h1>
-                  <p className="app-subtitle">{api.notes.length} 颗麻薯 · 点小球打开笔记</p>
-                </div>
+            <header className="screen-header graph-header">
+              <div>
+                <h1 className="screen-title">生活图谱</h1>
+                <p className="screen-subtitle">拖动、添加、连线，随你整理</p>
               </div>
               <button
                 type="button"
                 className="icon-btn"
-                aria-label="返回笔记列表"
+                aria-label="回到记录"
                 onClick={() => navigate({ name: 'notes' })}
               >
-                <Icon name="notes" size={21} />
+                <Icon name="notes" size={20} />
               </button>
             </header>
             <div className="graph-host">
               <GraphView
                 notes={api.notes}
                 activeNoteId={null}
+                selectedNoteId={nodeEditor.open && nodeEditor.noteId ? nodeEditor.noteId : null}
+                onSelectNote={(id) => setNodeEditor({ open: id !== null, noteId: id })}
                 onOpenNote={openNote}
-                onCreateNote={(title) => void openOrCreateByTitle(title)}
+                onMoveNote={(id, position) => api.setNodePosition(id, position)}
+                onCreateNoteAt={(position) => setNodeEditor({ open: true, noteId: null, position })}
+                onLinkNotes={(sourceId, targetId) => {
+                  api.addManualLink(sourceId, targetId);
+                  notify('已连一条线');
+                }}
+                onRequestResetLayout={() => {
+                  api.resetNodePositions();
+                  notify('已恢复自动布局');
+                }}
               />
             </div>
           </div>
         );
       case 'search':
+        return <SearchScreen notes={api.sortedNotes} onOpenNote={openNote} />;
+      case 'agent':
         return (
-          <SearchScreen notes={api.sortedNotes} onOpenNote={openNote} />
+          <AgentPanel
+            persona={persona}
+            notes={api.sortedNotes}
+            onSaveDraft={saveDraft}
+            onOpenNote={openNote}
+            onEditPersona={() => navigate({ name: 'settings' })}
+            onCreateRecord={() => openCapture()}
+          />
         );
       case 'settings':
         return (
@@ -285,6 +344,8 @@ export default function App() {
             onClearAll={api.clearAll}
             notify={notify}
             onOpenNote={openNote}
+            persona={persona}
+            onPersonaChange={handlePersonaChange}
           />
         );
       case 'notes':
@@ -293,12 +354,13 @@ export default function App() {
           <NotesScreen
             notes={api.sortedNotes}
             loading={false}
-            tagFilter={tagFilter}
-            onTagFilter={setTagFilter}
+            kindFilter={kindFilter}
+            onKindFilter={setKindFilter}
             onOpenNote={openNote}
             onNoteMenu={setNoteMenu}
             onOpenSearch={() => navigate({ name: 'search' })}
-            onCreateNote={() => void createNote()}
+            onQuickCapture={openCapture}
+            onOpenAgent={() => navigate({ name: 'agent' })}
             storageWarning={api.storageWarning}
           />
         );
@@ -320,6 +382,7 @@ export default function App() {
           onMenu={() => setEditorMenuOpen(true)}
           onOpenNote={openNote}
           onCreateNote={(title) => void openOrCreateByTitle(title)}
+          onEditRecord={() => editRecord(activeNote)}
           storageWarning={api.storageWarning}
         />
       ) : (
@@ -328,7 +391,7 @@ export default function App() {
           <TabBar
             active={activeTab}
             onChange={(tab) => navigate({ name: tab })}
-            onCompose={() => void createNote()}
+            onCompose={() => openCapture()}
             notesCount={api.notes.length}
           />
         </>
@@ -336,18 +399,42 @@ export default function App() {
 
       <ActionSheet
         open={noteMenu !== null}
-        title="笔记操作"
+        title="记录操作"
         items={noteMenuItems}
         onClose={() => setNoteMenu(null)}
       />
       <ActionSheet
         open={editorMenuOpen}
-        title="笔记操作"
+        title="记录操作"
         items={editorMenuItems}
         onClose={() => setEditorMenuOpen(false)}
       />
 
-      <HeartBurst burstKey={burstKey} />
+      <CaptureSheet
+        open={captureOpen}
+        initialKind={captureKind}
+        onClose={() => setCaptureOpen(false)}
+        onSave={saveDraft}
+      />
+
+      <NodeEditorSheet
+        open={nodeEditor.open}
+        note={nodeEditorNote}
+        notes={api.notes}
+        position={nodeEditor.position}
+        onClose={() => setNodeEditor({ open: false, noteId: null })}
+        onSave={handleNodeSave}
+        onDelete={
+          nodeEditorNote
+            ? () => {
+                void removeNote(nodeEditorNote).then(() =>
+                  setNodeEditor({ open: false, noteId: null }),
+                );
+              }
+            : undefined
+        }
+        onOpenNote={openNote}
+      />
 
       {toast ? (
         <div className="toast" role="status" aria-live="polite">

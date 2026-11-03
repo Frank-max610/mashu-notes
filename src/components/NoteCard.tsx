@@ -1,6 +1,7 @@
 import { useMemo, useRef, type PointerEvent as ReactPointerEvent } from 'react';
 import type { Note } from '../lib/types';
 import { excerpt } from '../lib/markdown';
+import { describeMeta, kindInfo } from '../lib/kinds';
 import { formatRelativeTime } from '../lib/format';
 import { Icon } from './Icon';
 
@@ -13,25 +14,15 @@ export interface NoteCardProps {
 const LONG_PRESS_MS = 480;
 const MOVE_TOLERANCE_PX = 10;
 
-const STICKERS = ['🍓', '🍡', '🌸', '☁️', '🍰', '🎀', '🍯', '🌷', '🧸', '🫧', '🍵', '🌼'];
-
-/** Stable cute sticker per note, so the bowl stays varied but reproducible. */
-function stickerFor(seed: string): string {
-  let hash = 0;
-  for (let index = 0; index < seed.length; index += 1) {
-    hash = (hash * 31 + seed.charCodeAt(index)) % 100000;
-  }
-  return STICKERS[hash % STICKERS.length];
-}
-
-/** Note list card with tap-to-open and long-press menu (mobile friendly). */
+/** Calm list card: kind badge, structured summary, short excerpt. */
 export function NoteCard({ note, onOpen, onMenu }: NoteCardProps) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startRef = useRef({ x: 0, y: 0 });
   const suppressClickRef = useRef(false);
 
-  const preview = useMemo(() => excerpt(note.content, 96), [note.content]);
-  const tags = note.tags.slice(0, 3);
+  const info = kindInfo(note.kind);
+  const metaLine = useMemo(() => describeMeta(note), [note]);
+  const preview = useMemo(() => excerpt(note.content, 80), [note.content]);
   const updated = formatRelativeTime(note.updatedAt);
 
   const clearTimer = () => {
@@ -60,10 +51,14 @@ export function NoteCard({ note, onOpen, onMenu }: NoteCardProps) {
 
   return (
     <article
-      className={`note-card${note.pinned ? ' is-pinned' : ''}`}
+      className={`note-card kind-${note.kind}${note.pinned ? ' is-pinned' : ''}`}
+      style={{
+        ['--kind-accent' as string]: `var(${info.accentVar})`,
+        ['--kind-soft' as string]: `var(${info.accentSoftVar})`,
+      }}
       role="button"
       tabIndex={0}
-      aria-label={`打开笔记：${note.title}`}
+      aria-label={`打开${info.label}：${note.title}`}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={clearTimer}
@@ -88,22 +83,24 @@ export function NoteCard({ note, onOpen, onMenu }: NoteCardProps) {
       }}
     >
       <div className="note-card-head">
-        <span className="note-card-sticker" aria-hidden="true">
-          {stickerFor(note.id)}
+        <span className="note-kind-badge">
+          <span aria-hidden="true">{info.emoji}</span>
+          {info.label}
         </span>
-        <h3 className="note-card-title">{note.title || '未命名麻薯'}</h3>
         {note.pinned ? (
           <span className="note-card-pin" aria-label="已置顶">
-            <Icon name="pin" size={15} />
+            <Icon name="pin" size={14} />
           </span>
         ) : null}
       </div>
+      <h3 className="note-card-title">{note.title || '未命名记录'}</h3>
+      {metaLine ? <p className="note-card-meta-line">{metaLine}</p> : null}
       {preview ? <p className="note-card-excerpt">{preview}</p> : null}
       <div className="note-card-meta">
         <span className="note-card-time">{updated}</span>
-        {tags.length > 0 ? (
+        {note.tags.length > 0 ? (
           <span className="note-card-tags">
-            {tags.map((tag) => (
+            {note.tags.slice(0, 3).map((tag) => (
               <span key={tag} className="note-card-tag">
                 #{tag}
               </span>

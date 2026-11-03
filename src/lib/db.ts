@@ -1,4 +1,5 @@
 import type { Note } from './types';
+import { normalizeNote } from './prefs';
 
 /**
  * Persistence layer: IndexedDB with a localStorage fallback (private mode,
@@ -6,7 +7,7 @@ import type { Note } from './types';
  */
 
 const DB_NAME = 'mochi';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE = 'notes';
 const LS_KEY = 'mochi.notes.v1';
 
@@ -33,11 +34,26 @@ function openDatabase(): Promise<IDBDatabase> {
       return;
     }
     const request = indexedDB.open(DB_NAME, DB_VERSION);
-    request.onupgradeneeded = () => {
+    request.onupgradeneeded = (event) => {
       const db = request.result;
       if (!db.objectStoreNames.contains(STORE)) {
         const store = db.createObjectStore(STORE, { keyPath: 'id' });
         store.createIndex('updatedAt', 'updatedAt');
+      }
+      if (event.oldVersion < 2) {
+        // v2 adds life-record fields (kind/meta/manualLinks/position) to every
+        // stored note; rewrite them inside the upgrade transaction.
+        const store = request.transaction?.objectStore(STORE);
+        if (store) {
+          const cursorRequest = store.openCursor();
+          cursorRequest.onsuccess = () => {
+            const cursor = cursorRequest.result;
+            if (!cursor) return;
+            const normalized = normalizeNote(cursor.value);
+            if (normalized) cursor.update(normalized);
+            cursor.continue();
+          };
+        }
       }
     };
     request.onsuccess = () => resolve(request.result);
@@ -68,7 +84,10 @@ function readLocal(): Note[] {
     const raw = localStorage.getItem(LS_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as unknown;
-    return Array.isArray(parsed) ? (parsed as Note[]) : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((value) => normalizeNote(value))
+      .filter((note): note is Note => note !== null);
   } catch {
     return [];
   }
@@ -85,7 +104,10 @@ function readLegacyLocalNotes(): Note[] {
     const raw = localStorage.getItem(LEGACY_LS.notes);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as unknown;
-    return Array.isArray(parsed) ? (parsed as Note[]) : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((value) => normalizeNote(value))
+      .filter((note): note is Note => note !== null);
   } catch {
     return [];
   }
@@ -127,7 +149,10 @@ function readLegacyIndexedDbNotes(): Promise<Note[]> {
           const transaction = database.transaction(STORE, 'readonly');
           const getAll = transaction.objectStore(STORE).getAll();
           getAll.onsuccess = () => {
-            done((getAll.result as Note[]) ?? []);
+            const rows = ((getAll.result as unknown[]) ?? [])
+              .map((value) => normalizeNote(value))
+              .filter((note): note is Note => note !== null);
+            done(rows);
             database.close();
           };
           getAll.onerror = () => {
@@ -226,12 +251,15 @@ export async function loadNotes(): Promise<Note[]> {
     });
     await txDone(tx);
     mode = 'indexeddb';
-    if (notes.length === 0) {
+    const normalized = notes
+      .map((note) => normalizeNote(note))
+      .filter((note): note is Note => note !== null);
+    if (normalized.length === 0) {
       // First run of 0.2.x on a device that may still hold 0.1.x notes.
       const migrated = await migrateLegacyVault();
       if (migrated.length > 0) return recoverLocalFallback(migrated);
     }
-    return recoverLocalFallback(notes);
+    return recoverLocalFallback(normalized);
   } catch {
     mode = 'localstorage';
     return readLocal();

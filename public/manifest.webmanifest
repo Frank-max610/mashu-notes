@@ -1,15 +1,15 @@
 {
-  "name": "Mochi 麻薯",
-  "short_name": "Mochi",
-  "description": "把想法揉成一颗颗软乎乎的麻薯 —— 本地优先、手机可用的开源 Markdown 笔记本。",
+  "name": "麻薯",
+  "short_name": "麻薯",
+  "description": "本地优先的生活记录 + Markdown 笔记本：饮食、健康、收支、日记，连成一张可编辑的图。",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "lang": "zh-CN",
   "dir": "ltr",
-  "background_color": "#fff7f5",
-  "theme_color": "#fff7f5",
+  "background_color": "#f7f5f0",
+  "theme_color": "#f7f5f0",
   "categories": ["productivity", "utilities", "education"],
   "icons": [
     {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Note, NotePatch } from './types';
+import type { Note, NoteInput, NotePatch, NotePosition } from './types';
 import { extractTags, noteSummary, normalizeTitle } from './links';
 import {
   clearAllNotes,
@@ -29,8 +29,15 @@ export interface NotesApi {
   ready: boolean;
   storageMode: StorageMode;
   storageWarning: string | null;
-  createNote(input?: { title?: string; content?: string }): Promise<Note>;
+  createNote(input?: NoteInput): Promise<Note>;
   updateNote(id: string, patch: NotePatch): void;
+  /** Save a manual graph position (null clears it and lets the layout decide). */
+  setNodePosition(id: string, position: NotePosition | null): void;
+  /** Draw a hand-made link between two notes (undirected, de-duplicated). */
+  addManualLink(sourceId: string, targetId: string): void;
+  removeManualLink(sourceId: string, targetId: string): void;
+  /** Clear every saved graph position so the auto layout takes over again. */
+  resetNodePositions(): void;
   deleteNote(id: string): Promise<boolean>;
   togglePin(id: string): void;
   replaceAll(notes: Note[]): Promise<void>;
@@ -189,7 +196,7 @@ export function useNotes(): NotesApi {
   }, [flush]);
 
   const createNote = useCallback(
-    async (input: { title?: string; content?: string } = {}) => {
+    async (input: NoteInput = {}) => {
       const note = makeNote(input);
       commit(sortNotes([note, ...notesRef.current]));
       try {
@@ -208,16 +215,20 @@ export function useNotes(): NotesApi {
       const current = notesRef.current.find((note) => note.id === id);
       if (!current) return;
       const content = patch.content ?? current.content;
+      const structural =
+        patch.content !== undefined ||
+        patch.title !== undefined ||
+        patch.kind !== undefined ||
+        patch.meta !== undefined;
       const next: Note = {
         ...current,
         title: patch.title !== undefined ? patch.title : current.title,
         content,
         pinned: patch.pinned !== undefined ? patch.pinned : current.pinned,
+        kind: patch.kind !== undefined ? patch.kind : current.kind,
+        meta: patch.meta !== undefined ? patch.meta : current.meta,
         tags: extractTags(content),
-        updatedAt:
-          patch.content !== undefined || patch.title !== undefined
-            ? Date.now()
-            : current.updatedAt,
+        updatedAt: structural ? Date.now() : current.updatedAt,
       };
       dirtyRef.current.set(id, next);
       commit(
@@ -233,7 +244,15 @@ export function useNotes(): NotesApi {
   const deleteNote = useCallback(
     async (id: string): Promise<boolean> => {
       dirtyRef.current.delete(id);
-      commit(notesRef.current.filter((note) => note.id !== id));
+      const changed = notesRef.current
+        .filter((note) => note.id !== id && note.manualLinks.includes(id))
+        .map((note) => ({ ...note, manualLinks: note.manualLinks.filter((link) => link !== id) }));
+      for (const note of changed) dirtyRef.current.set(note.id, note);
+      commit(
+        notesRef.current
+          .filter((note) => note.id !== id)
+          .map((note) => changed.find((item) => item.id === note.id) ?? note),
+      );
       try {
         await settleWrites();
         await deleteNoteFromDb(id);
@@ -259,6 +278,86 @@ export function useNotes(): NotesApi {
     },
     [commit, scheduleFlush],
   );
+
+  const setNodePosition = useCallback(
+    (id: string, position: NotePosition | null) => {
+      const current = notesRef.current.find((note) => note.id === id);
+      if (!current) return;
+      const next: Note = {
+        ...current,
+        position: position
+          ? { x: Math.min(1, Math.max(0, position.x)), y: Math.min(1, Math.max(0, position.y)) }
+          : undefined,
+      };
+      dirtyRef.current.set(id, next);
+      commit(notesRef.current.map((note) => (note.id === id ? next : note)));
+      scheduleFlush();
+    },
+    [commit, scheduleFlush],
+  );
+
+  const addManualLink = useCallback(
+    (sourceId: string, targetId: string) => {
+      if (sourceId === targetId) return;
+      const source = notesRef.current.find((note) => note.id === sourceId);
+      const target = notesRef.current.find((note) => note.id === targetId);
+      if (!source || !target) return;
+      // Manual links are undirected: store them on both ends so either node
+      // shows the connection and can remove it.
+      const link = (note: Note, other: string): Note =>
+        note.manualLinks.includes(other)
+          ? note
+          : { ...note, manualLinks: [...note.manualLinks, other] };
+      const nextSource = link(source, targetId);
+      const nextTarget = link(target, sourceId);
+      const nextNotes = notesRef.current.map((note) =>
+        note.id === sourceId ? nextSource : note.id === targetId ? nextTarget : note,
+      );
+      if (nextSource !== source) dirtyRef.current.set(sourceId, nextSource);
+      if (nextTarget !== target) dirtyRef.current.set(targetId, nextTarget);
+      commit(nextNotes);
+      scheduleFlush();
+    },
+    [commit, scheduleFlush],
+  );
+
+  const removeManualLink = useCallback(
+    (sourceId: string, targetId: string) => {
+      const source = notesRef.current.find((note) => note.id === sourceId);
+      const target = notesRef.current.find((note) => note.id === targetId);
+      if (!source || !target) return;
+      if (!source.manualLinks.includes(targetId) && !target.manualLinks.includes(sourceId)) return;
+      const strip = (note: Note, other: string): Note =>
+        note.manualLinks.includes(other)
+          ? { ...note, manualLinks: note.manualLinks.filter((link) => link !== other) }
+          : note;
+      const nextSource = strip(source, targetId);
+      const nextTarget = strip(target, sourceId);
+      if (nextSource !== source) dirtyRef.current.set(sourceId, nextSource);
+      if (nextTarget !== target) dirtyRef.current.set(targetId, nextTarget);
+      commit(
+        notesRef.current.map((note) =>
+          note.id === sourceId ? nextSource : note.id === targetId ? nextTarget : note,
+        ),
+      );
+      scheduleFlush();
+    },
+    [commit, scheduleFlush],
+  );
+
+  const resetNodePositions = useCallback(() => {
+    let changed = false;
+    const next = notesRef.current.map((note) => {
+      if (!note.position) return note;
+      changed = true;
+      const updated: Note = { ...note, position: undefined };
+      dirtyRef.current.set(note.id, updated);
+      return updated;
+    });
+    if (!changed) return;
+    commit(next);
+    scheduleFlush();
+  }, [commit, scheduleFlush]);
 
   const replaceAll = useCallback(
     async (incoming: Note[]) => {
@@ -306,6 +405,10 @@ export function useNotes(): NotesApi {
     storageWarning,
     createNote,
     updateNote,
+    setNodePosition,
+    addManualLink,
+    removeManualLink,
+    resetNodePositions,
     deleteNote,
     togglePin,
     replaceAll,

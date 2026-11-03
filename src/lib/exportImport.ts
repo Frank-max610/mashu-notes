@@ -1,6 +1,5 @@
 import type { Note } from './types';
-import { extractTags } from './links';
-import { makeId } from './prefs';
+import { normalizeNote } from './prefs';
 
 /**
  * Portable vault export/import. JSON is the lossless format; a single Markdown
@@ -9,13 +8,14 @@ import { makeId } from './prefs';
 
 export interface VaultFile {
   app: 'mochi';
-  version: 1;
+  version: 2;
   exportedAt: string;
   notes: Note[];
 }
 
 export const VAULT_APP = 'mochi' as const;
-export const VAULT_VERSION = 1 as const;
+/** v2 adds life-record fields (kind/meta/manualLinks/position); v1 is accepted. */
+export const VAULT_VERSION = 2 as const;
 
 /** Serialise the whole vault. */
 export function toVaultJson(notes: Note[]): string {
@@ -26,30 +26,6 @@ export function toVaultJson(notes: Note[]): string {
     notes,
   };
   return JSON.stringify(file, null, 2);
-}
-
-function coerceNote(raw: unknown, seenIds: Set<string>): Note | null {
-  if (!raw || typeof raw !== 'object') return null;
-  const value = raw as Record<string, unknown>;
-  const content = typeof value.content === 'string' ? value.content : '';
-  const title = typeof value.title === 'string' && value.title.trim() ? value.title.trim() : '未命名笔记';
-  const now = Date.now();
-  const createdAt = typeof value.createdAt === 'number' ? value.createdAt : now;
-  const updatedAt = typeof value.updatedAt === 'number' ? value.updatedAt : createdAt;
-  let id = typeof value.id === 'string' && value.id ? value.id : makeId();
-  // Duplicate ids in a hand-edited backup would overwrite each other in the
-  // keyPath store, so give later copies a fresh id instead of losing notes.
-  if (seenIds.has(id)) id = makeId();
-  seenIds.add(id);
-  return {
-    id,
-    title,
-    content,
-    tags: extractTags(content),
-    createdAt,
-    updatedAt,
-    pinned: value.pinned === true,
-  };
 }
 
 /**
@@ -73,7 +49,7 @@ export function parseVaultJson(text: string): Note[] {
   }
   const seenIds = new Set<string>();
   const notes = (list as unknown[])
-    .map((raw) => coerceNote(raw, seenIds))
+    .map((raw) => normalizeNote(raw, seenIds))
     .filter((note): note is Note => note !== null);
   if (notes.length === 0) throw new Error('文件里没有可导入的笔记。');
   return notes;
@@ -127,7 +103,7 @@ export function mergeVaultNotes(existing: Note[], incoming: Note[]): MergeResult
 export function toMarkdownBundle(notes: Note[]): string {
   const exportedAt = new Date().toLocaleString('zh-CN', { hour12: false });
   const header = [
-    '# Mochi 笔记导出',
+    '# 麻薯 笔记导出',
     '',
     `> 导出时间：${exportedAt}`,
     `> 笔记数量：${notes.length}`,

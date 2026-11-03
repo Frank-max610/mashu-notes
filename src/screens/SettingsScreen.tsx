@@ -1,21 +1,22 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { Note, ThemeMode } from '../lib/types';
+import type { AgentPersona, Note, ThemeMode } from '../lib/types';
 import type { StorageMode } from '../lib/db';
 import { storageEstimate } from '../lib/db';
 import {
   downloadText,
   fileStamp,
-  mergeVaultNotes,
   parseVaultJson,
   pickTextFile,
   toMarkdownBundle,
   toVaultJson,
+  mergeVaultNotes,
 } from '../lib/exportImport';
 import { formatBytes } from '../lib/format';
+import { AGENT_AVATARS } from '../lib/prefs';
 import { Icon, type IconName } from '../components/Icon';
-import { Mascot } from '../components/Mascot';
+import { AgentAvatar } from '../components/AgentAvatar';
 
-const APP_VERSION = '0.2.0';
+const APP_VERSION = '0.3.0';
 
 export interface SettingsScreenProps {
   notes: Note[];
@@ -26,6 +27,8 @@ export interface SettingsScreenProps {
   onClearAll: () => Promise<void>;
   notify: (message: string) => void;
   onOpenNote: (id: string) => void;
+  persona: AgentPersona;
+  onPersonaChange: (persona: AgentPersona) => void;
 }
 
 interface RowProps {
@@ -52,12 +55,16 @@ function SettingsRow({ icon, label, hint, onClick, danger }: RowProps) {
 }
 
 const THEMES: ReadonlyArray<{ value: ThemeMode; label: string; icon: IconName }> = [
-  { value: 'light', label: '草莓牛奶', icon: 'sun' },
-  { value: 'dark', label: '芋泥夜', icon: 'moon' },
+  { value: 'light', label: '浅色', icon: 'sun' },
+  { value: 'dark', label: '深色', icon: 'moon' },
   { value: 'system', label: '跟随系统', icon: 'info' },
 ];
 
-/** Settings: data portability, storage, appearance and about. */
+function isPresetAvatar(avatar: string): boolean {
+  return AGENT_AVATARS.some((option) => option.id === avatar);
+}
+
+/** Settings: agent persona, data, storage, appearance and about. */
 export function SettingsScreen({
   notes,
   storageMode,
@@ -67,9 +74,18 @@ export function SettingsScreen({
   onClearAll,
   notify,
   onOpenNote,
+  persona,
+  onPersonaChange,
 }: SettingsScreenProps) {
   const [usage, setUsage] = useState<{ usage: number; quota: number } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [nameDraft, setNameDraft] = useState(persona.name);
+  const [emojiDraft, setEmojiDraft] = useState(isPresetAvatar(persona.avatar) ? '' : persona.avatar);
+
+  useEffect(() => {
+    setNameDraft(persona.name);
+    setEmojiDraft(isPresetAvatar(persona.avatar) ? '' : persona.avatar);
+  }, [persona]);
 
   const refreshUsage = useCallback(() => {
     void storageEstimate().then(setUsage);
@@ -79,27 +95,37 @@ export function SettingsScreen({
     refreshUsage();
   }, [refreshUsage, notes.length]);
 
-  const welcomeNote = useMemo(
-    () => notes.find((note) => note.title.includes('欢迎')),
-    [notes],
-  );
+  const welcomeNote = useMemo(() => notes.find((note) => note.title.includes('欢迎')), [notes]);
+
+  const commitName = () => {
+    const name = nameDraft.trim();
+    if (name && name !== persona.name) onPersonaChange({ ...persona, name });
+    else setNameDraft(persona.name);
+  };
+
+  const commitEmoji = () => {
+    const emoji = emojiDraft.trim().slice(0, 4);
+    if (!emoji) return;
+    onPersonaChange({ ...persona, avatar: emoji });
+    setEmojiDraft('');
+  };
 
   const handleExportJson = () => {
     if (notes.length === 0) {
-      notify('还没有笔记可以导出');
+      notify('还没有记录可以导出');
       return;
     }
-    downloadText(`mochi-${fileStamp()}.json`, toVaultJson(notes));
-    notify(`已导出 ${notes.length} 条笔记（JSON）`);
+    downloadText(`mashu-${fileStamp()}.json`, toVaultJson(notes));
+    notify(`已导出 ${notes.length} 条记录`);
   };
 
   const handleExportMarkdown = () => {
     if (notes.length === 0) {
-      notify('还没有笔记可以导出');
+      notify('还没有记录可以导出');
       return;
     }
-    downloadText(`mochi-${fileStamp()}.md`, toMarkdownBundle(notes), 'text/markdown');
-    notify('已导出 Markdown 合集');
+    downloadText(`mashu-${fileStamp()}.md`, toMarkdownBundle(notes), 'text/markdown');
+    notify('已导出 Markdown');
   };
 
   const handleImport = async (mode: 'merge' | 'replace') => {
@@ -110,17 +136,15 @@ export function SettingsScreen({
       const imported = parseVaultJson(text);
       if (mode === 'replace') {
         const confirmed = window.confirm(
-          `将用文件中的 ${imported.length} 条笔记替换当前全部 ${notes.length} 条笔记，此操作不可撤销。确定继续？`,
+          `将用文件中的 ${imported.length} 条记录替换当前全部 ${notes.length} 条，此操作不可撤销。继续？`,
         );
         if (!confirmed) return;
         await onReplaceAll(imported);
-        notify(`已替换为 ${imported.length} 条笔记`);
+        notify(`已替换为 ${imported.length} 条记录`);
       } else {
-        // Never rebuild the vault through a title-keyed map: local notes that
-        // share a title must survive an import untouched.
         const { notes: merged, added, updated } = mergeVaultNotes(notes, imported);
         await onReplaceAll(merged);
-        notify(`导入完成：新增 ${added} 条，更新 ${updated} 条，共 ${merged.length} 条`);
+        notify(`导入完成：新增 ${added} 条，更新 ${updated} 条`);
       }
       refreshUsage();
     } catch (error) {
@@ -131,13 +155,13 @@ export function SettingsScreen({
   };
 
   const handleClear = async () => {
-    const first = window.confirm(`确定要删除全部 ${notes.length} 条笔记吗？建议先导出备份。`);
+    const first = window.confirm(`确定要删除全部 ${notes.length} 条记录吗？建议先导出备份。`);
     if (!first) return;
-    const second = window.confirm('此操作不可撤销。再次确认删除全部笔记？');
+    const second = window.confirm('此操作不可撤销。再次确认删除全部记录？');
     if (!second) return;
     try {
       await onClearAll();
-      notify('已清空笔记库');
+      notify('已清空');
     } catch {
       notify('清空失败，请重试');
     }
@@ -150,7 +174,7 @@ export function SettingsScreen({
       await navigator.clipboard.writeText(url);
       notify('已复制当前地址');
     } catch {
-      notify(`当前地址：${url}`);
+      notify(url);
     }
   };
 
@@ -160,50 +184,104 @@ export function SettingsScreen({
 
   return (
     <div className="screen settings-screen">
-      <header className="screen-header app-header">
-        <div className="app-brand">
-          <span className="app-logo" aria-hidden="true">
-            <Mascot variant="wink" size={40} />
-          </span>
-          <div className="app-brand-text">
-            <h1 className="app-title">我的</h1>
-            <p className="app-subtitle">数据、心情和一点小秘密</p>
-          </div>
+      <header className="screen-header settings-header">
+        <div>
+          <h1 className="screen-title">我的</h1>
+          <p className="screen-subtitle">助手、数据与外观</p>
         </div>
       </header>
 
       <div className="screen-body">
         <section>
-          <div className="section-label">我的麻薯</div>
+          <div className="section-label">智能体</div>
+          <div className="settings-card agent-persona">
+            <div className="agent-persona-head">
+              <AgentAvatar avatar={persona.avatar} size={46} />
+              <div className="agent-persona-copy">
+                <div className="agent-persona-name">{persona.name}</div>
+                <div className="agent-persona-hint">本地助手 · 头像和名字都可以换</div>
+              </div>
+            </div>
+
+            <label className="field-field">
+              <span className="field-label">名字</span>
+              <input
+                className="field-input"
+                value={nameDraft}
+                maxLength={12}
+                onChange={(event) => setNameDraft(event.target.value)}
+                onBlur={commitName}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.currentTarget.blur();
+                  }
+                }}
+              />
+            </label>
+
+            <div className="field-label">头像</div>
+            <div className="avatar-grid">
+              {AGENT_AVATARS.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  className={`avatar-option${persona.avatar === option.id ? ' is-active' : ''}`}
+                  aria-label={`使用 ${option.label} 头像`}
+                  onClick={() => onPersonaChange({ ...persona, avatar: option.id })}
+                >
+                  <AgentAvatar avatar={option.id} size={34} />
+                  <span>{option.label}</span>
+                </button>
+              ))}
+            </div>
+            <div className="avatar-custom">
+              <input
+                className="field-input"
+                value={emojiDraft}
+                maxLength={4}
+                placeholder="或输入一个 emoji，如 🌱"
+                aria-label="自定义 emoji 头像"
+                onChange={(event) => setEmojiDraft(event.target.value)}
+                onBlur={commitEmoji}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') event.currentTarget.blur();
+                }}
+              />
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div className="section-label">数据</div>
           <div className="settings-card">
             <SettingsRow
               icon="download"
-              label="导出全部笔记（JSON）"
-              hint={`把 ${notes.length} 颗麻薯装进文件里 ♡`}
+              label="导出全部记录（JSON）"
+              hint={`${notes.length} 条 · 完整保留结构化字段`}
               onClick={handleExportJson}
             />
             <SettingsRow
               icon="book"
               label="导出 Markdown 合集"
-              hint="一整碗倒成一份 .md，方便搬去别处"
+              hint="单个 .md 文件，方便迁移"
               onClick={handleExportMarkdown}
             />
             <SettingsRow
               icon="upload"
-              label="导入笔记（合并）"
-              hint="按名字合并，较新的那份说了算"
+              label="导入记录（合并）"
+              hint="按标题合并，较新的版本优先"
               onClick={() => void handleImport('merge')}
             />
             <SettingsRow
               icon="database"
-              label="导入笔记（替换全部）"
-              hint="倒掉旧的，只留下文件里的麻薯"
+              label="导入记录（替换全部）"
+              hint="用备份完全覆盖当前数据"
               onClick={() => void handleImport('replace')}
             />
             <SettingsRow
               icon="trash"
-              label="清空全部笔记"
-              hint="会全部消失哦，先导出备份吧"
+              label="清空全部记录"
+              hint="不可撤销，建议先导出备份"
               onClick={() => void handleClear()}
               danger
             />
@@ -212,25 +290,25 @@ export function SettingsScreen({
         </section>
 
         <section>
-          <div className="section-label">麻薯住在哪里</div>
-          <div className="settings-card settings-static">
+          <div className="section-label">存储</div>
+          <div className="settings-card">
             <div className="settings-row as-static">
               <span className="settings-row-icon">
                 <Icon name="database" size={19} />
               </span>
               <span className="settings-row-text">
                 <span className="settings-row-label">
-                  本地存储 · {storageMode === 'indexeddb' ? 'IndexedDB' : 'localStorage（降级模式）'}
+                  本地存储 · {storageMode === 'indexeddb' ? 'IndexedDB' : 'localStorage（降级）'}
                 </span>
-                <span className="settings-row-hint">已用 {usedText} · 麻薯不会离开这台设备</span>
+                <span className="settings-row-hint">已用 {usedText} · 数据不离开这台设备</span>
               </span>
             </div>
           </div>
         </section>
 
         <section>
-          <div className="section-label">换个心情</div>
-          <div className="segmented" role="group" aria-label="主题心情">
+          <div className="section-label">外观</div>
+          <div className="segmented" role="group" aria-label="主题">
             {THEMES.map((item) => (
               <button
                 key={item.value}
@@ -239,7 +317,7 @@ export function SettingsScreen({
                 aria-pressed={theme === item.value}
                 onClick={() => onThemeChange(item.value)}
               >
-                <Icon name={item.icon} size={17} />
+                <Icon name={item.icon} size={16} />
                 <span>{item.label}</span>
               </button>
             ))}
@@ -247,8 +325,8 @@ export function SettingsScreen({
         </section>
 
         <section>
-          <div className="section-label">装进手机里</div>
-          <div className="settings-card settings-static">
+          <div className="section-label">在手机上使用</div>
+          <div className="settings-card">
             <div className="settings-row as-static">
               <span className="settings-row-icon">
                 <Icon name="external" size={19} />
@@ -263,18 +341,18 @@ export function SettingsScreen({
             </div>
           </div>
           <p className="settings-note">
-            手机和电脑连同一个 Wi-Fi，在电脑上运行 <code>npm run share</code>，用手机扫描终端里的二维码即可打开；也可以把当前页面「添加到主屏幕」。
+            手机和电脑连同一个 Wi-Fi，在电脑上运行 <code>npm run share</code>，用手机扫描终端二维码即可打开。
           </p>
         </section>
 
         <section>
-          <div className="section-label">关于 Mochi</div>
+          <div className="section-label">关于</div>
           <div className="settings-card">
             {welcomeNote ? (
               <SettingsRow
-                icon="sparkles"
-                label="打开欢迎页"
-                hint="先逛逛这条软乎乎的示例麻薯"
+                icon="book"
+                label="打开示例记录"
+                hint="看看麻薯能记些什么"
                 onClick={() => onOpenNote(welcomeNote.id)}
               />
             ) : null}
@@ -283,8 +361,8 @@ export function SettingsScreen({
                 <Icon name="info" size={19} />
               </span>
               <span className="settings-row-text">
-                <span className="settings-row-label">Mochi 麻薯 · v{APP_VERSION}</span>
-                <span className="settings-row-hint">MIT 协议开源 · 本地优先的 Markdown 知识库</span>
+                <span className="settings-row-label">麻薯 · v{APP_VERSION}</span>
+                <span className="settings-row-hint">MIT 协议开源 · 本地优先的生活记录</span>
               </span>
             </div>
             <div className="settings-row as-static">
@@ -293,26 +371,27 @@ export function SettingsScreen({
               </span>
               <span className="settings-row-text">
                 <span className="settings-row-label">备份提醒</span>
-                <span className="settings-row-hint">
-                  清理浏览器数据会让麻薯消失，记得偶尔把它们打包带走。
-                </span>
+                <span className="settings-row-hint">清理浏览器数据会删除记录，重要内容请定期导出。</span>
               </span>
             </div>
+            <a
+              className="settings-row as-static"
+              href="https://github.com/Frank-max610/mashu-notes"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <span className="settings-row-icon">
+                <Icon name="external" size={19} />
+              </span>
+              <span className="settings-row-text">
+                <span className="settings-row-label">项目主页</span>
+                <span className="settings-row-hint">GitHub · MIT 开源</span>
+              </span>
+            </a>
           </div>
         </section>
 
-        <div className="settings-mascot">
-          <Mascot variant="love" size={88} bob />
-          <p className="settings-mascot-text">把想法揉成软乎乎的形状 ♡</p>
-          <a
-            className="settings-mascot-link"
-            href="https://github.com/Frank-max610/mochi-notes"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Icon name="external" size={14} /> GitHub · MIT 开源
-          </a>
-        </div>
+        <p className="settings-footer">本地优先 · 数据属于你</p>
       </div>
     </div>
   );

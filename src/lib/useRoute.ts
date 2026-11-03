@@ -5,11 +5,12 @@ import { useEffect, useState } from 'react';
  * (including a sub-path or file://) and makes the phone's back gesture work.
  */
 
-export type TabName = 'notes' | 'graph' | 'search' | 'settings';
+export type TabName = 'notes' | 'graph' | 'agent' | 'search' | 'settings';
 
 export type Route =
   | { name: 'notes' }
   | { name: 'graph' }
+  | { name: 'agent' }
   | { name: 'search' }
   | { name: 'settings' }
   | { name: 'note'; id: string };
@@ -23,6 +24,8 @@ export function parseRoute(hash: string): Route {
       return segments[1] ? { name: 'note', id: decodeURIComponent(segments[1]) } : { name: 'notes' };
     case 'graph':
       return { name: 'graph' };
+    case 'agent':
+      return { name: 'agent' };
     case 'search':
       return { name: 'search' };
     case 'settings':

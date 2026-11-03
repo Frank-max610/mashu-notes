@@ -1,20 +1,21 @@
 {
-  "name": "mochi-notes",
+  "name": "mashu-notes",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
-  "description": "Mochi 麻薯 — 一个软乎乎、本地优先、手机可用的开源 Markdown 笔记本（Obsidian 的轻量可爱替代）。",
+  "description": "麻薯 — 本地优先的生活记录 + Markdown 笔记本：饮食、健康、收支、日记连成一张可自由编辑的图，内置不联网的本地助手。",
   "license": "MIT",
   "keywords": [
-    "mochi",
+    "life-log",
+    "journal",
+    "finance",
+    "health",
     "markdown",
     "notes",
-    "knowledge-base",
-    "pkm",
-    "obsidian-alternative",
     "local-first",
-    "mobile",
-    "cute"
+    "agent",
+    "obsidian-alternative",
+    "pwa"
   ],
   "engines": {
     "node": ">=22.12.0"
@@ -49,6 +50,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Frank-max610/mochi-notes.git"
+    "url": "git+https://github.com/Frank-max610/mashu-notes.git"
   }
 }

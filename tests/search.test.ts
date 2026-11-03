@@ -15,6 +15,10 @@ function makeNote(overrides: Partial<Note> & { title: string }): Note {
     createdAt: overrides.createdAt ?? stamp,
     updatedAt: overrides.updatedAt ?? stamp,
     pinned: overrides.pinned ?? false,
+    kind: overrides.kind ?? 'note',
+    meta: overrides.meta ?? {},
+    manualLinks: overrides.manualLinks ?? [],
+    position: overrides.position,
   };
 }
 

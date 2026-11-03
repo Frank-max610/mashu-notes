@@ -21,7 +21,7 @@ export function Mascot({ variant = 'happy', size = 88, bob = false, className, .
       width={size}
       height={size}
       role="img"
-      aria-label="麻薯 Mochi 吉祥物"
+      aria-label="麻薯吉祥物"
       className={`mochi-mascot${bob ? ' is-bobbing' : ''}${className ? ` ${className}` : ''}`}
       {...rest}
     >

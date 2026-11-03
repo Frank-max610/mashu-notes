@@ -1,87 +1,133 @@
 import { useMemo } from 'react';
-import type { Note } from '../lib/types';
-import { allTags, extractWikiLinks } from '../lib/links';
+import type { Note, NoteKind } from '../lib/types';
+import { KIND_INFO, NOTE_KINDS, formatAmount } from '../lib/kinds';
+import { dayKeyOf, noteDayKey, summarizeDay } from '../lib/insights';
 import { NoteCard } from '../components/NoteCard';
 import { Icon } from '../components/Icon';
-import { Mascot } from '../components/Mascot';
+
+export type KindFilter = NoteKind | 'all';
 
 export interface NotesScreenProps {
   notes: Note[];
   loading: boolean;
-  tagFilter: string | null;
-  onTagFilter: (tag: string | null) => void;
+  kindFilter: KindFilter;
+  onKindFilter: (kind: KindFilter) => void;
   onOpenNote: (id: string) => void;
   onNoteMenu: (note: Note) => void;
   onOpenSearch: () => void;
-  onCreateNote: () => void;
+  onQuickCapture: (kind?: NoteKind) => void;
+  onOpenAgent: () => void;
   storageWarning: string | null;
 }
 
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六'];
-
-function greetingFor(hour: number): string {
-  if (hour < 5) return '夜深啦，早点睡呀';
-  if (hour < 11) return '早上好呀 ☀️';
-  if (hour < 14) return '中午好呀 🍚';
-  if (hour < 18) return '下午好呀 🍵';
-  if (hour < 23) return '晚上好呀 🌙';
-  return '该睡啦，晚安 🌛';
-}
-
 function todayLabel(now = new Date()): string {
   return `${now.getMonth() + 1}月${now.getDate()}日 · 周${WEEKDAYS[now.getDay()]}`;
 }
 
-/** Home screen: greeting, tag filter and the bowl of mochi notes. */
+function daySectionLabel(dayKey: string, now = new Date()): string {
+  const todayKey = dayKeyOf(now);
+  if (dayKey === todayKey) return '今天';
+  const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  if (dayKey === dayKeyOf(yesterday)) return '昨天';
+  const [, month, day] = dayKey.split('-');
+  return `${Number(month)}月${Number(day)}日`;
+}
+
+/** Home: daily overview, quick capture and the calm record list. */
 export function NotesScreen({
   notes,
   loading,
-  tagFilter,
-  onTagFilter,
+  kindFilter,
+  onKindFilter,
   onOpenNote,
   onNoteMenu,
   onOpenSearch,
-  onCreateNote,
+  onQuickCapture,
+  onOpenAgent,
   storageWarning,
 }: NotesScreenProps) {
-  const tags = useMemo(() => allTags(notes).slice(0, 16), [notes]);
-  const linkCount = useMemo(
-    () => notes.reduce((total, note) => total + extractWikiLinks(note.content).length, 0),
-    [notes],
-  );
+  const today = useMemo(() => summarizeDay(notes), [notes]);
 
   const filtered = useMemo(() => {
-    if (!tagFilter) return notes;
-    const key = tagFilter.toLowerCase();
-    return notes.filter((note) => note.tags.some((tag) => tag.toLowerCase() === key));
-  }, [notes, tagFilter]);
+    if (kindFilter === 'all') return notes;
+    return notes.filter((note) => note.kind === kindFilter);
+  }, [notes, kindFilter]);
 
   const pinned = filtered.filter((note) => note.pinned);
   const rest = filtered.filter((note) => !note.pinned);
+
+  const groups = useMemo(() => {
+    const buckets = new Map<string, Note[]>();
+    for (const note of rest) {
+      const key = noteDayKey(note);
+      const list = buckets.get(key);
+      if (list) list.push(note);
+      else buckets.set(key, [note]);
+    }
+    return [...buckets.entries()];
+  }, [rest]);
+
+  const overviewItems = [
+    { label: '支出', value: today.spend > 0 ? `¥${formatAmount(today.spend)}` : '—' },
+    { label: '摄入 kcal', value: today.calories > 0 ? `${Math.round(today.calories)}` : '—' },
+    { label: '睡眠 h', value: today.sleep !== undefined ? formatAmount(today.sleep) : '—' },
+    { label: '记录', value: `${today.recordCount} 条` },
+  ];
 
   return (
     <div className="screen notes-screen">
       <header className="screen-header notes-header">
         <div className="notes-header-top">
-          <div className="notes-greeting">
-            <span className="notes-greeting-mascot" aria-hidden="true">
-              <Mascot variant="happy" size={54} bob />
+          <div className="notes-brand-wrap">
+            <span className="notes-mark" aria-hidden="true">
+              麻
             </span>
-            <div className="notes-greeting-text">
-              <p className="notes-hello">{greetingFor(new Date().getHours())}</p>
-              <h1 className="notes-brand">Mochi 麻薯</h1>
+            <div className="notes-brand-text">
+              <h1 className="notes-brand">麻薯</h1>
+              <p className="notes-subtitle">本地生活记录 · {todayLabel()}</p>
             </div>
           </div>
-          <button type="button" className="icon-btn notes-search-btn" aria-label="搜索麻薯" onClick={onOpenSearch}>
-            <Icon name="search" size={21} />
-          </button>
+          <div className="notes-header-actions">
+            <button type="button" className="icon-btn" aria-label="搜索" onClick={onOpenSearch}>
+              <Icon name="search" size={20} />
+            </button>
+          </div>
         </div>
 
-        <div className="notes-stats">
-          <span className="notes-stat">🍡 {notes.length} 颗麻薯</span>
-          <span className="notes-stat">🔗 {linkCount} 条糖丝</span>
-          <span className="notes-stat notes-stat-date">{todayLabel()}</span>
-        </div>
+        <section className="today-card" aria-label="今日概览">
+          <div className="today-card-head">
+            <div className="today-card-title">今天</div>
+            <button type="button" className="today-agent" onClick={onOpenAgent}>
+              <Icon name="sparkles" size={15} />
+              问问助手
+            </button>
+          </div>
+
+          <div className="today-stats">
+            {overviewItems.map((item) => (
+              <div key={item.label} className="today-stat">
+                <span className="today-stat-label">{item.label}</span>
+                <span className="today-stat-value">{item.value}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="today-actions">
+            <button type="button" className="today-action is-primary" onClick={() => onQuickCapture('food')}>
+              记饮食
+            </button>
+            <button type="button" className="today-action" onClick={() => onQuickCapture('health')}>
+              记健康
+            </button>
+            <button type="button" className="today-action" onClick={() => onQuickCapture('finance')}>
+              记一笔
+            </button>
+            <button type="button" className="today-action" onClick={() => onQuickCapture('diary')}>
+              写日记
+            </button>
+          </div>
+        </section>
       </header>
 
       {storageWarning ? (
@@ -91,65 +137,68 @@ export function NotesScreen({
         </div>
       ) : null}
 
-      {tags.length > 0 ? (
-        <div className="chips-row" role="tablist" aria-label="按口味筛选">
+      <div className="kind-chips" role="tablist" aria-label="按类型筛选">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={kindFilter === 'all'}
+          className={`chip${kindFilter === 'all' ? ' is-active' : ''}`}
+          onClick={() => onKindFilter('all')}
+        >
+          全部
+        </button>
+        {NOTE_KINDS.filter((kind) => kind !== 'note').map((kind) => (
           <button
+            key={kind}
             type="button"
             role="tab"
-            aria-selected={tagFilter === null}
-            className={`chip${tagFilter === null ? ' is-active' : ''}`}
-            onClick={() => onTagFilter(null)}
+            aria-selected={kindFilter === kind}
+            className={`chip kind-chip${kindFilter === kind ? ' is-active' : ''}`}
+            style={{ ['--kind-accent' as string]: `var(${KIND_INFO[kind].accentVar})`, ['--kind-soft' as string]: `var(${KIND_INFO[kind].accentSoftVar})` }}
+            onClick={() => onKindFilter(kind)}
           >
-            全部口味
+            <span aria-hidden="true">{KIND_INFO[kind].emoji}</span>
+            {KIND_INFO[kind].label}
           </button>
-          {tags.map((tag) => (
-            <button
-              key={tag.tag}
-              type="button"
-              role="tab"
-              aria-selected={tagFilter === tag.label}
-              className={`chip${tagFilter?.toLowerCase() === tag.tag ? ' is-active' : ''}`}
-              onClick={() => onTagFilter(tag.label)}
-            >
-              #{tag.label}
-              <span className="chip-count">{tag.count}</span>
-            </button>
-          ))}
-        </div>
-      ) : null}
+        ))}
+        <button
+          type="button"
+          role="tab"
+          aria-selected={kindFilter === 'note'}
+          className={`chip kind-chip${kindFilter === 'note' ? ' is-active' : ''}`}
+          style={{ ['--kind-accent' as string]: `var(${KIND_INFO.note.accentVar})`, ['--kind-soft' as string]: `var(${KIND_INFO.note.accentSoftVar})` }}
+          onClick={() => onKindFilter('note')}
+        >
+          笔记
+        </button>
+      </div>
 
       <div className="screen-body">
         {loading && notes.length === 0 ? (
           <div className="empty">
-            <Mascot variant="sleepy" size={96} bob />
-            <p className="empty-text">正在揉麻薯…</p>
+            <div className="spinner" />
+            <p className="empty-text">正在打开本地记录…</p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="empty">
-            <Mascot variant="sleepy" size={104} bob />
-            <p className="empty-title">{tagFilter ? '这个口味还没有麻薯哦' : '还没有麻薯哦～'}</p>
+            <Icon name="book" size={30} />
+            <p className="empty-title">{kindFilter === 'all' ? '还没有记录' : '这个分类还没有内容'}</p>
             <p className="empty-text">
-              {tagFilter
-                ? '换一个口味看看，或者把它们都做成同一种味道。'
-                : '点底部中间的 ＋ 捏一颗软乎乎的新麻薯吧，写点什么都可以呀。'}
+              {kindFilter === 'all'
+                ? '用一句话记下今天：吃了什么、睡了多久、花了多少。'
+                : '切换分类看看，或者现在记一笔。'}
             </p>
-            {tagFilter ? (
-              <button type="button" className="btn btn-ghost" onClick={() => onTagFilter(null)}>
-                看看全部
-              </button>
-            ) : (
-              <button type="button" className="btn btn-primary" onClick={onCreateNote}>
-                捏一颗麻薯
-              </button>
-            )}
+            <button type="button" className="btn btn-primary" onClick={() => onQuickCapture()}>
+              记一笔
+            </button>
           </div>
         ) : (
           <>
             {pinned.length > 0 ? (
-              <section aria-label="置顶麻薯">
+              <section aria-label="置顶">
                 <div className="section-label">
                   <Icon name="pin" size={13} />
-                  <span>舍不得弄丢</span>
+                  <span>置顶</span>
                 </div>
                 <div className="notes-list">
                   {pinned.map((note) => (
@@ -159,14 +208,16 @@ export function NotesScreen({
               </section>
             ) : null}
 
-            <section aria-label="全部麻薯">
-              {pinned.length > 0 && rest.length > 0 ? <div className="section-label">全部麻薯</div> : null}
-              <div className="notes-list">
-                {rest.map((note) => (
-                  <NoteCard key={note.id} note={note} onOpen={onOpenNote} onMenu={onNoteMenu} />
-                ))}
-              </div>
-            </section>
+            {groups.map(([dayKey, dayNotes]) => (
+              <section key={dayKey} aria-label={daySectionLabel(dayKey)}>
+                <div className="section-label">{daySectionLabel(dayKey)}</div>
+                <div className="notes-list">
+                  {dayNotes.map((note) => (
+                    <NoteCard key={note.id} note={note} onOpen={onOpenNote} onMenu={onNoteMenu} />
+                  ))}
+                </div>
+              </section>
+            ))}
           </>
         )}
       </div>

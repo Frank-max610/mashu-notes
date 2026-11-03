@@ -23,6 +23,9 @@ function makeNote(id: string, title: string, content: string, updatedAt = 1): No
     createdAt: updatedAt,
     updatedAt,
     pinned: false,
+    kind: 'note',
+    meta: {},
+    manualLinks: [],
   };
 }
 

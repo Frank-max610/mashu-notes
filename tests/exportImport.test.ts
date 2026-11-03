@@ -16,6 +16,10 @@ const note: Note = {
   createdAt: 1,
   updatedAt: 2,
   pinned: true,
+  kind: 'food',
+  meta: { meal: '午餐', calories: 620, amount: 32 },
+  manualLinks: ['other-note'],
+  position: { x: 0.4, y: 0.6 },
 };
 
 describe('vault JSON round trip', () => {
@@ -26,7 +30,7 @@ describe('vault JSON round trip', () => {
       notes: Note[];
     };
     expect(parsed.app).toBe('mochi');
-    expect(parsed.version).toBe(1);
+    expect(parsed.version).toBe(2);
     expect(parsed.notes[0].title).toBe('测试笔记');
   });
 
@@ -36,6 +40,27 @@ describe('vault JSON round trip', () => {
     expect(restored[0].id).toBe('n1');
     expect(restored[0].pinned).toBe(true);
     expect(restored[0].tags).toEqual(['标签']);
+  });
+
+  it('round trips life-record fields', () => {
+    const [restored] = parseVaultJson(toVaultJson([note]));
+    expect(restored.kind).toBe('food');
+    expect(restored.meta).toEqual({ meal: '午餐', calories: 620, amount: 32 });
+    expect(restored.manualLinks).toEqual(['other-note']);
+    expect(restored.position).toEqual({ x: 0.4, y: 0.6 });
+  });
+
+  it('accepts a v1 backup and defaults the new fields', () => {
+    const legacy = JSON.stringify({
+      app: 'mochi',
+      version: 1,
+      exportedAt: '2026-01-01T00:00:00.000Z',
+      notes: [{ id: 'old', title: '旧笔记', content: '内容', tags: [], createdAt: 1, updatedAt: 2, pinned: false }],
+    });
+    const [restored] = parseVaultJson(legacy);
+    expect(restored.kind).toBe('note');
+    expect(restored.meta).toEqual({});
+    expect(restored.manualLinks).toEqual([]);
   });
 
   it('accepts a raw note array', () => {
@@ -88,6 +113,9 @@ describe('mergeVaultNotes', () => {
     createdAt: updatedAt,
     updatedAt,
     pinned: false,
+    kind: 'note',
+    meta: {},
+    manualLinks: [],
   });
 
   it('never drops local notes that share a title', () => {

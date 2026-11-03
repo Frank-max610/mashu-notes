@@ -41,8 +41,28 @@ const PROFILE_DIR = resolve(tmpdir(), `mochi-chrome-${Date.now()}`);
 const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
 
 const SHOTS = [
-  { file: 'mobile-notes.png', hash: '#/notes', waitFor: '.note-card', delay: 700 },
-  { file: 'graph.png', hash: '#/graph', waitFor: '.graph-view canvas', delay: 1400 },
+  { file: 'mobile-notes.png', hash: '#/notes', waitFor: '.today-card', delay: 700 },
+  {
+    file: 'capture.png',
+    hash: '#/notes',
+    waitFor: '.today-card',
+    delay: 500,
+    action: `(() => {
+      document.querySelector('.tabbar-compose')?.click();
+      setTimeout(() => {
+        const input = document.querySelector('.capture-sheet__textarea');
+        if (!input) return;
+        input.focus();
+        const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set;
+        setter.call(input, '午饭牛肉面 32 元，620 大卡');
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      }, 400);
+    })()`,
+    afterActionWaitFor: '.capture-sheet__preview',
+    afterActionDelay: 600,
+  },
+  { file: 'graph.png', hash: '#/graph', waitFor: '.graph-view canvas', delay: 3000 },
+  { file: 'agent.png', hash: '#/agent', waitFor: '.agent-screen', delay: 800 },
   {
     file: 'editor.png',
     hash: '#/note/seed-welcome',
@@ -63,15 +83,15 @@ const SHOTS = [
     hash: '#/search',
     waitFor: '.search-screen',
     delay: 500,
-    action: `(() => { const input = document.querySelector('.search-screen input[type="search"]'); if (!input) return; input.focus(); const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set; setter.call(input, '链接'); input.dispatchEvent(new Event('input', { bubbles: true })); })()`,
+    action: `(() => { const input = document.querySelector('.search-screen input[type="search"]'); if (!input) return; input.focus(); const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set; setter.call(input, '麻薯'); input.dispatchEvent(new Event('input', { bubbles: true })); })()`,
     afterActionWaitFor: '.search-screen mark',
     afterActionDelay: 500,
   },
-  { file: 'settings.png', hash: '#/settings', waitFor: '.settings-card', delay: 500 },
+  { file: 'settings.png', hash: '#/settings', waitFor: '.settings-card', delay: 700 },
   {
     file: 'dark-notes.png',
     hash: '#/notes',
-    waitFor: '.note-card',
+    waitFor: '.today-card',
     delay: 700,
     theme: 'dark',
   },

@@ -1,0 +1,383 @@
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import type { AgentPersona, Note, NoteKind, NoteMeta, RecordDraft } from '../lib/types';
+import { KIND_INFO, formatAmount } from '../lib/kinds';
+import { AGENT_SUGGESTIONS, agentGreeting, agentReply } from '../lib/agent';
+import { AgentAvatar } from './AgentAvatar';
+import { Icon } from './Icon';
+import './AgentPanel.css';
+
+export interface AgentPanelProps {
+  persona: AgentPersona;
+  notes: Note[];
+  onSaveDraft: (draft: RecordDraft) => Promise<void> | void;
+  onOpenNote: (id: string) => void;
+  /** Opens the persona settings in 我的. */
+  onEditPersona: () => void;
+  /** Opens the capture sheet. */
+  onCreateRecord: () => void;
+}
+
+interface ChatMessage {
+  id: number;
+  role: 'user' | 'bot';
+  text: string;
+  suggestions?: string[];
+  /** Set when the agent prepared a record and asks for confirmation. */
+  draft?: RecordDraft;
+  draftState?: 'pending' | 'saved' | 'cancelled';
+}
+
+interface Fact {
+  label: string;
+  value: string;
+}
+
+/** Structured one-line facts for a draft, shared by the chat and the card. */
+function draftFacts(kind: NoteKind, meta: NoteMeta): Fact[] {
+  const facts: Fact[] = [];
+  const amount = meta.amount !== undefined ? `¥${formatAmount(meta.amount)}` : '';
+  switch (kind) {
+    case 'food':
+      if (meta.meal && meta.meal !== '未分类') facts.push({ label: '餐次', value: meta.meal });
+      if (meta.calories !== undefined) {
+        facts.push({ label: '热量', value: `${formatAmount(meta.calories)} 千卡` });
+      }
+      if (amount) facts.push({ label: '花费', value: amount });
+      break;
+    case 'health':
+      if (meta.metric) facts.push({ label: '指标', value: meta.metric });
+      if (meta.value !== undefined) {
+        facts.push({
+          label: '数值',
+          value: `${formatAmount(meta.value)}${meta.unit ? ` ${meta.unit}` : ''}`,
+        });
+      }
+      break;
+    case 'finance':
+      facts.push({ label: '方向', value: meta.direction === 'income' ? '收入' : '支出' });
+      if (amount) facts.push({ label: '金额', value: amount });
+      if (meta.category) facts.push({ label: '分类', value: meta.category });
+      break;
+    default:
+      break;
+  }
+  return facts;
+}
+
+/** Render plain reply text line by line; leading "-"/"·" becomes a bullet. */
+function replyLines(text: string) {
+  const lines = text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+  return lines.map((line, index) => {
+    if (/^[-·•*]\s+/.test(line)) {
+      return (
+        <span className="agent-screen__bullet" key={index}>
+          {line.replace(/^[-·•*]\s+/, '')}
+        </span>
+      );
+    }
+    return (
+      <span className="agent-screen__line" key={index}>
+        {line}
+      </span>
+    );
+  });
+}
+
+/**
+ * The built-in offline helper.
+ *
+ * A full-screen in-app panel (no fixed overlay) that renders a local chat:
+ * the greeting comes from `agentGreeting`, replies from `agentReply`, and any
+ * prepared record arrives as a confirm card so nothing is saved silently.
+ * Messages live in component state only — the panel starts fresh every mount
+ * and never touches the network.
+ */
+export function AgentPanel({
+  persona,
+  notes,
+  onSaveDraft,
+  onEditPersona,
+  onCreateRecord,
+}: AgentPanelProps) {
+  const idRef = useRef(1);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    const greeting = agentGreeting(notes);
+    return [{ id: 0, role: 'bot', text: greeting.text }];
+  });
+  const [savingId, setSavingId] = useState<number | null>(null);
+
+  const appendBot = useCallback((text: string, suggestions?: string[]) => {
+    setMessages((current) => [
+      ...current,
+      {
+        id: idRef.current++,
+        role: 'bot',
+        text,
+        suggestions: suggestions && suggestions.length > 0 ? [...suggestions] : undefined,
+      },
+    ]);
+  }, []);
+
+  const send = useCallback(
+    (raw: string) => {
+      const text = raw.trim();
+      if (!text) return;
+      const reply = agentReply(text, notes);
+      const userMessage: ChatMessage = { id: idRef.current++, role: 'user', text };
+      const botMessage: ChatMessage = {
+        id: idRef.current++,
+        role: 'bot',
+        text: reply.text,
+        suggestions:
+          reply.suggestions && reply.suggestions.length > 0 ? [...reply.suggestions] : undefined,
+        draft: reply.action?.type === 'createNote' ? reply.action.draft : undefined,
+        draftState: reply.action?.type === 'createNote' ? 'pending' : undefined,
+      };
+      setMessages((current) => [...current, userMessage, botMessage]);
+      setInput('');
+    },
+    [notes],
+  );
+
+  const saveDraft = useCallback(
+    async (message: ChatMessage) => {
+      if (!message.draft || message.draftState !== 'pending' || savingId !== null) return;
+      setSavingId(message.id);
+      try {
+        await onSaveDraft(message.draft);
+        setMessages((current) =>
+          current.map((item) =>
+            item.id === message.id ? { ...item, draftState: 'saved' as const } : item,
+          ),
+        );
+        appendBot('记好了。');
+      } catch {
+        appendBot('保存失败，请再试一次。');
+      } finally {
+        setSavingId(null);
+      }
+    },
+    [appendBot, onSaveDraft, savingId],
+  );
+
+  const cancelDraft = useCallback(
+    (message: ChatMessage) => {
+      if (message.draftState !== 'pending' || savingId !== null) return;
+      setMessages((current) =>
+        current.map((item) =>
+          item.id === message.id ? { ...item, draftState: 'cancelled' as const } : item,
+        ),
+      );
+      appendBot('好的，先不记。');
+    },
+    [appendBot, savingId],
+  );
+
+  // Keep the newest message in view. Respect reduced motion for the scroll.
+  useEffect(() => {
+    const node = scrollRef.current;
+    if (!node) return;
+    const reduce =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    node.scrollTo({ top: node.scrollHeight, behavior: reduce ? 'auto' : 'smooth' });
+  }, [messages]);
+
+  const starterSuggestions = useMemo(() => AGENT_SUGGESTIONS.slice(0, 4), []);
+  const onlyGreeting = messages.length === 1;
+
+  const handleSend = (): void => {
+    send(input);
+  };
+
+  const handleInputKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
+    // Never send while an IME composition is active (e.g. pinyin candidate).
+    if (event.nativeEvent.isComposing) return;
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      send(input);
+    }
+  };
+
+  return (
+    <div className="screen agent-screen">
+      <header className="agent-screen__header">
+        <div className="agent-screen__identity">
+          <AgentAvatar avatar={persona.avatar} size={46} />
+          <div className="agent-screen__name-block">
+            <h1 className="agent-screen__name">{persona.name}</h1>
+            <p className="agent-screen__subtitle">本地助手 · 不联网</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          className="icon-btn agent-screen__edit"
+          aria-label="更换头像和名字"
+          title="更换头像和名字"
+          onClick={onEditPersona}
+        >
+          <Icon name="edit" size={19} />
+        </button>
+      </header>
+
+      <div
+        ref={scrollRef}
+        className="agent-screen__scroll scroll-area"
+        role="log"
+        aria-live="polite"
+        aria-label={`与${persona.name}的对话`}
+      >
+        {messages.map((message) =>
+          message.role === 'bot' ? (
+            <div className="agent-screen__row agent-screen__row--bot" key={message.id}>
+              <AgentAvatar avatar={persona.avatar} size={30} className="agent-screen__bubble-avatar" />
+              <div className="agent-screen__bubble agent-screen__bubble--bot">
+                <p className="agent-screen__reply">{replyLines(message.text)}</p>
+
+                {message.draft && message.draftState ? (
+                  <div className={`agent-screen__draft is-${message.draftState}`}>
+                    <div className="agent-screen__draft-head">
+                      <span
+                        className="agent-screen__draft-kind"
+                        style={{
+                          background: `var(${KIND_INFO[message.draft.kind].accentSoftVar})`,
+                          color: `var(${KIND_INFO[message.draft.kind].accentVar})`,
+                        }}
+                      >
+                        {KIND_INFO[message.draft.kind].label}
+                      </span>
+                      <span className="agent-screen__draft-hint">
+                        {message.draftState === 'pending'
+                          ? '待确认'
+                          : message.draftState === 'saved'
+                            ? '已保存'
+                            : '已取消'}
+                      </span>
+                    </div>
+                    <p className="agent-screen__draft-title">{message.draft.title}</p>
+                    {draftFacts(message.draft.kind, message.draft.meta).length > 0 ? (
+                      <dl className="agent-screen__draft-facts">
+                        {draftFacts(message.draft.kind, message.draft.meta).map((fact) => (
+                          <div className="agent-screen__draft-fact" key={`${fact.label}-${fact.value}`}>
+                            <dt>{fact.label}</dt>
+                            <dd>{fact.value}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    ) : null}
+                    {message.draftState === 'pending' ? (
+                      <div className="agent-screen__draft-actions">
+                        <button
+                          type="button"
+                          className="btn btn-primary btn-small"
+                          disabled={savingId !== null}
+                          onClick={() => void saveDraft(message)}
+                        >
+                          {savingId === message.id ? '保存中…' : '保存'}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-small"
+                          disabled={savingId !== null}
+                          onClick={() => cancelDraft(message)}
+                        >
+                          取消
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {message.suggestions && message.suggestions.length > 0 ? (
+                  <div className="agent-screen__reply-suggestions" role="group" aria-label="继续提问">
+                    {message.suggestions.map((suggestion) => (
+                      <button
+                        key={suggestion}
+                        type="button"
+                        className="chip agent-screen__suggestion"
+                        onClick={() => send(suggestion)}
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          ) : (
+            <div className="agent-screen__row agent-screen__row--user" key={message.id}>
+              <div className="agent-screen__bubble agent-screen__bubble--user">
+                <p className="agent-screen__reply">{replyLines(message.text)}</p>
+              </div>
+            </div>
+          ),
+        )}
+      </div>
+
+      <div className="agent-screen__composer-wrap">
+        {onlyGreeting && starterSuggestions.length > 0 ? (
+          <div className="agent-screen__starters" role="group" aria-label="可以这样问">
+            {starterSuggestions.map((suggestion) => (
+              <button
+                key={suggestion}
+                type="button"
+                className="chip agent-screen__starter"
+                onClick={() => send(suggestion)}
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        ) : null}
+
+        <form
+          className="agent-screen__composer"
+          onSubmit={(event) => {
+            event.preventDefault();
+            handleSend();
+          }}
+        >
+          <button
+            type="button"
+            className="icon-btn agent-screen__capture"
+            aria-label="打开记一笔"
+            title="记一笔"
+            onClick={onCreateRecord}
+          >
+            <Icon name="plus" size={20} />
+          </button>
+          <input
+            ref={inputRef}
+            className="agent-screen__input"
+            type="text"
+            value={input}
+            placeholder={`和${persona.name}说点什么`}
+            aria-label="输入消息"
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="none"
+            spellCheck={false}
+            enterKeyHint="send"
+            onChange={(event) => setInput(event.target.value)}
+            onKeyDown={handleInputKeyDown}
+          />
+          <button
+            type="submit"
+            className="agent-screen__send"
+            aria-label="发送"
+            title="发送"
+            disabled={input.trim().length === 0}
+          >
+            <Icon name="arrowRight" size={20} />
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}

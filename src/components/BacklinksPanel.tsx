@@ -27,8 +27,8 @@ export function BacklinksPanel({ note, notes, onOpenNote, onCreateNote }: Backli
       {outgoing.length > 0 ? (
         <div className="backlinks-panel__section">
           <div className="section-label backlinks-panel__heading">
-            <Icon name="flower" size={13} />
-            <span>串起来的麻薯</span>
+            <Icon name="link" size={13} />
+            <span>链接到</span>
             <span className="badge">{outgoing.length}</span>
           </div>
           <div className="backlinks-panel__list">
@@ -55,9 +55,9 @@ export function BacklinksPanel({ note, notes, onOpenNote, onCreateNote }: Backli
                   title={`创建「${link.target}」`}
                   onClick={() => onCreateNote(link.target)}
                 >
-                  <Icon name="sparkles" size={13} />
+                  <Icon name="plus" size={13} />
                   <span className="backlinks-panel__label">{link.target}</span>
-                  <span className="backlinks-panel__missing">还没捏</span>
+                  <span className="backlinks-panel__missing">未创建</span>
                 </button>
               );
             })}
@@ -68,8 +68,8 @@ export function BacklinksPanel({ note, notes, onOpenNote, onCreateNote }: Backli
       {backlinks.length > 0 ? (
         <div className="backlinks-panel__section">
           <div className="section-label backlinks-panel__heading">
-            <Icon name="heart" size={13} />
-            <span>被这些麻薯串到</span>
+            <Icon name="arrowRight" size={13} />
+            <span>被链接</span>
             <span className="badge">{backlinks.length}</span>
           </div>
           <div className="backlinks-panel__list">
@@ -80,9 +80,9 @@ export function BacklinksPanel({ note, notes, onOpenNote, onCreateNote }: Backli
                 className="backlinks-panel__link is-backlink"
                 onClick={() => onOpenNote(backlink.note.id)}
               >
-                <Icon name="heart" size={13} />
+                <Icon name="notes" size={13} />
                 <span className="backlinks-panel__label">
-                  {backlink.note.title || '未命名笔记'}
+                  {backlink.note.title || '未命名记录'}
                 </span>
                 <span className="badge">{backlink.count}</span>
               </button>

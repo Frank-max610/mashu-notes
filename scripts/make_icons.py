@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate Mochi app icons (SVG + PNG) without external dependencies.
+"""Generate 麻薯 app icons (SVG + PNG) without external dependencies.
 
 The mark: a strawberry-milk mochi dumpling with a tiny strawberry hat, on a
 pastel rounded square. Run with: npm run icons
@@ -158,7 +158,7 @@ def render_icon(size, maskable=False):
     return image.resize((size, size), Image.LANCZOS)
 
 
-SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Mochi 麻薯">
+SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="麻薯">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#fff1f5"/>

@@ -104,14 +104,14 @@ export function SearchScreen({ notes, onOpenNote }: SearchScreenProps) {
         <div className="search-screen__title-row">
           <div className="search-screen__title-block">
             <h1 className="search-screen__title">搜索</h1>
-            <p className="search-screen__subtitle">在麻薯堆里翻翻看～</p>
+            <p className="search-screen__subtitle">搜索标题、正文或标签</p>
           </div>
           {idle ? (
             <Icon name="flower" size={24} className="search-screen__header-flower" />
           ) : (
             <span className="search-screen__count-pill" aria-live="polite">
               <Icon name="sparkles" size={13} />
-              {hits.length} 颗麻薯
+              {hits.length} 条结果
             </span>
           )}
         </div>
@@ -181,11 +181,11 @@ export function SearchScreen({ notes, onOpenNote }: SearchScreenProps) {
         {hits.length === 0 ? (
           <div className="empty search-screen__empty">
             <Mascot variant={idle ? 'happy' : 'sleepy'} size={92} bob />
-            <p className="empty-title">{idle ? '还没有麻薯呢' : '没找到这颗麻薯呀～'}</p>
+            <p className="empty-title">{idle ? '还没有内容' : '没有找到相关内容'}</p>
             <p className="empty-text">
               {idle
-                ? '先捏一颗新麻薯，再回来搜索吧。'
-                : '换个关键词试试，或者用 #标签 找找看。'}
+                ? '先记一条，再回来搜索吧。'
+                : '换个关键词试试，或者用 #标签 筛选。'}
             </p>
           </div>
         ) : (
