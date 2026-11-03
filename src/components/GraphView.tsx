@@ -124,13 +124,13 @@ const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
 /** Instrument-panel grid spacing in CSS pixels (drawn at device resolution). */
 const GRID_SIZE = 28;
 
-/** Kind → neon instrument colour token. */
+/** Kind → pastel colour token. */
 const KIND_COLOR_VARS: Record<NoteKind, string> = {
-  diary: '--graph-node-1', // cyan
-  food: '--graph-node-4', // amber
-  health: '--graph-node-3', // teal
-  finance: '--graph-node-2', // violet
-  note: '--graph-node-5', // slate
+  diary: '--graph-node-1', // lavender
+  food: '--graph-node-4', // butter
+  health: '--graph-node-3', // mint
+  finance: '--graph-node-2', // rose
+  note: '--graph-node-5', // breeze
 };
 
 /** Kind → technical legend code. */
@@ -143,26 +143,26 @@ const KIND_CODES: Record<NoteKind, string> = {
 };
 
 const FALLBACK_KIND_COLORS: Record<NoteKind, string> = {
-  diary: '#38bdf8',
-  food: '#f59e0b',
-  health: '#2dd4bf',
-  finance: '#a78bfa',
-  note: '#94a3b8',
+  diary: '#b79ced',
+  food: '#f0bf6a',
+  health: '#8fd4b6',
+  finance: '#ea9ab4',
+  note: '#a9c6e8',
 };
 
 const FALLBACK_PALETTE: Palette = {
-  panel: '#0a0c10',
-  panel2: '#11151b',
-  grid: 'rgba(120, 160, 200, 0.1)',
-  ghost: '#475569',
-  edge: 'rgba(56, 189, 248, 0.32)',
-  node: '#38bdf8',
-  text: '#cbd5e1',
-  textDim: '#64748b',
+  panel: '#fff5f8',
+  panel2: '#ffedf3',
+  grid: 'rgba(205, 138, 158, 0.2)',
+  ghost: '#d9c8d1',
+  edge: 'rgba(232, 143, 168, 0.42)',
+  node: '#ea9ab4',
+  text: '#6b4a59',
+  textDim: '#7a5a6b',
   fontMono: "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace",
   kindColors: FALLBACK_KIND_COLORS,
 };
-const FALLBACK_RGBA: Rgba = { r: 56, g: 189, b: 248, a: 1 };
+const FALLBACK_RGBA: Rgba = { r: 234, g: 154, b: 180, a: 1 };
 
 function clamp(value: number, min: number, max: number): number {
   if (value < min) return min;
