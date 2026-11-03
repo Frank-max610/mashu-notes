@@ -115,7 +115,7 @@ export function SettingsScreen({
       notify('还没有记录可以导出');
       return;
     }
-    const result = await shareOrDownload(`rixin-${fileStamp()}.json`, toVaultJson(notes));
+    const result = await shareOrDownload(`mashu-${fileStamp()}.json`, toVaultJson(notes));
     notify(result === 'shared' ? '已打开分享面板，可存到「文件」或 iCloud 云盘' : '已导出 JSON');
   };
 
@@ -124,7 +124,7 @@ export function SettingsScreen({
       notify('还没有记录可以导出');
       return;
     }
-    const result = await shareOrDownload(`rixin-${fileStamp()}.md`, toMarkdownBundle(notes), 'text/markdown');
+    const result = await shareOrDownload(`mashu-${fileStamp()}.md`, toMarkdownBundle(notes), 'text/markdown');
     notify(result === 'shared' ? '已打开分享面板' : '已导出 Markdown');
   };
 

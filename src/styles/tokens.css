@@ -29,7 +29,7 @@
   --border-strong: rgba(255, 255, 255, 0.16);
   --text: #f4f5f8;
   --text-muted: #9aa1b0;
-  --text-faint: #737b8c;
+  --text-faint: #8f97a8;
 
   /* brand gradients */
   --sunset: #ff7a17;
@@ -142,7 +142,7 @@
   --border-strong: rgba(20, 20, 32, 0.16);
   --text: #111218;
   --text-muted: #5d6170;
-  --text-faint: #767b8a;
+  --text-faint: #5f6572;
 
   --sunset: #e8590c;
   --sunset-soft: rgba(232, 89, 12, 0.12);
