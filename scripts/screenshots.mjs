@@ -228,6 +228,19 @@ async function capture(shot) {
       });
     }
 
+    // Freeze the clock so seeded demo data and relative timestamps are stable.
+    await cdp.send('Page.addScriptToEvaluateOnNewDocument', {
+      source: `(() => {
+        const RealDate = Date;
+        const FIXED = Date.UTC(2026, 10, 3, 13, 0, 0);
+        class FrozenDate extends RealDate {
+          constructor(...args) { if (args.length === 0) super(FIXED); else super(...args); }
+          static now() { return FIXED; }
+        }
+        window.Date = FrozenDate;
+      })()`,
+    });
+
     const url = `${BASE}/${shot.hash}`;
     await cdp.send('Page.navigate', { url });
     await waitForExpression(cdp, 'document.readyState === "complete"', 12000);

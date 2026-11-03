@@ -3,7 +3,7 @@ import type { Backlink, Note, NoteSummary, ResolvedLink, TagCount, WikiLink } fr
 /**
  * Link + tag parsing utilities.
  *
- * Every relation in Mochi is derived from plain Markdown. These helpers are
+ * Every relation in Rixin is derived from plain Markdown. These helpers are
  * deliberately dependency-free and synchronous so they can run on every
  * keystroke, and they ignore code spans/blocks so `[[not a link]]` inside a
  * fenced block stays prose.

@@ -281,7 +281,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 38px;
+  min-height: 40px;
   padding: 0 13px;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-s);

@@ -298,6 +298,10 @@ export default function App() {
       const parsed = text.trim().startsWith('{') || text.trim().startsWith('[')
         ? parseHealthJson(text)
         : parseHealthCsv(text);
+      if (parsed.samples.length === 0) {
+        notify('没有解析到健康数据，请检查 JSON/CSV 格式');
+        return 0;
+      }
       const drafts = healthSamplesToNotes(parsed.samples, api.notes);
       const count = await applyHealthDrafts(drafts);
       notify(`已从 Apple 健康导入 ${count} 条记录`);
@@ -315,8 +319,12 @@ export default function App() {
     healthImportStarted.current = true;
     try {
       const parsed = decodeHealthPayload(payload);
-      const drafts = healthSamplesToNotes(parsed.samples, api.notes);
-      void applyHealthDrafts(drafts).then((count) => notify(`已从 Apple 健康导入 ${count} 条记录`));
+      if (parsed.samples.length === 0) {
+        notify('健康数据解析失败，请检查链接');
+      } else {
+        const drafts = healthSamplesToNotes(parsed.samples, api.notes);
+        void applyHealthDrafts(drafts).then((count) => notify(`已从 Apple 健康导入 ${count} 条记录`));
+      }
     } catch {
       notify('健康数据解析失败，请检查链接');
     }

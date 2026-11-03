@@ -2,7 +2,7 @@ import MarkdownIt from 'markdown-it';
 import type { NoteSummary } from './types';
 
 /**
- * Markdown rendering for Mochi.
+ * Markdown rendering for Rixin.
  *
  * Output is sanitised by construction: raw HTML is disabled and only
  * `http(s)`/`mailto` links are kept as external links. `[[wiki links]]` become

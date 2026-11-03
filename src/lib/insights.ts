@@ -2,7 +2,7 @@ import type { HealthMetric, Note } from './types';
 import { formatAmount } from './kinds';
 
 /**
- * Life-record insights for Mochi.
+ * Life-record insights for Rixin.
  *
  * Everything here is a pure function over the in-memory vault: no IndexedDB,
  * no network, no timers. The agent, the daily overview and the charts all read

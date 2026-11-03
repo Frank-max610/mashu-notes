@@ -18,7 +18,7 @@ import {
 } from './insights';
 
 /**
- * Mochi's local agent brain.
+ * Rixin's local agent brain.
  *
  * Fully offline Chinese heuristics: a one-line natural-language capture parser
  * (`parseEntry` / `captureDraft`) and a small Q&A layer (`agentReply`) that

@@ -3,7 +3,7 @@ import { normalizeTitle, noteSummary } from './links';
 import { excerpt, plainText } from './markdown';
 
 /**
- * Search for Mochi.
+ * Search for Rixin.
  *
  * A vault is small (hundreds of notes) and lives in memory, so search is a
  * plain linear scan per keystroke rather than a maintained index. Everything
