@@ -4,6 +4,9 @@
 
 一个本地优先、手机可用的 Markdown 知识库：没有后端、没有账号、没有云，笔记只属于你。
 
+**在线试用（HTTPS，可添加到主屏幕并离线使用）**：<https://frank-max610.github.io/inkstone/>
+仓库：[github.com/Frank-max610/inkstone](https://github.com/Frank-max610/inkstone)
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-a78bfa.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19-61dafb.svg?logo=react&logoColor=1b1b24)](https://react.dev/)
