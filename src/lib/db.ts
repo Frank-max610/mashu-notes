@@ -185,7 +185,8 @@ async function migrateLegacyVault(): Promise<Note[]> {
       const byId = new Map<string, Note>();
       for (const note of readLegacyLocalNotes()) byId.set(note.id, note);
 
-      if (await legacyDatabaseExists()) {
+      const hasLegacyDatabase = await legacyDatabaseExists();
+      if (hasLegacyDatabase) {
         for (const note of await readLegacyIndexedDbNotes()) byId.set(note.id, note);
       }
 
@@ -213,7 +214,7 @@ async function migrateLegacyVault(): Promise<Note[]> {
       // Clean up the old storage only once the copy really landed: deleting a
       // localStorage-only vault after a failed write would lose the last copy.
       if (notes.length === 0 || written) {
-        if (written) {
+        if (written || hasLegacyDatabase) {
           try {
             indexedDB.deleteDatabase(LEGACY_DB_NAME);
           } catch {

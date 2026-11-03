@@ -66,7 +66,7 @@ export function TabBar({ active, onChange, onCompose, notesCount }: TabBarProps)
           />
         ))}
 
-        <button type="button" className="tabbar-compose" aria-label="捏一颗新麻薯" onClick={onCompose}>
+        <button type="button" className="tabbar-compose" aria-label="新建记录" onClick={onCompose}>
           <Icon name="plus" size={26} strokeWidth={2.4} />
         </button>
 

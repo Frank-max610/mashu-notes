@@ -377,7 +377,7 @@
 
 .note-card-meta-line {
   font-size: var(--text-sm);
-  color: var(--kind-accent, var(--accent-ink));
+  color: var(--text-muted);
   font-weight: 600;
 }
 

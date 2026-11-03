@@ -24,7 +24,7 @@
   --border-strong: rgba(74, 62, 48, 0.2);
   --text: #3a352c;
   --text-muted: #6f675a;
-  --text-faint: #8a8072;
+  --text-faint: #756b5e;
 
   /* sage accent */
   --accent: #6f9280;
@@ -112,7 +112,7 @@
   --border-strong: rgba(240, 235, 220, 0.18);
   --text: #ece8df;
   --text-muted: #b3ac9d;
-  --text-faint: #8d857a;
+  --text-faint: #a39a8c;
 
   --accent: #9dbfa9;
   --accent-strong: #86ab93;
