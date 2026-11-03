@@ -235,7 +235,7 @@ export function EditorScreen({
         <div className="editor-header-meta">
           {onEditRecord ? (
             <button type="button" className="editor-kind" onClick={onEditRecord} aria-label="编辑记录信息">
-              {KIND_INFO[note.kind].emoji} {KIND_INFO[note.kind].label}
+              {KIND_INFO[note.kind].label}
             </button>
           ) : null}
           <span className={`editor-status${storageWarning ? ' is-error' : ''}`}>

@@ -1,7 +1,7 @@
-/* 麻薯 service worker: app-shell offline support.
+/* 日新 service worker: app-shell offline support.
  * Only registers in secure contexts (https / localhost); on plain http LAN the
  * app runs without it. Navigation is network-first, assets cache-first. */
-const CACHE = 'mochi-v3';
+const CACHE = 'rixin-v1';
 const PRECACHE = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png'];
 
 self.addEventListener('install', (event) => {

@@ -1,16 +1,31 @@
-/* Editable life graph for 麻薯 v0.3 — calm paper surfaces, muted kind colours.
-   Everything is scoped under .graph-view. */
+/* 日新 life graph — always-dark "instrument panel".
+   Scoped under .graph-view; the paper app shell stays outside the panel frame. */
 
 .graph-view {
   position: relative;
   width: 100%;
   height: 100%;
   overflow: hidden;
-  /* Transparent: the app shell paints the paper ground and dot texture. */
-  background: transparent;
+  background: var(--graph-panel);
+  border: 1px solid var(--graph-grid);
+  border-radius: var(--radius-s);
+  color: var(--graph-text);
+  font-family: var(--font-mono);
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
+}
+
+/* Soft vignette under the canvas grid so the panel frame reads as a screen. */
+.graph-view::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 92% at 50% 0%, transparent 42%, rgba(2, 4, 8, 0.55) 100%),
+    linear-gradient(180deg, rgba(56, 189, 248, 0.05), transparent 26%);
 }
 
 .graph-view .graph-canvas {
@@ -35,94 +50,152 @@
   cursor: crosshair;
 }
 
-/* Floating pill toolbar: view tools, then edit tools, then relayout. */
-.graph-view .graph-toolbar {
+/* ---------- panel header: LIFE GRAPH · NODES/EDGES ---------- */
+
+.graph-view .graph-panel-head {
   position: absolute;
-  top: calc(var(--safe-top) + 12px);
-  right: calc(var(--safe-right) + 12px);
+  top: 9px;
+  left: 11px;
+  right: 56px;
   z-index: 2;
   display: flex;
+  align-items: baseline;
+  gap: 10px;
+  overflow: hidden;
+  white-space: nowrap;
+  color: var(--graph-text-dim);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.graph-view .graph-panel-title {
+  color: var(--graph-node-1);
+  font-weight: 600;
+}
+
+.graph-view .graph-panel-stats {
+  color: var(--graph-text-dim);
+}
+
+.graph-view .graph-panel-mode {
+  margin-left: auto;
+  color: var(--graph-text);
+}
+
+/* ---------- panel footer: MODE · SCALE ---------- */
+
+.graph-view .graph-panel-foot {
+  position: absolute;
+  right: 11px;
+  bottom: 9px;
+  z-index: 2;
+  display: flex;
+  gap: 12px;
+  color: var(--graph-text-dim);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+}
+
+/* ---------- compact segmented toolbar (top-right) ---------- */
+
+.graph-view .graph-toolbar {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  z-index: 3;
+  display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 6px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-full);
-  background: var(--surface);
-  background: color-mix(in srgb, var(--surface) 92%, transparent);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  box-shadow: var(--shadow-1);
+  gap: 1px;
+  padding: 2px;
+  border: 1px solid var(--graph-grid);
+  border-radius: var(--radius-xs);
+  background: color-mix(in srgb, var(--graph-panel-2) 92%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
 }
 
 .graph-view .graph-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-full);
-  color: var(--text-muted);
+  width: 34px;
+  height: 34px;
+  border-radius: 2px;
+  color: var(--graph-text-dim);
+  background: transparent;
 }
 
 .graph-view .graph-btn:hover,
 .graph-view .graph-btn:active {
-  background: var(--surface-2);
-  color: var(--text);
+  background: rgba(148, 163, 184, 0.14);
+  color: var(--graph-text);
 }
 
 .graph-view .graph-btn[aria-pressed='true'] {
-  background: var(--accent-soft);
-  color: var(--accent-ink);
+  background: color-mix(in srgb, var(--graph-node-1) 20%, transparent);
+  color: var(--graph-node-1);
 }
 
 .graph-view .graph-toolbar-sep {
-  width: 22px;
   height: 1px;
-  margin: 3px 0;
-  background: var(--border-strong);
-  opacity: 0.65;
+  margin: 2px 3px;
+  background: var(--graph-grid);
 }
 
-/* Quiet mode hint pinned to the top-left corner. */
+/* ---------- mode hint: terminal readout under the header ---------- */
+
 .graph-view .graph-hint {
   position: absolute;
-  top: calc(var(--safe-top) + 12px);
-  left: calc(var(--safe-left) + 12px);
+  top: 26px;
+  left: 11px;
   z-index: 2;
-  max-width: min(62%, 236px);
-  padding: 8px 13px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-full);
-  background: var(--surface);
-  background: color-mix(in srgb, var(--surface) 92%, transparent);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  box-shadow: var(--shadow-1);
-  color: var(--text-muted);
-  font-size: var(--text-xs);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: min(70%, 260px);
+  padding: 3px 7px;
+  border: 1px solid color-mix(in srgb, var(--graph-node-1) 55%, transparent);
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--graph-panel-2) 94%, transparent);
+  color: var(--graph-text);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.03em;
   line-height: 1.4;
   pointer-events: none;
 }
 
-/* Legend chips for the kinds present in the vault. */
+.graph-view .graph-hint-tag {
+  flex: none;
+  padding: 0 4px;
+  border: 1px solid color-mix(in srgb, var(--graph-node-1) 70%, transparent);
+  color: var(--graph-node-1);
+  font-size: 8.5px;
+  letter-spacing: 0.08em;
+}
+
+/* ---------- legend: monospace chips with colour swatches ---------- */
+
 .graph-view .graph-legend {
   position: absolute;
-  left: calc(var(--safe-left) + 12px);
-  bottom: calc(var(--safe-bottom) + 12px);
+  left: 9px;
+  bottom: 9px;
   z-index: 2;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 10px;
-  max-width: calc(100% - 84px);
-  padding: 8px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-m);
-  background: var(--surface);
-  background: color-mix(in srgb, var(--surface) 88%, transparent);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  box-shadow: var(--shadow-1);
-  color: var(--text-muted);
-  font-size: var(--text-xs);
+  max-width: calc(100% - 96px);
+  padding: 5px 8px;
+  border: 1px solid var(--graph-grid);
+  border-radius: var(--radius-xs);
+  background: color-mix(in srgb, var(--graph-panel-2) 82%, transparent);
+  color: var(--graph-text-dim);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.05em;
   line-height: 1.2;
   pointer-events: none;
 }
@@ -130,77 +203,47 @@
 .graph-view .graph-legend-item {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   white-space: nowrap;
 }
 
-.graph-view .graph-legend-dot {
-  width: 8px;
-  height: 8px;
+.graph-view .graph-legend-swatch {
+  width: 7px;
+  height: 7px;
   flex: none;
-  border-radius: var(--radius-full);
+  border-radius: 1px;
 }
 
-.graph-view .graph-legend-dot--ghost {
-  width: 9px;
-  height: 9px;
+.graph-view .graph-legend-swatch--ghost {
+  width: 7px;
+  height: 7px;
   background: transparent;
-  border: 1.5px dashed var(--graph-node-ghost);
+  border: 1px dashed var(--graph-node-ghost);
 }
 
-/* Calm empty state. */
+/* ---------- empty state: terminal copy, no illustration ---------- */
+
 .graph-view .graph-empty {
   position: absolute;
   inset: 0;
   z-index: 3;
-  gap: 12px;
-  padding: calc(var(--safe-top) + 36px) 28px calc(var(--safe-bottom) + 36px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 24px;
   background: transparent;
+  color: var(--graph-text-dim);
+  font-family: var(--font-mono);
+  text-align: center;
 }
 
-.graph-view .graph-empty-badge {
-  display: grid;
-  place-items: center;
-  width: 64px;
-  height: 64px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-full);
-  background: var(--surface);
-  box-shadow: var(--shadow-1);
-  color: var(--accent-ink);
+.graph-view .graph-empty-line {
+  font-size: 12px;
+  letter-spacing: 0.08em;
 }
 
-.graph-view .graph-empty .empty-title {
-  color: var(--text);
-}
-
-.graph-view .graph-empty .empty-text {
-  max-width: 262px;
-  color: var(--text-muted);
-}
-
-@media (max-width: 380px) {
-  .graph-view .graph-btn {
-    width: 38px;
-    height: 38px;
-  }
-
-  .graph-view .graph-toolbar {
-    top: calc(var(--safe-top) + 8px);
-    right: calc(var(--safe-right) + 8px);
-    padding: 5px;
-  }
-
-  .graph-view .graph-hint {
-    top: calc(var(--safe-top) + 8px);
-    left: calc(var(--safe-left) + 8px);
-    padding: 7px 11px;
-  }
-
-  .graph-view .graph-legend {
-    left: calc(var(--safe-left) + 8px);
-    bottom: calc(var(--safe-bottom) + 8px);
-    gap: 3px 8px;
-    padding: 7px 10px;
-  }
+.graph-view .graph-empty-line::before {
+  content: '> ';
+  color: var(--graph-node-1);
 }

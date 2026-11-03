@@ -202,7 +202,6 @@ export function NodeEditorSheet({
                 }}
                 onClick={() => update('kind', kind)}
               >
-                <span aria-hidden="true">{KIND_INFO[kind].emoji}</span>
                 {KIND_INFO[kind].label}
               </button>
             ))}

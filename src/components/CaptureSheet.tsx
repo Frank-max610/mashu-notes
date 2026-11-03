@@ -121,12 +121,12 @@ function metaFacts(kind: NoteKind, meta: NoteMeta): Fact[] {
 }
 
 /**
- * Bottom sheet for capturing one life record.
- *
- * The textarea is parsed live with the offline agent (`captureDraft`); the
- * preview and the optional quick fields stay in sync with a merged meta object
- * so what the user sees is exactly what gets saved. App renders this component
- * near the root; it owns its fixed overlay, scroll lock and Escape handling.
+ * Bottom sheet for capturing one life record, in the 日新 editorial style:
+ * hairline rules, receipt-like preview table, mono meta and lean underlined
+ * quick fields. The textarea is parsed live with the offline agent
+ * (`captureDraft`); the preview and quick fields share one merged meta object,
+ * so what the user sees is exactly what gets saved. App renders this near the
+ * root; the component owns its fixed overlay, scroll lock and Escape handling.
  */
 export function CaptureSheet({ open, onClose, onSave, now, initialKind }: CaptureSheetProps) {
   const [text, setText] = useState('');
@@ -311,13 +311,14 @@ export function CaptureSheet({ open, onClose, onSave, now, initialKind }: Captur
       >
         <header className="capture-sheet__head">
           <div className="capture-sheet__heading">
+            <p className="capture-sheet__eyebrow">QUICK CAPTURE</p>
             <h2 className="capture-sheet__title" id="capture-sheet-title">
               记一笔
             </h2>
-            <p className="capture-sheet__subtitle">用一句话，或者直接填</p>
+            <p className="capture-sheet__subtitle">一句话，或者直接填</p>
           </div>
           <button type="button" className="icon-btn capture-sheet__close" aria-label="关闭" onClick={onClose}>
-            <Icon name="close" size={19} />
+            <Icon name="close" size={18} />
           </button>
         </header>
 
@@ -330,14 +331,13 @@ export function CaptureSheet({ open, onClose, onSave, now, initialKind }: Captur
                 <button
                   key={choice.label}
                   type="button"
-                  className={`chip capture-sheet__kind${active ? ' is-active' : ''}`}
+                  className={`capture-sheet__kind${active ? ' is-active' : ''}`}
                   aria-pressed={active}
                   style={
-                    active && info
+                    active
                       ? {
-                          background: `var(${info.accentSoftVar})`,
-                          borderColor: `var(${info.accentVar})`,
-                          color: `var(${info.accentVar})`,
+                          borderBottomColor: info ? `var(${info.accentVar})` : 'var(--accent)',
+                          color: 'var(--text)',
                         }
                       : undefined
                   }
@@ -369,16 +369,13 @@ export function CaptureSheet({ open, onClose, onSave, now, initialKind }: Captur
               <div className="capture-sheet__preview-head">
                 <span
                   className="capture-sheet__kind-badge"
-                  style={{
-                    background: `var(${KIND_INFO[parsed.kind].accentSoftVar})`,
-                    color: `var(${KIND_INFO[parsed.kind].accentVar})`,
-                  }}
+                  style={{ color: `var(${KIND_INFO[parsed.kind].accentVar})` }}
                 >
-                  {KIND_INFO[parsed.kind].emoji} {KIND_INFO[parsed.kind].label}
+                  {KIND_INFO[parsed.kind].label}
                 </span>
                 {confidence !== null ? (
                   <span className="capture-sheet__confidence">
-                    识别把握 {Math.round(confidence * 100)}%
+                    识别 {Math.round(confidence * 100)}%
                   </span>
                 ) : null}
               </div>
@@ -396,8 +393,7 @@ export function CaptureSheet({ open, onClose, onSave, now, initialKind }: Captur
             </div>
           ) : trimmed || kindHint ? (
             <p className="capture-sheet__hint" role="status">
-              <Icon name="info" size={14} />
-              <span>还没识别出来，试着写金额或数值</span>
+              未识别 · 试着写金额或数值
             </p>
           ) : null}
 
@@ -410,7 +406,7 @@ export function CaptureSheet({ open, onClose, onSave, now, initialKind }: Captur
                     <button
                       key={meal}
                       type="button"
-                      className={`chip capture-sheet__mini-chip${quick.meal === meal ? ' is-active' : ''}`}
+                      className={`capture-sheet__mini-chip${quick.meal === meal ? ' is-active' : ''}`}
                       aria-pressed={quick.meal === meal}
                       onClick={() => setQuick((prev) => ({ ...prev, meal: prev.meal === meal ? null : meal }))}
                     >
@@ -456,7 +452,7 @@ export function CaptureSheet({ open, onClose, onSave, now, initialKind }: Captur
                     <button
                       key={metric}
                       type="button"
-                      className={`chip capture-sheet__mini-chip${quick.metric === metric ? ' is-active' : ''}`}
+                      className={`capture-sheet__mini-chip${quick.metric === metric ? ' is-active' : ''}`}
                       aria-pressed={quick.metric === metric}
                       onClick={() =>
                         setQuick((prev) => ({
@@ -506,7 +502,7 @@ export function CaptureSheet({ open, onClose, onSave, now, initialKind }: Captur
                     <button
                       key={direction}
                       type="button"
-                      className={`chip capture-sheet__mini-chip${quick.direction === direction ? ' is-active' : ''}`}
+                      className={`capture-sheet__mini-chip${quick.direction === direction ? ' is-active' : ''}`}
                       aria-pressed={quick.direction === direction}
                       onClick={() => setQuick((prev) => ({ ...prev, direction }))}
                     >
@@ -552,10 +548,12 @@ export function CaptureSheet({ open, onClose, onSave, now, initialKind }: Captur
             <p className="capture-sheet__error" role="alert">
               {error}
             </p>
-          ) : null}
+          ) : (
+            <span className="capture-sheet__footnote">仅保存在本地</span>
+          )}
           <button
             type="button"
-            className="btn btn-primary btn-block capture-sheet__save"
+            className="capture-sheet__save"
             disabled={!draft || saving}
             onClick={() => void handleSave()}
           >

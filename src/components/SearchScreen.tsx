@@ -4,10 +4,11 @@ import { allTags } from '../lib/links';
 import { formatRelativeTime } from '../lib/format';
 import { searchNotes } from '../lib/search';
 import { Icon } from './Icon';
-import { Mascot } from './Mascot';
 import './SearchScreen.css';
 
 export interface SearchScreenProps {
+  /** Leave search (back to the records list). */
+  onClose?: () => void;
   notes: Note[];
   onOpenNote: (id: string) => void;
 }
@@ -50,7 +51,7 @@ function highlight(text: string, tokens: string[]): ReactNode {
 }
 
 /** Full-text search screen: a pastel pill search box, tag chips and result cards. */
-export function SearchScreen({ notes, onOpenNote }: SearchScreenProps) {
+export function SearchScreen({ notes, onOpenNote, onClose }: SearchScreenProps) {
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
@@ -103,17 +104,19 @@ export function SearchScreen({ notes, onOpenNote }: SearchScreenProps) {
       <header className="screen-header search-screen__header">
         <div className="search-screen__title-row">
           <div className="search-screen__title-block">
-            <h1 className="search-screen__title">搜索</h1>
-            <p className="search-screen__subtitle">搜索标题、正文或标签</p>
+            <h1 className="page-title display search-screen__title">搜索</h1>
+            <p className="brand-date mono">SEARCH · {notes.length} ENTRIES</p>
           </div>
-          {idle ? (
-            <Icon name="flower" size={24} className="search-screen__header-flower" />
-          ) : (
-            <span className="search-screen__count-pill" aria-live="polite">
-              <Icon name="sparkles" size={13} />
-              {hits.length} 条结果
+          {!idle ? (
+            <span className="search-screen__count-pill mono" aria-live="polite">
+              {hits.length} RESULTS
             </span>
-          )}
+          ) : null}
+          {onClose ? (
+            <button type="button" className="icon-btn search-screen__close" aria-label="关闭搜索" onClick={onClose}>
+              <Icon name="close" size={19} />
+            </button>
+          ) : null}
         </div>
 
         <div className="search-screen__searchbar">
@@ -170,17 +173,11 @@ export function SearchScreen({ notes, onOpenNote }: SearchScreenProps) {
       </header>
 
       <div ref={resultsRef} className="search-screen__results scroll-area">
-        {idle ? (
-          <div className="section-label search-screen__section-label">
-            <Icon name="clock" size={13} />
-            <span>最近编辑</span>
-            <Icon name="heart" size={12} className="search-screen__section-heart" />
-          </div>
-        ) : null}
+        {idle ? <div className="section-label search-screen__section-label">最近编辑 / RECENT</div> : null}
 
         {hits.length === 0 ? (
           <div className="empty search-screen__empty">
-            <Mascot variant={idle ? 'happy' : 'sleepy'} size={92} bob />
+
             <p className="empty-title">{idle ? '还没有内容' : '没有找到相关内容'}</p>
             <p className="empty-text">
               {idle

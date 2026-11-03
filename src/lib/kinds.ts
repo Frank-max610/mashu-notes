@@ -60,15 +60,27 @@ export const KIND_INFO: Record<NoteKind, KindInfo> = {
 
 export const MEAL_SLOTS: readonly MealSlot[] = ['早餐', '午餐', '晚餐', '加餐', '夜宵', '未分类'];
 
-export const HEALTH_METRICS: readonly HealthMetric[] = ['体重', '睡眠', '步数', '饮水', '运动', '心情', '其他'];
+export const HEALTH_METRICS: readonly HealthMetric[] = [
+  '体重',
+  '睡眠',
+  '步数',
+  '心率',
+  '饮水',
+  '运动',
+  '活动能量',
+  '心情',
+  '其他',
+];
 
 /** Units offered for health metrics (value is stored numerically). */
 export const HEALTH_UNITS: Record<HealthMetric, string> = {
   体重: 'kg',
   睡眠: '小时',
   步数: '步',
+  心率: 'bpm',
   饮水: 'ml',
   运动: '分钟',
+  活动能量: 'kcal',
   心情: '',
   其他: '',
 };

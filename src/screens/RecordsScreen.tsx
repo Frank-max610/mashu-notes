@@ -1,0 +1,162 @@
+import { useMemo } from 'react';
+import type { Note, NoteKind } from '../lib/types';
+import { KIND_INFO, NOTE_KINDS } from '../lib/kinds';
+import { dayKeyOf, noteDayKey } from '../lib/insights';
+import { NoteCard } from '../components/NoteCard';
+import { Icon } from '../components/Icon';
+
+export type KindFilter = NoteKind | 'all';
+
+export interface RecordsScreenProps {
+  notes: Note[];
+  loading: boolean;
+  kindFilter: KindFilter;
+  onKindFilter: (kind: KindFilter) => void;
+  onOpenNote: (id: string) => void;
+  onNoteMenu: (note: Note) => void;
+  onOpenSearch: () => void;
+  onQuickCapture: (kind?: NoteKind) => void;
+  storageWarning: string | null;
+}
+
+const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六'];
+
+function dayLabel(dayKey: string, now = new Date()): string {
+  const todayKey = dayKeyOf(now);
+  if (dayKey === todayKey) return '今天';
+  const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  if (dayKey === dayKeyOf(yesterday)) return '昨天';
+  const [year, month, day] = dayKey.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  return `${month}月${day}日 · 周${WEEKDAYS[date.getDay()]}`;
+}
+
+/** All records: filters, day groups and the full vault list. */
+export function RecordsScreen({
+  notes,
+  loading,
+  kindFilter,
+  onKindFilter,
+  onOpenNote,
+  onNoteMenu,
+  onOpenSearch,
+  onQuickCapture,
+  storageWarning,
+}: RecordsScreenProps) {
+  const filtered = useMemo(() => {
+    if (kindFilter === 'all') return notes;
+    return notes.filter((note) => note.kind === kindFilter);
+  }, [notes, kindFilter]);
+
+  const pinned = filtered.filter((note) => note.pinned);
+  const rest = filtered.filter((note) => !note.pinned);
+
+  const groups = useMemo(() => {
+    const buckets = new Map<string, Note[]>();
+    for (const note of rest) {
+      const key = noteDayKey(note);
+      const list = buckets.get(key);
+      if (list) list.push(note);
+      else buckets.set(key, [note]);
+    }
+    return [...buckets.entries()];
+  }, [rest]);
+
+  return (
+    <div className="screen records-screen">
+      <header className="screen-header records-header">
+        <div className="brand-row">
+          <div className="brand-copy">
+            <h1 className="page-title display">记录</h1>
+            <p className="brand-date mono">{notes.length} ENTRIES</p>
+          </div>
+        </div>
+        <div className="header-actions">
+          <button type="button" className="icon-btn" aria-label="搜索" onClick={onOpenSearch}>
+            <Icon name="search" size={19} />
+          </button>
+          <button type="button" className="icon-btn" aria-label="记一笔" onClick={() => onQuickCapture()}>
+            <Icon name="plus" size={20} />
+          </button>
+        </div>
+      </header>
+
+      {storageWarning ? (
+        <div className="banner banner-warn" role="status">
+          <Icon name="warn" size={15} />
+          <span>{storageWarning}</span>
+        </div>
+      ) : null}
+
+      <div className="filter-bar" role="tablist" aria-label="按类型筛选">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={kindFilter === 'all'}
+          className={`chip${kindFilter === 'all' ? ' is-active' : ''}`}
+          onClick={() => onKindFilter('all')}
+        >
+          全部
+        </button>
+        {NOTE_KINDS.map((kind) => (
+          <button
+            key={kind}
+            type="button"
+            role="tab"
+            aria-selected={kindFilter === kind}
+            className={`chip${kindFilter === kind ? ' is-active' : ''}`}
+            style={{
+              ['--kind-accent' as string]: `var(${KIND_INFO[kind].accentVar})`,
+              ['--kind-soft' as string]: `var(${KIND_INFO[kind].accentSoftVar})`,
+            }}
+            onClick={() => onKindFilter(kind)}
+          >
+            {KIND_INFO[kind].label}
+          </button>
+        ))}
+      </div>
+
+      <div className="screen-body">
+        {loading && notes.length === 0 ? (
+          <div className="empty">
+            <div className="spinner" />
+            <p className="empty-text">正在读取本地记录…</p>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="empty">
+            <Icon name="notes" size={26} />
+            <p className="empty-title">{kindFilter === 'all' ? '还没有记录' : '这个类型还没有内容'}</p>
+            <p className="empty-text">用一句话记下今天，或者直接手动填写。</p>
+            <button type="button" className="btn btn-primary" onClick={() => onQuickCapture()}>
+              记一笔
+            </button>
+          </div>
+        ) : (
+          <>
+            {pinned.length > 0 ? (
+              <section aria-label="置顶">
+                <div className="section-label">置顶 / PINNED</div>
+                <div className="notes-list">
+                  {pinned.map((note) => (
+                    <NoteCard key={note.id} note={note} onOpen={onOpenNote} onMenu={onNoteMenu} />
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            {groups.map(([dayKey, dayNotes]) => (
+              <section key={dayKey} aria-label={dayLabel(dayKey)}>
+                <div className="section-label">{dayLabel(dayKey)}</div>
+                <div className="notes-list">
+                  {dayNotes.map((note) => (
+                    <NoteCard key={note.id} note={note} onOpen={onOpenNote} onMenu={onNoteMenu} />
+                  ))}
+                </div>
+              </section>
+            ))}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}

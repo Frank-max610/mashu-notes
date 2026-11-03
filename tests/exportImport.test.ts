@@ -29,7 +29,7 @@ describe('vault JSON round trip', () => {
       version: number;
       notes: Note[];
     };
-    expect(parsed.app).toBe('mochi');
+    expect(parsed.app).toBe('rixin');
     expect(parsed.version).toBe(2);
     expect(parsed.notes[0].title).toBe('测试笔记');
   });

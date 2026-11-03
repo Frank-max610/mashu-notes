@@ -83,10 +83,7 @@ export function NoteCard({ note, onOpen, onMenu }: NoteCardProps) {
       }}
     >
       <div className="note-card-head">
-        <span className="note-kind-badge">
-          <span aria-hidden="true">{info.emoji}</span>
-          {info.label}
-        </span>
+        <span className="note-kind-badge">{info.label}</span>
         {note.pinned ? (
           <span className="note-card-pin" aria-label="已置顶">
             <Icon name="pin" size={14} />

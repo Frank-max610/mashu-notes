@@ -12,7 +12,16 @@ export type NoteKind = 'note' | 'diary' | 'food' | 'health' | 'finance';
 
 export type MealSlot = '早餐' | '午餐' | '晚餐' | '加餐' | '夜宵' | '未分类';
 
-export type HealthMetric = '体重' | '睡眠' | '步数' | '饮水' | '运动' | '心情' | '其他';
+export type HealthMetric =
+  | '体重'
+  | '睡眠'
+  | '步数'
+  | '心率'
+  | '饮水'
+  | '运动'
+  | '活动能量'
+  | '心情'
+  | '其他';
 
 export type FinanceDirection = 'expense' | 'income';
 

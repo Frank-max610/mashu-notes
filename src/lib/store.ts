@@ -12,7 +12,7 @@ import {
   storageEstimate,
   type StorageMode,
 } from './db';
-import { hasOnboarded, makeNote, markOnboarded } from './prefs';
+import { hasOnboarded, makeNote, markOnboarded, migrateLegacyPreferences } from './prefs';
 import { createSeedNotes } from './seed';
 
 /** Pin first, then most recently updated. */
@@ -63,6 +63,7 @@ let vaultInitPromise: Promise<Note[]> | null = null;
 function initializeVault(): Promise<Note[]> {
   if (!vaultInitPromise) {
     vaultInitPromise = (async () => {
+      migrateLegacyPreferences();
       let stored = await loadNotes();
       if (stored.length === 0 && !hasOnboarded()) {
         stored = createSeedNotes();

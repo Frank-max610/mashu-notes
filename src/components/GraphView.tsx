@@ -2,12 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import type { Note, NoteKind, NotePosition } from '../lib/types';
 import { buildGraph, layoutSync, seedPositions, tick } from '../lib/graph';
 import type { Graph, GraphNode } from '../lib/graph';
-import { KIND_INFO, NOTE_KINDS } from '../lib/kinds';
+import { NOTE_KINDS } from '../lib/kinds';
 import { Icon } from './Icon';
 import './GraphView.css';
 
 /**
- * Editable life graph for 麻薯 v0.3.
+ * Editable life graph for 日新 v0.4.
  *
  * Notes are drawn as kind-coloured nodes; `[[wiki links]]`, hand-drawn links and
  * same-day life records become typed edges. Users can drag nodes (positions are
@@ -84,20 +84,17 @@ interface PinchState {
   ty: number;
 }
 
-/** Calm paper/ink palette pulled from the design tokens (see styles/tokens.css). */
+/** Always-dark instrument-panel palette read from the graph-* design tokens. */
 interface Palette {
+  panel: string;
+  panel2: string;
+  grid: string;
   ghost: string;
   edge: string;
-  accent: string;
-  accentStrong: string;
-  accentInk: string;
+  node: string;
   text: string;
-  textMuted: string;
-  textFaint: string;
-  surface: string;
-  border: string;
-  fontSans: string;
-  theme: 'light' | 'dark';
+  textDim: string;
+  fontMono: string;
   kindColors: Record<NoteKind, string>;
 }
 
@@ -118,39 +115,54 @@ const DEFAULT_TICK_BUDGET = 160;
 /** Small settle only when a brand-new free node appears (e.g. from the editor). */
 const ADDED_NODE_SETTLE_TICKS = 28;
 const TICKS_PER_FRAME = 3;
-const LABEL_FONT_SIZE = 11;
-const SELECTED_LABEL_FONT_SIZE = 11.5;
+const LABEL_FONT_SIZE = 10;
+const SELECTED_LABEL_FONT_SIZE = 10.5;
 const MAX_LABEL_CHARS = 14;
 /** Nodes stay this far from the canvas edges (parity with lib/graph.ts). */
 const NODE_MARGIN_MAX = 12;
-/** Offscreen node sprites are baked at this multiple for crisp zooming. */
-const SPRITE_SUPERSAMPLE = 2.5;
 const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
+/** Instrument-panel grid spacing in CSS pixels (drawn at device resolution). */
+const GRID_SIZE = 28;
+
+/** Kind → neon instrument colour token. */
+const KIND_COLOR_VARS: Record<NoteKind, string> = {
+  diary: '--graph-node-1', // cyan
+  food: '--graph-node-4', // amber
+  health: '--graph-node-3', // teal
+  finance: '--graph-node-2', // violet
+  note: '--graph-node-5', // slate
+};
+
+/** Kind → technical legend code. */
+const KIND_CODES: Record<NoteKind, string> = {
+  diary: 'DIARY',
+  food: 'FOOD',
+  health: 'HEALTH',
+  finance: 'FINANCE',
+  note: 'NOTE',
+};
 
 const FALLBACK_KIND_COLORS: Record<NoteKind, string> = {
-  diary: '#6f88a3',
-  food: '#b9735a',
-  health: '#6f927c',
-  finance: '#a8894f',
-  note: '#8a8275',
+  diary: '#38bdf8',
+  food: '#f59e0b',
+  health: '#2dd4bf',
+  finance: '#a78bfa',
+  note: '#94a3b8',
 };
 
 const FALLBACK_PALETTE: Palette = {
-  ghost: '#c9c2b6',
-  edge: 'rgba(90, 120, 105, 0.3)',
-  accent: '#6f9280',
-  accentStrong: '#567c69',
-  accentInk: '#47695a',
-  text: '#3a352c',
-  textMuted: '#6f675a',
-  textFaint: '#8a8072',
-  surface: '#ffffff',
-  border: 'rgba(74, 62, 48, 0.1)',
-  fontSans: '-apple-system, BlinkMacSystemFont, PingFang SC, system-ui, sans-serif',
-  theme: 'light',
+  panel: '#0a0c10',
+  panel2: '#11151b',
+  grid: 'rgba(120, 160, 200, 0.1)',
+  ghost: '#475569',
+  edge: 'rgba(56, 189, 248, 0.32)',
+  node: '#38bdf8',
+  text: '#cbd5e1',
+  textDim: '#64748b',
+  fontMono: "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace",
   kindColors: FALLBACK_KIND_COLORS,
 };
-const FALLBACK_RGBA: Rgba = { r: 111, g: 146, b: 128, a: 1 };
+const FALLBACK_RGBA: Rgba = { r: 56, g: 189, b: 248, a: 1 };
 
 function clamp(value: number, min: number, max: number): number {
   if (value < min) return min;
@@ -202,20 +214,6 @@ function colorToRgba(input: string, alpha = 1): string {
   return `rgba(${Math.round(color.r)}, ${Math.round(color.g)}, ${Math.round(color.b)}, ${clamp(alpha, 0, 1)})`;
 }
 
-/** Blend two token colours (0 = a, 1 = b). */
-function mixColor(a: string, b: string, amount: number): string {
-  const from = parseColor(a) ?? FALLBACK_RGBA;
-  const to = parseColor(b) ?? FALLBACK_RGBA;
-  const t = clamp(amount, 0, 1);
-  return `rgb(${Math.round(from.r + (to.r - from.r) * t)}, ${Math.round(
-    from.g + (to.g - from.g) * t,
-  )}, ${Math.round(from.b + (to.b - from.b) * t)})`;
-}
-
-function lightenColor(input: string, amount: number): string {
-  return mixColor(input, '#ffffff', amount);
-}
-
 /** djb2 string hash: small and fast, only used to detect content changes. */
 function hashString(input: string): number {
   let hash = 5381;
@@ -251,9 +249,9 @@ function fingerprintNotes(notes: Note[]): string {
   return parts.join('\u0002');
 }
 
-/** Visual radius grows with citation count, per the legend. */
+/** Sharp 7-9px marks: radius grows a little with citation count. */
 function radiusForDegree(degree: number): number {
-  return 5 + Math.sqrt(Math.max(0, degree)) * 2;
+  return 4 + Math.min(2.2, Math.sqrt(Math.max(0, degree)) * 0.8);
 }
 
 function truncateLabel(title: string): string {
@@ -294,29 +292,6 @@ function selectLabelNodes(
     .sort((a, b) => Number(focused.has(a.id)) - Number(focused.has(b.id)));
 }
 
-/** Rounded-rect path (avoids relying on the newer ctx.roundRect). */
-function roundRectPath(
-  context: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  radius: number,
-): void {
-  const r = Math.max(0, Math.min(radius, width / 2, height / 2));
-  context.beginPath();
-  context.moveTo(x + r, y);
-  context.lineTo(x + width - r, y);
-  context.quadraticCurveTo(x + width, y, x + width, y + r);
-  context.lineTo(x + width, y + height - r);
-  context.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
-  context.lineTo(x + r, y + height);
-  context.quadraticCurveTo(x, y + height, x, y + height - r);
-  context.lineTo(x, y + r);
-  context.quadraticCurveTo(x, y, x + r, y);
-  context.closePath();
-}
-
 export function GraphView({
   notes,
   activeNoteId = null,
@@ -338,8 +313,9 @@ export function GraphView({
   const dprRef = useRef<number>(1);
   const paletteRef = useRef<Palette | null>(null);
   const paletteThemeRef = useRef<string>('');
-  /** Baked node sprites keyed by kind colour + degree + theme (cheap re-draws). */
-  const nodeSpriteCacheRef = useRef<Map<string, HTMLCanvasElement>>(new Map());
+  /** Footer "SCALE 1.00" readout, updated imperatively (no React re-render). */
+  const scaleLabelRef = useRef<HTMLSpanElement | null>(null);
+  const lastScaleTextRef = useRef<string>('');
   const rafRef = useRef<number | null>(null);
   const ticksDoneRef = useRef<number>(0);
   const tickBudgetRef = useRef<number>(DEFAULT_TICK_BUDGET);
@@ -357,6 +333,7 @@ export function GraphView({
   const [mode, setMode] = useState<GraphMode>('idle');
   const [connectSource, setConnectSource] = useState<string | null>(null);
   const [hasGhost, setHasGhost] = useState<boolean>(false);
+  const [stats, setStats] = useState<{ nodes: number; edges: number }>({ nodes: 0, edges: 0 });
 
   // Latest props kept in refs so the canvas loop always sees fresh values
   // without being torn down and rebuilt on every React render.
@@ -381,16 +358,14 @@ export function GraphView({
   onLinkRef.current = onLinkNotes;
   onResetRef.current = onRequestResetLayout;
 
-  /** Read design tokens from the container (cached per theme). */
+  /** Read the always-dark instrument-panel tokens (cached per app theme). */
   function getPalette(): Palette {
     const container = containerRef.current;
-    const theme: 'light' | 'dark' =
+    const theme =
       document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
     const cached = paletteRef.current;
     if (cached && paletteThemeRef.current === theme) return cached;
     if (!container) return FALLBACK_PALETTE;
-    // Theme flips re-bake node sprites with different shading.
-    nodeSpriteCacheRef.current.clear();
     const styles = getComputedStyle(container);
     const read = (name: string, fallback: string): string => {
       const value = styles.getPropertyValue(name).trim();
@@ -398,21 +373,18 @@ export function GraphView({
     };
     const kindColors = {} as Record<NoteKind, string>;
     for (const kind of NOTE_KINDS) {
-      kindColors[kind] = read(KIND_INFO[kind].accentVar, FALLBACK_KIND_COLORS[kind]);
+      kindColors[kind] = read(KIND_COLOR_VARS[kind], FALLBACK_KIND_COLORS[kind]);
     }
     const palette: Palette = {
+      panel: read('--graph-panel', FALLBACK_PALETTE.panel),
+      panel2: read('--graph-panel-2', FALLBACK_PALETTE.panel2),
+      grid: read('--graph-grid', FALLBACK_PALETTE.grid),
       ghost: read('--graph-node-ghost', FALLBACK_PALETTE.ghost),
       edge: read('--graph-edge', FALLBACK_PALETTE.edge),
-      accent: read('--accent', FALLBACK_PALETTE.accent),
-      accentStrong: read('--accent-strong', FALLBACK_PALETTE.accentStrong),
-      accentInk: read('--accent-ink', FALLBACK_PALETTE.accentInk),
-      text: read('--text', FALLBACK_PALETTE.text),
-      textMuted: read('--text-muted', FALLBACK_PALETTE.textMuted),
-      textFaint: read('--text-faint', FALLBACK_PALETTE.textFaint),
-      surface: read('--surface', FALLBACK_PALETTE.surface),
-      border: read('--border', FALLBACK_PALETTE.border),
-      fontSans: read('--font-sans', FALLBACK_PALETTE.fontSans),
-      theme,
+      node: read('--graph-node', FALLBACK_PALETTE.node),
+      text: read('--graph-text', FALLBACK_PALETTE.text),
+      textDim: read('--graph-text-dim', FALLBACK_PALETTE.textDim),
+      fontMono: read('--font-mono', FALLBACK_PALETTE.fontMono),
       kindColors,
     };
     paletteRef.current = palette;
@@ -479,98 +451,116 @@ export function GraphView({
     return worldToNormalized(node.x, node.y);
   }
 
-  /** Bake one calm node sprite into an offscreen canvas (cached). */
-  function nodeSprite(palette: Palette, kind: NoteKind, degree: number): HTMLCanvasElement {
-    const baseColor = palette.kindColors[kind] ?? FALLBACK_KIND_COLORS.note;
-    const cache = nodeSpriteCacheRef.current;
-    const key = `${baseColor}|${degree}|${palette.theme}`;
-    const cached = cache.get(key);
-    if (cached) return cached;
-
-    const radius = radiusForDegree(degree);
-    // Padding keeps the baked soft shadow from being clipped at the edge.
-    const pad = Math.max(3, radius * 0.85 + 3);
-    const worldSize = (radius + pad) * 2;
-    const pixelSize = Math.max(8, Math.ceil(worldSize * SPRITE_SUPERSAMPLE));
-    const sprite = document.createElement('canvas');
-    sprite.width = pixelSize;
-    sprite.height = pixelSize;
-    const spriteContext = sprite.getContext('2d');
-    if (!spriteContext) return sprite;
-
-    spriteContext.scale(pixelSize / worldSize, pixelSize / worldSize);
-    spriteContext.translate(worldSize / 2, worldSize / 2);
-
-    // Soft drop shadow, baked once instead of paying shadowBlur every frame.
-    spriteContext.save();
-    spriteContext.shadowColor = colorToRgba(
-      palette.accentStrong,
-      palette.theme === 'dark' ? 0.34 : 0.18,
-    );
-    spriteContext.shadowBlur = radius * 0.8;
-    spriteContext.shadowOffsetY = radius * 0.16;
-    spriteContext.fillStyle = baseColor;
-    spriteContext.beginPath();
-    spriteContext.arc(0, 0, radius, 0, Math.PI * 2);
-    spriteContext.fill();
-    spriteContext.restore();
-
-    // Body: gentle top-left light → kind colour → slightly deeper rim.
-    const body = spriteContext.createRadialGradient(
-      -radius * 0.32,
-      -radius * 0.38,
-      radius * 0.1,
-      0,
-      0,
-      radius * 1.12,
-    );
-    body.addColorStop(0, lightenColor(baseColor, palette.theme === 'dark' ? 0.32 : 0.5));
-    body.addColorStop(0.42, lightenColor(baseColor, 0.16));
-    body.addColorStop(0.78, baseColor);
-    body.addColorStop(1, mixColor(baseColor, palette.theme === 'dark' ? '#000000' : '#3a352c', 0.22));
-    spriteContext.fillStyle = body;
-    spriteContext.beginPath();
-    spriteContext.arc(0, 0, radius, 0, Math.PI * 2);
-    spriteContext.fill();
-
-    // Quiet sheen.
-    const sheen = spriteContext.createRadialGradient(
-      -radius * 0.34,
-      -radius * 0.4,
-      0,
-      -radius * 0.34,
-      -radius * 0.4,
-      radius * 0.7,
-    );
-    sheen.addColorStop(0, palette.theme === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.4)');
-    sheen.addColorStop(1, 'rgba(255,255,255,0)');
-    spriteContext.fillStyle = sheen;
-    spriteContext.beginPath();
-    spriteContext.arc(0, 0, radius, 0, Math.PI * 2);
-    spriteContext.fill();
-
-    // Thin lighter rim so the dot reads as a soft physical token.
-    spriteContext.strokeStyle =
-      palette.theme === 'dark' ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.5)';
-    spriteContext.lineWidth = Math.max(1, radius * 0.1);
-    spriteContext.beginPath();
-    spriteContext.arc(0, 0, Math.max(0.5, radius - spriteContext.lineWidth * 0.5), 0, Math.PI * 2);
-    spriteContext.stroke();
-
-    cache.set(key, sprite);
-    return sprite;
-  }
-
-  /** Draw a baked node at its layout position. */
-  function drawNode(
+  /** One sharp technical node mark, drawn in world space. */
+  function drawNodeMark(
     context: CanvasRenderingContext2D,
     palette: Palette,
     node: GraphNode,
-    scaleFactor: number,
+    scale: number,
+    focused: boolean,
+    active: boolean,
+    pending: boolean,
   ): void {
-    const sprite = nodeSprite(palette, node.kind, node.degree);
-    const worldSize = (sprite.width / SPRITE_SUPERSAMPLE) * scaleFactor;
-    context.drawImage(sprite, node.x - worldSize / 2, node.y - worldSize / 2, worldSize, worldSize);
+    const radius = radiusForDegree(node.degree);
+    const color = palette.kindColors[node.kind] ?? palette.node;
+    const hairline = 1 / scale;
+
+    // Hollow core hides the edges running behind the mark.
+    context.beginPath();
+    context.arc(node.x, node.y, radius, 0, Math.PI * 2);
+    context.fillStyle = palette.panel;
+    context.fill();
+    context.lineWidth = 1.5 / scale;
+    context.strokeStyle = colorToRgba(color, focused ? 1 : 0.9);
+    context.stroke();
+
+    // Faint outer collar for the instrument look.
+    context.beginPath();
+    context.arc(node.x, node.y, radius + 2.6 / scale, 0, Math.PI * 2);
+    context.lineWidth = hairline;
+    context.strokeStyle = colorToRgba(color, 0.24);
+    context.stroke();
+
+    // Center disc: hollow when idle, filled when selected.
+    context.beginPath();
+    context.arc(node.x, node.y, Math.max(1, focused ? radius * 0.4 : 1.1 / scale), 0, Math.PI * 2);
+    context.fillStyle = colorToRgba(color, 0.92);
+    context.fill();
+
+    // Selected: square corner brackets around the mark.
+    if (focused) {
+      const bracket = radius + 5.4 / scale;
+      const tick = 3 / scale;
+      context.strokeStyle = colorToRgba(color, 0.95);
+      context.lineWidth = 1.2 / scale;
+      context.beginPath();
+      for (const [dirX, dirY] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+        const cornerX = node.x + dirX * bracket;
+        const cornerY = node.y + dirY * bracket;
+        context.moveTo(cornerX - dirX * tick, cornerY);
+        context.lineTo(cornerX - dirX * tick * 0.2, cornerY);
+        context.moveTo(cornerX, cornerY - dirY * tick);
+        context.lineTo(cornerX, cornerY - dirY * tick * 0.2);
+      }
+      context.stroke();
+    }
+
+    // Active note: target crosshair.
+    if (active) {
+      const ring = radius + 6.5 / scale;
+      context.strokeStyle = colorToRgba(palette.node, 0.9);
+      context.lineWidth = hairline;
+      context.setLineDash([2 / scale, 2 / scale]);
+      context.beginPath();
+      context.arc(node.x, node.y, ring, 0, Math.PI * 2);
+      context.stroke();
+      context.setLineDash([]);
+      const tick = 2.6 / scale;
+      context.beginPath();
+      context.moveTo(node.x - ring - tick, node.y);
+      context.lineTo(node.x - ring + tick, node.y);
+      context.moveTo(node.x + ring - tick, node.y);
+      context.lineTo(node.x + ring + tick, node.y);
+      context.moveTo(node.x, node.y - ring - tick);
+      context.lineTo(node.x, node.y - ring + tick);
+      context.moveTo(node.x, node.y + ring - tick);
+      context.lineTo(node.x, node.y + ring + tick);
+      context.stroke();
+    }
+
+    // Connect mode: pending source gets a dashed target ring.
+    if (pending) {
+      context.strokeStyle = colorToRgba(palette.node, 0.95);
+      context.lineWidth = 1.2 / scale;
+      context.setLineDash([3 / scale, 2.4 / scale]);
+      context.beginPath();
+      context.arc(node.x, node.y, radius + 4 / scale, 0, Math.PI * 2);
+      context.stroke();
+      context.setLineDash([]);
+    }
+  }
+
+  /** Ghost note: dashed diamond in the ghost colour, no fill. */
+  function drawGhostMark(
+    context: CanvasRenderingContext2D,
+    palette: Palette,
+    node: GraphNode,
+    scale: number,
+  ): void {
+    const half = Math.max(5.5, radiusForDegree(node.degree) * 1.4);
+    context.beginPath();
+    context.moveTo(node.x, node.y - half);
+    context.lineTo(node.x + half, node.y);
+    context.lineTo(node.x, node.y + half);
+    context.lineTo(node.x - half, node.y);
+    context.closePath();
+    context.fillStyle = palette.panel;
+    context.fill();
+    context.setLineDash([2.4 / scale, 2.4 / scale]);
+    context.lineWidth = 1 / scale;
+    context.strokeStyle = colorToRgba(palette.ghost, 0.95);
+    context.stroke();
+    context.setLineDash([]);
   }
 
   function draw(): void {
@@ -593,8 +583,50 @@ export function GraphView({
     const activeId = activeIdRef.current;
     const selectedId = selectedIdRef.current;
     const pendingSource = modeRef.current === 'connect' ? connectSourceRef.current : null;
+
+    // Footer readout updated imperatively so drawing never re-renders React.
+    const scaleText = view.scale.toFixed(2);
+    if (scaleLabelRef.current && lastScaleTextRef.current !== scaleText) {
+      lastScaleTextRef.current = scaleText;
+      scaleLabelRef.current.textContent = scaleText;
+    }
+
+    // ---- static instrument-panel background: 1px grid + corner frame ----
     context.setTransform(1, 0, 0, 1, 0, 0);
-    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.clearRect(0, 0, pixelWidth, pixelHeight);
+    const step = Math.max(16, Math.round(GRID_SIZE * dpr));
+    context.strokeStyle = palette.grid;
+    context.lineWidth = 1;
+    context.beginPath();
+    for (let x = step; x < pixelWidth; x += step) {
+      const lineX = Math.round(x) + 0.5;
+      context.moveTo(lineX, 0);
+      context.lineTo(lineX, pixelHeight);
+    }
+    for (let y = step; y < pixelHeight; y += step) {
+      const lineY = Math.round(y) + 0.5;
+      context.moveTo(0, lineY);
+      context.lineTo(pixelWidth, lineY);
+    }
+    context.stroke();
+    const frame = 12 * dpr;
+    const frameInset = 6 * dpr;
+    context.strokeStyle = colorToRgba(palette.node, 0.22);
+    context.lineWidth = 1;
+    context.beginPath();
+    const frameCorners: Array<[number, number, number, number]> = [
+      [frameInset, frameInset, 1, 1],
+      [pixelWidth - frameInset, frameInset, -1, 1],
+      [frameInset, pixelHeight - frameInset, 1, -1],
+      [pixelWidth - frameInset, pixelHeight - frameInset, -1, -1],
+    ];
+    for (const [cornerX, cornerY, dirX, dirY] of frameCorners) {
+      context.moveTo(cornerX + dirX * frame, cornerY);
+      context.lineTo(cornerX, cornerY);
+      context.lineTo(cornerX, cornerY + dirY * frame);
+    }
+    context.stroke();
+
     if (graph.nodes.length === 0) return;
     if (!layoutReadyRef.current) return;
 
@@ -602,9 +634,10 @@ export function GraphView({
     for (const node of graph.nodes) nodeById.set(node.id, node);
 
     context.setTransform(dpr * view.scale, 0, 0, dpr * view.scale, dpr * view.tx, dpr * view.ty);
-    context.lineCap = 'round';
-    context.lineJoin = 'round';
+    context.lineCap = 'butt';
+    context.lineJoin = 'miter';
 
+    // ---- edges: 1px technical threads, no glows ----
     const traceEdges = (accept: (edgeType: string) => boolean): void => {
       context.beginPath();
       for (const edge of graph.edges) {
@@ -618,28 +651,44 @@ export function GraphView({
       context.stroke();
     };
 
-    // ---- edges: day chains faint dashed, wiki solid, manual stronger ----
-    context.setLineDash([3.2 / view.scale, 3.2 / view.scale]);
-    context.strokeStyle = colorToRgba(palette.edge, 0.34);
-    context.lineWidth = 1.1 / view.scale;
+    context.setLineDash([3 / view.scale, 3 / view.scale]);
+    context.strokeStyle = colorToRgba(palette.edge, 0.22);
+    context.lineWidth = 1 / view.scale;
     traceEdges((type) => type === 'day');
     context.setLineDash([]);
 
-    context.strokeStyle = palette.edge;
-    context.lineWidth = 1.3 / view.scale;
+    context.strokeStyle = colorToRgba(palette.edge, 0.5);
+    context.lineWidth = 1 / view.scale;
     traceEdges((type) => type === 'wiki');
 
-    context.strokeStyle = colorToRgba(palette.accent, 0.58);
-    context.lineWidth = 1.7 / view.scale;
+    const manualColor = colorToRgba(palette.node, 0.9);
+    context.strokeStyle = manualColor;
+    context.lineWidth = 1.2 / view.scale;
     traceEdges((type) => type === 'manual');
 
-    // Edges touching the selected or active note read a little stronger.
+    // Manual links get a small square tick at their midpoint.
+    context.fillStyle = manualColor;
+    for (const edge of graph.edges) {
+      if (edge.type !== 'manual') continue;
+      const source = nodeById.get(edge.source);
+      const target = nodeById.get(edge.target);
+      if (!source || !target) continue;
+      const size = 2.4 / view.scale;
+      context.fillRect(
+        (source.x + target.x) / 2 - size / 2,
+        (source.y + target.y) / 2 - size / 2,
+        size,
+        size,
+      );
+    }
+
+    // Edges touching the selected/active note read brighter.
     const focusIds = new Set<string>();
     if (selectedId) focusIds.add(selectedId);
     if (activeId) focusIds.add(activeId);
     if (focusIds.size > 0) {
-      context.strokeStyle = colorToRgba(palette.accentStrong, 0.5);
-      context.lineWidth = 2.3 / view.scale;
+      context.strokeStyle = colorToRgba(palette.node, 0.85);
+      context.lineWidth = 1.2 / view.scale;
       context.beginPath();
       for (const edge of graph.edges) {
         if (!focusIds.has(edge.source) && !focusIds.has(edge.target)) continue;
@@ -652,106 +701,67 @@ export function GraphView({
       context.stroke();
     }
 
-    // ---- unresolved links: hollow dashed circles ----
-    context.strokeStyle = colorToRgba(palette.ghost, palette.theme === 'dark' ? 0.85 : 0.95);
+    // ---- node marks: ghosts first, then real nodes, focus last ----
     for (const node of graph.nodes) {
-      if (!node.ghost) continue;
-      const radius = radiusForDegree(node.degree);
-      context.setLineDash([3.6 / view.scale, 3.2 / view.scale]);
-      context.lineWidth = 1.4 / view.scale;
-      context.beginPath();
-      context.arc(node.x, node.y, radius, 0, Math.PI * 2);
-      context.stroke();
+      if (node.ghost) drawGhostMark(context, palette, node, view.scale);
     }
-    context.setLineDash([]);
-
-    // ---- nodes: smaller ones behind, focused ones last ----
-    const focusDrawOrder = graph.nodes
-      .filter(
-        (node) => !node.ghost && node.id !== selectedId && node.id !== activeId,
-      )
-      .sort((a, b) => a.degree - b.degree);
-    for (const node of focusDrawOrder) drawNode(context, palette, node, 1);
     const selectedNode = selectedId ? nodeById.get(selectedId) : undefined;
     const activeNode = activeId && activeId !== selectedId ? nodeById.get(activeId) : undefined;
-    if (selectedNode && !selectedNode.ghost) drawNode(context, palette, selectedNode, 1.04);
-    if (activeNode && !activeNode.ghost) drawNode(context, palette, activeNode, 1);
-
-    // ---- focus decorations (rings, halo, active dot) ----
-    const drawRing = (
-      node: GraphNode,
-      color: string,
-      lineWidth: number,
-      dash: number[] | null,
-    ): void => {
-      const radius = radiusForDegree(node.degree) + 4.5 / view.scale;
-      context.strokeStyle = color;
-      context.lineWidth = lineWidth;
-      context.setLineDash(dash ?? []);
-      context.beginPath();
-      context.arc(node.x, node.y, radius, 0, Math.PI * 2);
-      context.stroke();
-      context.setLineDash([]);
-    };
-
+    const orderedNodes = graph.nodes
+      .filter((node) => !node.ghost && node.id !== selectedId && node.id !== activeId)
+      .sort((a, b) => a.degree - b.degree);
+    for (const node of orderedNodes) {
+      drawNodeMark(context, palette, node, view.scale, false, false, pendingSource === node.id);
+    }
     if (selectedNode && !selectedNode.ghost) {
-      const radius = radiusForDegree(selectedNode.degree);
-      const haloRadius = radius + 11 / view.scale;
-      const halo = context.createRadialGradient(
-        selectedNode.x,
-        selectedNode.y,
-        radius * 0.8,
-        selectedNode.x,
-        selectedNode.y,
-        haloRadius,
+      drawNodeMark(
+        context,
+        palette,
+        selectedNode,
+        view.scale,
+        true,
+        selectedNode.id === activeId,
+        pendingSource === selectedNode.id,
       );
-      halo.addColorStop(0, colorToRgba(palette.accent, 0.28));
-      halo.addColorStop(1, colorToRgba(palette.accent, 0));
-      context.fillStyle = halo;
-      context.beginPath();
-      context.arc(selectedNode.x, selectedNode.y, haloRadius, 0, Math.PI * 2);
-      context.fill();
-      drawRing(selectedNode, colorToRgba(palette.accent, 0.95), 2 / view.scale, null);
     }
-
-    if (pendingSource) {
-      const sourceNode = nodeById.get(pendingSource);
-      if (sourceNode) {
-        drawRing(
-          sourceNode,
-          colorToRgba(palette.accentStrong, 0.9),
-          1.8 / view.scale,
-          [4 / view.scale, 3 / view.scale],
-        );
-      }
-    }
-
-    // Active note: a small dot so the open note is findable without noise.
     if (activeNode && !activeNode.ghost) {
-      const radius = radiusForDegree(activeNode.degree);
-      const dotRadius = Math.max(2.2, 2.8 / view.scale);
-      const dotX = activeNode.x + radius * 0.68;
-      const dotY = activeNode.y - radius * 0.68;
-      context.beginPath();
-      context.arc(dotX, dotY, dotRadius, 0, Math.PI * 2);
-      context.fillStyle = palette.accentStrong;
-      context.fill();
-      context.lineWidth = 1.4 / view.scale;
-      context.strokeStyle = palette.surface;
-      context.stroke();
+      drawNodeMark(context, palette, activeNode, view.scale, false, true, pendingSource === activeNode.id);
     }
 
-    // ---- labels: soft pills, screen space so text stays crisp ----
+    // ---- screen-space instrumentation: badges, "?" ghost labels, labels ----
+    context.setTransform(dpr, 0, 0, dpr, 0, 0);
+    context.textAlign = 'left';
+    context.textBaseline = 'bottom';
+    context.font = `500 8px ${palette.fontMono}`;
+    context.fillStyle = colorToRgba(palette.textDim, 0.95);
+    for (const node of graph.nodes) {
+      if (node.ghost || node.degree < 3) continue;
+      const screenX = node.x * view.scale + view.tx;
+      const screenY = node.y * view.scale + view.ty;
+      const radius = radiusForDegree(node.degree) * view.scale;
+      context.fillText(`+${node.degree}`, screenX + radius + 3, screenY - radius - 2);
+    }
+
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.font = `500 9.5px ${palette.fontMono}`;
+    context.fillStyle = colorToRgba(palette.textDim, 1);
+    for (const node of graph.nodes) {
+      if (!node.ghost) continue;
+      const screenX = node.x * view.scale + view.tx;
+      const screenY = node.y * view.scale + view.ty;
+      const half = Math.max(5.5, radiusForDegree(node.degree) * 1.4) * view.scale;
+      context.fillText('?', screenX, screenY + half + 9);
+    }
+
+    // ---- labels: monospace readouts; selected gets a 1px boxed label ----
     const labelNodes = selectLabelNodes(graph, activeId, selectedId, width, height);
     const focused = new Set<string>();
     if (activeId) focused.add(activeId);
     if (selectedId) focused.add(selectedId);
-
-    context.setTransform(dpr, 0, 0, dpr, 0, 0);
-    context.textAlign = 'center';
-    context.textBaseline = 'middle';
     const takenLabelAreas: Array<{ left: number; right: number; top: number; bottom: number }> = [];
     for (const node of labelNodes) {
+      if (node.ghost) continue;
       const label = truncateLabel(node.title);
       if (!label) continue;
       const isSelected = node.id === selectedId;
@@ -764,48 +774,51 @@ export function GraphView({
       }
 
       context.font = isSelected
-        ? `700 ${SELECTED_LABEL_FONT_SIZE}px ${palette.fontSans}`
-        : `600 ${LABEL_FONT_SIZE}px ${palette.fontSans}`;
+        ? `600 ${SELECTED_LABEL_FONT_SIZE}px ${palette.fontMono}`
+        : `500 ${LABEL_FONT_SIZE}px ${palette.fontMono}`;
       const textWidth = context.measureText(label).width;
-      const pillHeight = isSelected ? 22 : 19;
-      const pillWidth = Math.min(textWidth + 16, width - 12);
-      const pillX = clamp(screenX - pillWidth / 2, 6, Math.max(6, width - pillWidth - 6));
-      let pillY = screenY + radius + 7;
-      if (pillY + pillHeight > height - 6) pillY = screenY - radius - 7 - pillHeight;
-      pillY = clamp(pillY, 6, Math.max(6, height - pillHeight - 6));
+      const boxHeight = isSelected ? 16 : 12;
+      const boxWidth = Math.min(textWidth + (isSelected ? 12 : 0), width - 12);
+      const boxX = clamp(screenX - boxWidth / 2, 6, Math.max(6, width - boxWidth - 6));
+      let boxY = screenY + radius + 7;
+      if (boxY + boxHeight > height - 6) boxY = screenY - radius - 7 - boxHeight;
+      boxY = clamp(boxY, 6, Math.max(6, height - boxHeight - 6));
 
       if (!isFocused) {
         const overlaps = takenLabelAreas.some(
           (area) =>
-            pillX < area.right + 3 &&
-            pillX + pillWidth > area.left - 3 &&
-            pillY < area.bottom + 3 &&
-            pillY + pillHeight > area.top - 3,
+            boxX < area.right + 3 &&
+            boxX + boxWidth > area.left - 3 &&
+            boxY < area.bottom + 3 &&
+            boxY + boxHeight > area.top - 3,
         );
         if (overlaps) continue;
       }
       takenLabelAreas.push({
-        left: pillX,
-        right: pillX + pillWidth,
-        top: pillY,
-        bottom: pillY + pillHeight,
+        left: boxX,
+        right: boxX + boxWidth,
+        top: boxY,
+        bottom: boxY + boxHeight,
       });
 
-      roundRectPath(context, pillX, pillY, pillWidth, pillHeight, pillHeight / 2);
-      context.fillStyle = colorToRgba(palette.surface, isSelected ? 0.94 : 0.84);
-      context.fill();
-      context.lineWidth = 1;
-      context.strokeStyle = isSelected ? colorToRgba(palette.accent, 0.6) : palette.border;
-      context.stroke();
+      if (isSelected) {
+        const frameX = Math.round(boxX) + 0.5;
+        const frameY = Math.round(boxY) + 0.5;
+        const frameWidth = Math.max(2, Math.round(boxWidth) - 1);
+        const frameHeight = Math.max(2, Math.round(boxHeight) - 1);
+        context.fillStyle = colorToRgba(palette.panel2, 0.96);
+        context.fillRect(frameX, frameY, frameWidth, frameHeight);
+        context.strokeStyle = colorToRgba(palette.node, 0.8);
+        context.lineWidth = 1;
+        context.strokeRect(frameX, frameY, frameWidth, frameHeight);
+      }
 
       context.fillStyle = isSelected
-        ? palette.accentInk
-        : node.ghost
-          ? palette.textFaint
-          : isFocused
-            ? palette.text
-            : palette.textMuted;
-      context.fillText(label, pillX + pillWidth / 2, pillY + pillHeight / 2 + 0.5);
+        ? palette.text
+        : isFocused
+          ? colorToRgba(palette.text, 0.9)
+          : colorToRgba(palette.textDim, 0.95);
+      context.fillText(label, boxX + boxWidth / 2, boxY + boxHeight / 2 + 0.5);
     }
   }
 
@@ -840,8 +853,10 @@ export function GraphView({
         else if (side === 'bottom') bottom = Math.min(bottom, rect.top - canvasRect.top - gap);
         else top = Math.max(top, rect.bottom - canvasRect.top + 10);
       };
+      reserve('.graph-panel-head', 'top');
       reserve('.graph-toolbar', 'right');
       reserve('.graph-legend', 'bottom');
+      reserve('.graph-panel-foot', 'bottom');
       reserve('.graph-hint', 'top');
     }
     // Never let a cramped layout collapse the play area entirely.
@@ -883,7 +898,7 @@ export function GraphView({
 
     for (const node of graph.nodes) {
       const radius = radiusForDegree(node.degree) * scale;
-      const padding = node.id === selectedId ? 12 : 6;
+      const padding = node.id === selectedId || node.id === activeId || node.ghost ? 10 : 6;
       const screenX = node.x * scale + tx;
       const screenY = node.y * scale + ty;
       include(
@@ -892,9 +907,14 @@ export function GraphView({
         screenX + radius + padding,
         screenY + radius + padding,
       );
-      if (node.id === activeId) {
-        // Small "open note" dot at the node's top-right.
-        include(screenX + radius - 2, screenY - radius - 8, screenX + radius + 10, screenY - radius + 4);
+      if (node.ghost) {
+        // Ghost diamond plus the monospace "?" underneath.
+        const half = Math.max(5.5, radiusForDegree(node.degree) * 1.4) * scale;
+        include(screenX - half, screenY - half, screenX + half, screenY + half + 18);
+      }
+      if (node.degree >= 3 && !node.ghost) {
+        // Degree badge sits at the mark's top-right.
+        include(screenX + radius, screenY - radius - 12, screenX + radius + 22, screenY - radius);
       }
     }
 
@@ -903,19 +923,23 @@ export function GraphView({
       const palette = getPalette();
       const canvasWidth = sizeRef.current.width;
       for (const node of labelNodes) {
+        if (node.ghost) continue;
         const label = truncateLabel(node.title);
         if (!label) continue;
         const selected = node.id === selectedId;
         context.font = selected
-          ? `700 ${SELECTED_LABEL_FONT_SIZE}px ${palette.fontSans}`
-          : `600 ${LABEL_FONT_SIZE}px ${palette.fontSans}`;
-        const labelWidth = Math.min(context.measureText(label).width + 16, canvasWidth - 12);
-        const labelHeight = selected ? 22 : 19;
+          ? `600 ${SELECTED_LABEL_FONT_SIZE}px ${palette.fontMono}`
+          : `500 ${LABEL_FONT_SIZE}px ${palette.fontMono}`;
+        const labelWidth = Math.min(
+          context.measureText(label).width + (selected ? 12 : 0),
+          canvasWidth - 12,
+        );
+        const labelHeight = selected ? 16 : 12;
         const radius = radiusForDegree(node.degree) * scale;
         const screenX = node.x * scale + tx;
         const screenY = node.y * scale + ty;
-        const pillTop = screenY + radius + 7;
-        include(screenX - labelWidth / 2, pillTop, screenX + labelWidth / 2, pillTop + labelHeight);
+        const labelTop = screenY + radius + 7;
+        include(screenX - labelWidth / 2, labelTop, screenX + labelWidth / 2, labelTop + labelHeight);
       }
     }
 
@@ -1611,6 +1635,11 @@ export function GraphView({
     }
     const ghostPresent = next.nodes.some((node) => node.ghost);
     setHasGhost((current) => (current === ghostPresent ? current : ghostPresent));
+    setStats((current) =>
+      current.nodes === next.nodes.length && current.edges === next.edges.length
+        ? current
+        : { nodes: next.nodes.length, edges: next.edges.length },
+    );
 
     startLayout(!preserve, settleTicks);
   }, [notes]);
@@ -1651,9 +1680,20 @@ export function GraphView({
       />
       {notes.length > 0 ? (
         <>
+          <div className="graph-panel-head" aria-hidden="true">
+            <span className="graph-panel-title">LIFE GRAPH</span>
+            <span className="graph-panel-stats">
+              NODES {String(stats.nodes).padStart(2, '0')} · EDGES{' '}
+              {String(stats.edges).padStart(2, '0')}
+            </span>
+            <span className="graph-panel-mode">
+              {mode === 'add' ? 'MODE ADD' : mode === 'connect' ? 'MODE LINK' : 'MODE PAN'}
+            </span>
+          </div>
           {hint ? (
             <div className="graph-hint" role="status">
-              {hint}
+              <span className="graph-hint-tag">{mode === 'add' ? 'ADD' : 'LINK'}</span>
+              <span>{hint}</span>
             </div>
           ) : null}
           <div className="graph-toolbar" role="toolbar" aria-label="图谱工具">
@@ -1664,7 +1704,7 @@ export function GraphView({
               aria-label="放大"
               title="放大"
             >
-              <Icon name="zoomIn" size={20} />
+              <Icon name="zoomIn" size={18} />
             </button>
             <button
               type="button"
@@ -1673,7 +1713,7 @@ export function GraphView({
               aria-label="缩小"
               title="缩小"
             >
-              <Icon name="zoomOut" size={20} />
+              <Icon name="zoomOut" size={18} />
             </button>
             <button
               type="button"
@@ -1682,7 +1722,7 @@ export function GraphView({
               aria-label="适应画布"
               title="适应画布"
             >
-              <Icon name="fit" size={20} />
+              <Icon name="fit" size={18} />
             </button>
             <span className="graph-toolbar-sep" aria-hidden="true" />
             <button
@@ -1693,7 +1733,7 @@ export function GraphView({
               title="添加记录"
               aria-pressed={mode === 'add'}
             >
-              <Icon name="plus" size={20} />
+              <Icon name="plus" size={18} />
             </button>
             <button
               type="button"
@@ -1703,7 +1743,7 @@ export function GraphView({
               title="连线"
               aria-pressed={mode === 'connect'}
             >
-              <Icon name="link" size={20} />
+              <Icon name="link" size={18} />
             </button>
             <span className="graph-toolbar-sep" aria-hidden="true" />
             <button
@@ -1713,29 +1753,29 @@ export function GraphView({
               aria-label="重新布局"
               title="重新布局"
             >
-              <Icon name="refresh" size={20} />
+              <Icon name="refresh" size={18} />
             </button>
           </div>
+          <div className="graph-panel-foot" aria-hidden="true">
+            <span>
+              SCALE <span ref={scaleLabelRef}>1.00</span>
+            </span>
+          </div>
           <div className="graph-legend" aria-label="图例">
-            {presentKinds.map((kind) => {
-              const info = KIND_INFO[kind];
-              return (
-                <span key={kind} className="graph-legend-item">
-                  <span
-                    className="graph-legend-dot"
-                    style={{ backgroundColor: `var(${info.accentVar})` }}
-                    aria-hidden="true"
-                  />
-                  <span>
-                    {info.emoji} {info.label}
-                  </span>
-                </span>
-              );
-            })}
+            {presentKinds.map((kind) => (
+              <span key={kind} className="graph-legend-item">
+                <span
+                  className="graph-legend-swatch"
+                  style={{ backgroundColor: `var(${KIND_COLOR_VARS[kind]})` }}
+                  aria-hidden="true"
+                />
+                <span>{KIND_CODES[kind]}</span>
+              </span>
+            ))}
             {hasGhost ? (
               <span className="graph-legend-item">
                 <span
-                  className="graph-legend-dot graph-legend-dot--ghost"
+                  className="graph-legend-swatch graph-legend-swatch--ghost"
                   aria-hidden="true"
                 />
                 <span>未创建</span>
@@ -1745,11 +1785,7 @@ export function GraphView({
         </>
       ) : (
         <div className="empty graph-empty">
-          <div className="graph-empty-badge" aria-hidden="true">
-            <Icon name="graph" size={26} />
-          </div>
-          <div className="empty-title">还没有记录，去记一笔吧</div>
-          <div className="empty-text">写下的每一笔都会变成图谱里的一个点，慢慢连成你的生活。</div>
+          <div className="graph-empty-line">暂无节点 · 记一笔后再回来</div>
         </div>
       )}
     </div>

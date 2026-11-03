@@ -21,6 +21,8 @@ interface ChatMessage {
   id: number;
   role: 'user' | 'bot';
   text: string;
+  /** Creation time (epoch ms) shown as the mono AGENT/YOU meta label. */
+  at: number;
   suggestions?: string[];
   /** Set when the agent prepared a record and asks for confirmation. */
   draft?: RecordDraft;
@@ -30,6 +32,12 @@ interface ChatMessage {
 interface Fact {
   label: string;
   value: string;
+}
+
+/** 24h clock label for the chat meta line. */
+function clock(at: number): string {
+  const date = new Date(at);
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
 
 /** Structured one-line facts for a draft, shared by the chat and the card. */
@@ -64,7 +72,7 @@ function draftFacts(kind: NoteKind, meta: NoteMeta): Fact[] {
   return facts;
 }
 
-/** Render plain reply text line by line; leading "-"/"·" becomes a bullet. */
+/** Render plain reply text line by line; leading "-"/"·" becomes a rule bullet. */
 function replyLines(text: string) {
   const lines = text
     .split(/\r?\n/)
@@ -87,13 +95,12 @@ function replyLines(text: string) {
 }
 
 /**
- * The built-in offline helper.
- *
- * A full-screen in-app panel (no fixed overlay) that renders a local chat:
- * the greeting comes from `agentGreeting`, replies from `agentReply`, and any
- * prepared record arrives as a confirm card so nothing is saved silently.
- * Messages live in component state only — the panel starts fresh every mount
- * and never touches the network.
+ * The built-in local helper, in the 日新 editorial style: a flat chat on paper
+ * with hairline rules, serif display name and mono meta labels. The greeting
+ * comes from `agentGreeting`, replies from `agentReply`, and a prepared record
+ * arrives as a bordered confirm table so nothing is saved silently. Messages
+ * live in component state only — the panel starts fresh every mount and never
+ * touches the network.
  */
 export function AgentPanel({
   persona,
@@ -108,7 +115,7 @@ export function AgentPanel({
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     const greeting = agentGreeting(notes);
-    return [{ id: 0, role: 'bot', text: greeting.text }];
+    return [{ id: 0, role: 'bot', text: greeting.text, at: Date.now() }];
   });
   const [savingId, setSavingId] = useState<number | null>(null);
 
@@ -119,6 +126,7 @@ export function AgentPanel({
         id: idRef.current++,
         role: 'bot',
         text,
+        at: Date.now(),
         suggestions: suggestions && suggestions.length > 0 ? [...suggestions] : undefined,
       },
     ]);
@@ -129,11 +137,13 @@ export function AgentPanel({
       const text = raw.trim();
       if (!text) return;
       const reply = agentReply(text, notes);
-      const userMessage: ChatMessage = { id: idRef.current++, role: 'user', text };
+      const now = Date.now();
+      const userMessage: ChatMessage = { id: idRef.current++, role: 'user', text, at: now };
       const botMessage: ChatMessage = {
         id: idRef.current++,
         role: 'bot',
         text: reply.text,
+        at: now,
         suggestions:
           reply.suggestions && reply.suggestions.length > 0 ? [...reply.suggestions] : undefined,
         draft: reply.action?.type === 'createNote' ? reply.action.draft : undefined,
@@ -209,10 +219,10 @@ export function AgentPanel({
     <div className="screen agent-screen">
       <header className="agent-screen__header">
         <div className="agent-screen__identity">
-          <AgentAvatar avatar={persona.avatar} size={46} />
-          <div className="agent-screen__name-block">
+          <AgentAvatar avatar={persona.avatar} name={persona.name} size={44} />
+          <div className="agent-screen__title-block">
             <h1 className="agent-screen__name">{persona.name}</h1>
-            <p className="agent-screen__subtitle">本地助手 · 不联网</p>
+            <p className="agent-screen__subtitle">LOCAL · OFFLINE</p>
           </div>
         </div>
         <button
@@ -222,7 +232,7 @@ export function AgentPanel({
           title="更换头像和名字"
           onClick={onEditPersona}
         >
-          <Icon name="edit" size={19} />
+          <Icon name="edit" size={18} />
         </button>
       </header>
 
@@ -233,101 +243,103 @@ export function AgentPanel({
         aria-live="polite"
         aria-label={`与${persona.name}的对话`}
       >
-        {messages.map((message) =>
-          message.role === 'bot' ? (
-            <div className="agent-screen__row agent-screen__row--bot" key={message.id}>
-              <AgentAvatar avatar={persona.avatar} size={30} className="agent-screen__bubble-avatar" />
-              <div className="agent-screen__bubble agent-screen__bubble--bot">
-                <p className="agent-screen__reply">{replyLines(message.text)}</p>
+        {messages.map((message) => (
+          <div className={`agent-screen__row agent-screen__row--${message.role}`} key={message.id}>
+            <p className={`agent-screen__meta agent-screen__meta--${message.role}`}>
+              {message.role === 'bot' ? 'AGENT' : 'YOU'} {clock(message.at)}
+            </p>
+            <div className="agent-screen__body">
+              {message.role === 'user' ? (
+                <div className="agent-screen__user-block">
+                  <p className="agent-screen__text">{replyLines(message.text)}</p>
+                </div>
+              ) : (
+                <>
+                  <p className="agent-screen__text">{replyLines(message.text)}</p>
 
-                {message.draft && message.draftState ? (
-                  <div className={`agent-screen__draft is-${message.draftState}`}>
-                    <div className="agent-screen__draft-head">
-                      <span
-                        className="agent-screen__draft-kind"
-                        style={{
-                          background: `var(${KIND_INFO[message.draft.kind].accentSoftVar})`,
-                          color: `var(${KIND_INFO[message.draft.kind].accentVar})`,
-                        }}
-                      >
-                        {KIND_INFO[message.draft.kind].label}
-                      </span>
-                      <span className="agent-screen__draft-hint">
-                        {message.draftState === 'pending'
-                          ? '待确认'
-                          : message.draftState === 'saved'
-                            ? '已保存'
-                            : '已取消'}
-                      </span>
-                    </div>
-                    <p className="agent-screen__draft-title">{message.draft.title}</p>
-                    {draftFacts(message.draft.kind, message.draft.meta).length > 0 ? (
-                      <dl className="agent-screen__draft-facts">
-                        {draftFacts(message.draft.kind, message.draft.meta).map((fact) => (
-                          <div className="agent-screen__draft-fact" key={`${fact.label}-${fact.value}`}>
-                            <dt>{fact.label}</dt>
-                            <dd>{fact.value}</dd>
-                          </div>
-                        ))}
-                      </dl>
-                    ) : null}
-                    {message.draftState === 'pending' ? (
-                      <div className="agent-screen__draft-actions">
-                        <button
-                          type="button"
-                          className="btn btn-primary btn-small"
-                          disabled={savingId !== null}
-                          onClick={() => void saveDraft(message)}
+                  {message.draft && message.draftState ? (
+                    <div className={`agent-screen__draft is-${message.draftState}`}>
+                      <div className="agent-screen__draft-head">
+                        <span
+                          className="agent-screen__draft-kind"
+                          style={{ color: `var(${KIND_INFO[message.draft.kind].accentVar})` }}
                         >
-                          {savingId === message.id ? '保存中…' : '保存'}
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-ghost btn-small"
-                          disabled={savingId !== null}
-                          onClick={() => cancelDraft(message)}
-                        >
-                          取消
-                        </button>
+                          {KIND_INFO[message.draft.kind].label}
+                        </span>
+                        <span className="agent-screen__draft-state">
+                          {message.draftState === 'pending'
+                            ? '待确认'
+                            : message.draftState === 'saved'
+                              ? '已保存'
+                              : '已取消'}
+                        </span>
                       </div>
-                    ) : null}
-                  </div>
-                ) : null}
+                      <p className="agent-screen__draft-title">{message.draft.title}</p>
+                      {draftFacts(message.draft.kind, message.draft.meta).length > 0 ? (
+                        <dl className="agent-screen__draft-facts">
+                          {draftFacts(message.draft.kind, message.draft.meta).map((fact) => (
+                            <div
+                              className="agent-screen__draft-fact"
+                              key={`${fact.label}-${fact.value}`}
+                            >
+                              <dt>{fact.label}</dt>
+                              <dd>{fact.value}</dd>
+                            </div>
+                          ))}
+                        </dl>
+                      ) : null}
+                      {message.draftState === 'pending' ? (
+                        <div className="agent-screen__draft-actions">
+                          <button
+                            type="button"
+                            className="agent-screen__draft-btn agent-screen__draft-btn--save"
+                            disabled={savingId !== null}
+                            onClick={() => void saveDraft(message)}
+                          >
+                            {savingId === message.id ? '保存中…' : '保存'}
+                          </button>
+                          <button
+                            type="button"
+                            className="agent-screen__draft-btn agent-screen__draft-btn--cancel"
+                            disabled={savingId !== null}
+                            onClick={() => cancelDraft(message)}
+                          >
+                            取消
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
 
-                {message.suggestions && message.suggestions.length > 0 ? (
-                  <div className="agent-screen__reply-suggestions" role="group" aria-label="继续提问">
-                    {message.suggestions.map((suggestion) => (
-                      <button
-                        key={suggestion}
-                        type="button"
-                        className="chip agent-screen__suggestion"
-                        onClick={() => send(suggestion)}
-                      >
-                        {suggestion}
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
+                  {message.suggestions && message.suggestions.length > 0 ? (
+                    <div className="agent-screen__suggestions" role="group" aria-label="继续提问">
+                      {message.suggestions.map((suggestion) => (
+                        <button
+                          key={suggestion}
+                          type="button"
+                          className="agent-screen__suggestion"
+                          onClick={() => send(suggestion)}
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </>
+              )}
             </div>
-          ) : (
-            <div className="agent-screen__row agent-screen__row--user" key={message.id}>
-              <div className="agent-screen__bubble agent-screen__bubble--user">
-                <p className="agent-screen__reply">{replyLines(message.text)}</p>
-              </div>
-            </div>
-          ),
-        )}
+          </div>
+        ))}
       </div>
 
       <div className="agent-screen__composer-wrap">
         {onlyGreeting && starterSuggestions.length > 0 ? (
-          <div className="agent-screen__starters" role="group" aria-label="可以这样问">
+          <div className="agent-screen__suggestions agent-screen__starters" role="group" aria-label="可以这样问">
             {starterSuggestions.map((suggestion) => (
               <button
                 key={suggestion}
                 type="button"
-                className="chip agent-screen__starter"
+                className="agent-screen__suggestion"
                 onClick={() => send(suggestion)}
               >
                 {suggestion}
@@ -345,19 +357,19 @@ export function AgentPanel({
         >
           <button
             type="button"
-            className="icon-btn agent-screen__capture"
+            className="agent-screen__action"
             aria-label="打开记一笔"
             title="记一笔"
             onClick={onCreateRecord}
           >
-            <Icon name="plus" size={20} />
+            <Icon name="plus" size={18} />
           </button>
           <input
             ref={inputRef}
             className="agent-screen__input"
             type="text"
             value={input}
-            placeholder={`和${persona.name}说点什么`}
+            placeholder={`问${persona.name}，或记一笔`}
             aria-label="输入消息"
             autoComplete="off"
             autoCorrect="off"
@@ -369,12 +381,12 @@ export function AgentPanel({
           />
           <button
             type="submit"
-            className="agent-screen__send"
+            className="agent-screen__action agent-screen__send"
             aria-label="发送"
             title="发送"
             disabled={input.trim().length === 0}
           >
-            <Icon name="arrowRight" size={20} />
+            <Icon name="arrowRight" size={18} />
           </button>
         </form>
       </div>

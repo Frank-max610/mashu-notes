@@ -37,18 +37,19 @@ const baseArgIndex = args.findIndex((arg) => arg === '--base' || arg === '-b');
 const BASE = (baseArgIndex !== -1 ? args[baseArgIndex + 1] : undefined) ?? 'http://127.0.0.1:4173';
 const PORT = 9333;
 const OUT_DIR = resolve(process.cwd(), 'docs/screenshots');
-const PROFILE_DIR = resolve(tmpdir(), `mochi-chrome-${Date.now()}`);
+const PROFILE_DIR = resolve(tmpdir(), `rixin-chrome-${Date.now()}`);
 const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
 
 const SHOTS = [
-  { file: 'mobile-notes.png', hash: '#/notes', waitFor: '.today-card', delay: 700 },
+  { file: 'today.png', hash: '#/today', waitFor: '.brief-block', delay: 900 },
+  { file: 'records.png', hash: '#/records', waitFor: '.note-card', delay: 800 },
   {
     file: 'capture.png',
-    hash: '#/notes',
-    waitFor: '.today-card',
+    hash: '#/records',
+    waitFor: '.note-card',
     delay: 500,
     action: `(() => {
-      document.querySelector('.tabbar-compose')?.click();
+      document.querySelector('[aria-label="记一笔"]')?.click();
       setTimeout(() => {
         const input = document.querySelector('.capture-sheet__textarea');
         if (!input) return;
@@ -59,15 +60,15 @@ const SHOTS = [
       }, 400);
     })()`,
     afterActionWaitFor: '.capture-sheet__preview',
-    afterActionDelay: 600,
+    afterActionDelay: 700,
   },
   { file: 'graph.png', hash: '#/graph', waitFor: '.graph-view canvas', delay: 3000 },
-  { file: 'agent.png', hash: '#/agent', waitFor: '.agent-screen', delay: 800 },
+  { file: 'agent.png', hash: '#/agent', waitFor: '.agent-screen', delay: 900 },
   {
     file: 'editor.png',
     hash: '#/note/seed-welcome',
     waitFor: '.editor-screen .markdown-body',
-    delay: 600,
+    delay: 700,
   },
   {
     file: 'editor-edit.png',
@@ -76,18 +77,18 @@ const SHOTS = [
     delay: 500,
     action: `document.querySelector('[aria-label="切换到编辑"]')?.click()`,
     afterActionWaitFor: '.editor-textarea',
-    afterActionDelay: 500,
+    afterActionDelay: 600,
   },
   {
     file: 'search.png',
     hash: '#/search',
-    waitFor: '.search-screen',
+    waitFor: '.search-screen__input',
     delay: 500,
-    action: `(() => { const input = document.querySelector('.search-screen input[type="search"]'); if (!input) return; input.focus(); const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set; setter.call(input, '麻薯'); input.dispatchEvent(new Event('input', { bubbles: true })); })()`,
+    action: `(() => { const input = document.querySelector('.search-screen__input'); if (!input) return; input.focus(); const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set; setter.call(input, '日新'); input.dispatchEvent(new Event('input', { bubbles: true })); })()`,
     afterActionWaitFor: '.search-screen mark',
-    afterActionDelay: 500,
+    afterActionDelay: 600,
   },
-  { file: 'settings.png', hash: '#/settings', waitFor: '.settings-card', delay: 700 },
+  { file: 'settings.png', hash: '#/settings', waitFor: '.agent-persona', delay: 800 },
   {
     file: 'install.png',
     hash: '#/settings',
@@ -97,17 +98,17 @@ const SHOTS = [
     scrollTo: '.install-card',
   },
   {
-    file: 'dark-notes.png',
-    hash: '#/notes',
-    waitFor: '.today-card',
-    delay: 700,
+    file: 'dark-today.png',
+    hash: '#/today',
+    waitFor: '.brief-block',
+    delay: 800,
     theme: 'dark',
   },
   {
-    file: 'empty-notes.png',
-    hash: '#/notes',
+    file: 'empty-records.png',
+    hash: '#/records',
     waitFor: '.empty',
-    delay: 700,
+    delay: 800,
     resetVault: true,
   },
 ];
@@ -233,7 +234,7 @@ async function capture(shot) {
 
     if (shot.theme) {
       await cdp.send('Runtime.evaluate', {
-        expression: `localStorage.setItem('mochi.theme.v1', ${JSON.stringify(shot.theme)}); location.reload();`,
+        expression: `localStorage.setItem('rixin.theme.v1', ${JSON.stringify(shot.theme)}); location.reload();`,
       });
       await sleep(500);
       await waitForExpression(cdp, 'document.readyState === "complete"', 12000);
@@ -243,11 +244,13 @@ async function capture(shot) {
       // Empty vault + light theme, so the captured empty state is reproducible.
       await cdp.send('Runtime.evaluate', {
         expression: `(async () => {
-          localStorage.setItem('mochi.theme.v1', 'light');
-          localStorage.setItem('mochi.onboarded.v1', '1');
+          localStorage.setItem('rixin.theme.v1', 'light');
+          localStorage.setItem('rixin.onboarded.v1', '1');
+          localStorage.removeItem('rixin.notes.v1');
           localStorage.removeItem('mochi.notes.v1');
+          localStorage.removeItem('inkstone.notes.v1');
           await new Promise((done) => {
-            const request = indexedDB.deleteDatabase('mochi');
+            const request = indexedDB.deleteDatabase('rixin');
             request.onsuccess = request.onerror = request.onblocked = () => done();
           });
           location.reload();

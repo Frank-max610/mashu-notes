@@ -186,6 +186,12 @@ const ICONS = {
     </>
   ),
   arrowRight: <path d="M4.5 12h15m0 0-5.4-5.4M19.5 12l-5.4 5.4" />,
+  phone: (
+    <g>
+      <rect x="7" y="3" width="10" height="18" rx="1.5" />
+      <path d="M10.5 18.5h3" />
+    </g>
+  ),
   external: (
     <>
       <path d="M13.5 4.5H19.5V10.5" />

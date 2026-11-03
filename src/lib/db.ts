@@ -2,24 +2,19 @@ import type { Note } from './types';
 import { normalizeNote } from './prefs';
 
 /**
- * Persistence layer: IndexedDB with a localStorage fallback (private mode,
- * blocked storage). Everything stays on the device — there is no server.
+ * Persistence layer for 日新: IndexedDB with a localStorage fallback.
+ * Everything stays on the device. Data from previous brands (麻薯 / 砚) is
+ * migrated into the new `rixin` database on first open.
  */
 
-const DB_NAME = 'mochi';
+const DB_NAME = 'rixin';
 const DB_VERSION = 2;
 const STORE = 'notes';
-const LS_KEY = 'mochi.notes.v1';
+const LS_KEY = 'rixin.notes.v1';
 
-/** Pre-rebrand (0.1.x) storage, migrated once on first open. */
-const LEGACY_DB_NAME = 'inkstone';
-const LEGACY_LS = {
-  notes: 'inkstone.notes.v1',
-  theme: 'inkstone.theme.v1',
-  onboarded: 'inkstone.onboarded.v1',
-} as const;
-const THEME_KEY = 'mochi.theme.v1';
-const ONBOARDED_KEY = 'mochi.onboarded.v1';
+/** Storage from previous brands, adopted once. */
+const LEGACY_DB_NAMES = ['mochi', 'inkstone'] as const;
+const LEGACY_LS_NOTES = ['mochi.notes.v1', 'inkstone.notes.v1'] as const;
 
 export type StorageMode = 'indexeddb' | 'localstorage';
 
@@ -40,9 +35,7 @@ function openDatabase(): Promise<IDBDatabase> {
         const store = db.createObjectStore(STORE, { keyPath: 'id' });
         store.createIndex('updatedAt', 'updatedAt');
       }
-      if (event.oldVersion < 2) {
-        // v2 adds life-record fields (kind/meta/manualLinks/position) to every
-        // stored note; rewrite them inside the upgrade transaction.
+      if (event.oldVersion > 0 && event.oldVersion < 2) {
         const store = request.transaction?.objectStore(STORE);
         if (store) {
           const cursorRequest = store.openCursor();
@@ -57,8 +50,6 @@ function openDatabase(): Promise<IDBDatabase> {
       }
     };
     request.onsuccess = () => resolve(request.result);
-    // Do not cache a failed open: a transient error (blocked upgrade, another
-    // tab holding a transaction) must not degrade the whole session.
     request.onerror = () => {
       dbPromise = null;
       reject(request.error ?? new Error('IndexedDB open failed'));
@@ -79,15 +70,19 @@ function txDone(tx: IDBTransaction): Promise<void> {
   });
 }
 
+function normalizeAll(values: unknown[]): Note[] {
+  return values
+    .map((value) => normalizeNote(value))
+    .filter((note): note is Note => note !== null);
+}
+
 function readLocal(): Note[] {
   try {
     const raw = localStorage.getItem(LS_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [];
-    return parsed
-      .map((value) => normalizeNote(value))
-      .filter((note): note is Note => note !== null);
+    return normalizeAll(parsed);
   } catch {
     return [];
   }
@@ -97,23 +92,30 @@ function writeLocal(notes: Note[]): void {
   localStorage.setItem(LS_KEY, JSON.stringify(notes));
 }
 
+/** Whether the vault is stored in IndexedDB or fell back to localStorage. */
+export function getStorageMode(): StorageMode {
+  return mode ?? (typeof indexedDB === 'undefined' ? 'localstorage' : 'indexeddb');
+}
+
+/* ---------------- migration from previous brands ---------------- */
+
 let legacyMigration: Promise<Note[]> | null = null;
 
 function readLegacyLocalNotes(): Note[] {
-  try {
-    const raw = localStorage.getItem(LEGACY_LS.notes);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [];
-    return parsed
-      .map((value) => normalizeNote(value))
-      .filter((note): note is Note => note !== null);
-  } catch {
-    return [];
+  const notes: Note[] = [];
+  for (const key of LEGACY_LS_NOTES) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) continue;
+      const parsed = JSON.parse(raw) as unknown;
+      if (Array.isArray(parsed)) notes.push(...normalizeAll(parsed));
+    } catch {
+      /* ignore a broken legacy entry */
+    }
   }
+  return notes;
 }
 
-/** Whether the pre-rebrand database still exists on this origin. */
 function legacyDatabaseExists(): Promise<boolean> {
   return new Promise((resolve) => {
     const factory = indexedDB as IDBFactory & { databases?: () => Promise<IDBDatabaseInfo[]> };
@@ -123,12 +125,15 @@ function legacyDatabaseExists(): Promise<boolean> {
     }
     factory
       .databases()
-      .then((list) => resolve(list.some((database) => database.name === LEGACY_DB_NAME)))
+      .then((list) => {
+        const names = new Set(list.map((database) => database.name));
+        resolve(LEGACY_DB_NAMES.some((name) => names.has(name)));
+      })
       .catch(() => resolve(true));
   });
 }
 
-function readLegacyIndexedDbNotes(): Promise<Note[]> {
+function readOneLegacyDatabase(name: string): Promise<Note[]> {
   return new Promise((resolve) => {
     let settled = false;
     const done = (notes: Note[]) => {
@@ -137,7 +142,7 @@ function readLegacyIndexedDbNotes(): Promise<Note[]> {
       resolve(notes);
     };
     try {
-      const request = indexedDB.open(LEGACY_DB_NAME);
+      const request = indexedDB.open(name);
       request.onsuccess = () => {
         const database = request.result;
         if (!database.objectStoreNames.contains(STORE)) {
@@ -149,10 +154,7 @@ function readLegacyIndexedDbNotes(): Promise<Note[]> {
           const transaction = database.transaction(STORE, 'readonly');
           const getAll = transaction.objectStore(STORE).getAll();
           getAll.onsuccess = () => {
-            const rows = ((getAll.result as unknown[]) ?? [])
-              .map((value) => normalizeNote(value))
-              .filter((note): note is Note => note !== null);
-            done(rows);
+            done(normalizeAll((getAll.result as unknown[]) ?? []));
             database.close();
           };
           getAll.onerror = () => {
@@ -173,11 +175,27 @@ function readLegacyIndexedDbNotes(): Promise<Note[]> {
   });
 }
 
+/** Remove every previous-brand database and fallback notes key. */
+function cleanupLegacyStorage(): void {
+  for (const name of LEGACY_DB_NAMES) {
+    try {
+      indexedDB.deleteDatabase(name);
+    } catch {
+      /* ignore */
+    }
+  }
+  for (const key of LEGACY_LS_NOTES) {
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
 /**
- * Move a 0.1.x (Inkstone) vault into the Mochi database instead of throwing it
- * away. Notes from both old storage layers are merged by id, the old theme and
- * onboarding flags are carried over, and the legacy database is only deleted
- * after the copy has been written successfully.
+ * Move notes from 麻薯 (mochi) / 砚 (inkstone) into the rixin database.
+ * The old copies are only deleted after the merged vault has been written.
  */
 async function migrateLegacyVault(): Promise<Note[]> {
   if (!legacyMigration) {
@@ -187,22 +205,9 @@ async function migrateLegacyVault(): Promise<Note[]> {
 
       const hasLegacyDatabase = await legacyDatabaseExists();
       if (hasLegacyDatabase) {
-        for (const note of await readLegacyIndexedDbNotes()) byId.set(note.id, note);
-      }
-
-      // Adopt the old preferences (idempotent; the legacy keys are only
-      // removed below, after the notes themselves have been persisted).
-      try {
-        if (!localStorage.getItem(THEME_KEY)) {
-          const theme = localStorage.getItem(LEGACY_LS.theme);
-          if (theme) localStorage.setItem(THEME_KEY, theme);
+        for (const name of LEGACY_DB_NAMES) {
+          for (const note of await readOneLegacyDatabase(name)) byId.set(note.id, note);
         }
-        if (!localStorage.getItem(ONBOARDED_KEY)) {
-          const onboarded = localStorage.getItem(LEGACY_LS.onboarded);
-          if (onboarded) localStorage.setItem(ONBOARDED_KEY, onboarded);
-        }
-      } catch {
-        /* ignore storage restrictions */
       }
 
       const notes = [...byId.values()];
@@ -211,67 +216,16 @@ async function migrateLegacyVault(): Promise<Note[]> {
         await saveNotes(notes);
         written = getStorageMode() === 'indexeddb';
       }
-      // Clean up the old storage only once the copy really landed: deleting a
-      // localStorage-only vault after a failed write would lose the last copy.
-      if (notes.length === 0 || written) {
-        if (written || hasLegacyDatabase) {
-          try {
-            indexedDB.deleteDatabase(LEGACY_DB_NAME);
-          } catch {
-            /* ignore */
-          }
-        }
-        try {
-          localStorage.removeItem(LEGACY_LS.notes);
-          localStorage.removeItem(LEGACY_LS.theme);
-          localStorage.removeItem(LEGACY_LS.onboarded);
-        } catch {
-          /* ignore storage restrictions */
-        }
-      }
+      if (notes.length === 0 || written) cleanupLegacyStorage();
       return notes;
     })();
   }
   return legacyMigration;
 }
 
-/** Whether the vault is stored in IndexedDB or fell back to localStorage. */
-export function getStorageMode(): StorageMode {
-  return mode ?? (typeof indexedDB === 'undefined' ? 'localstorage' : 'indexeddb');
-}
-
-/** Load every note in the vault. */
-export async function loadNotes(): Promise<Note[]> {
-  try {
-    const db = await openDatabase();
-    const tx = db.transaction(STORE, 'readonly');
-    const request = tx.objectStore(STORE).getAll();
-    const notes = await new Promise<Note[]>((resolve, reject) => {
-      request.onsuccess = () => resolve(request.result as Note[]);
-      request.onerror = () => reject(request.error);
-    });
-    await txDone(tx);
-    mode = 'indexeddb';
-    const normalized = notes
-      .map((note) => normalizeNote(note))
-      .filter((note): note is Note => note !== null);
-    if (normalized.length === 0) {
-      // First run of 0.2.x on a device that may still hold 0.1.x notes.
-      const migrated = await migrateLegacyVault();
-      if (migrated.length > 0) return recoverLocalFallback(migrated);
-    }
-    return recoverLocalFallback(normalized);
-  } catch {
-    mode = 'localstorage';
-    return readLocal();
-  }
-}
-
 /**
- * If a previous session fell back to localStorage (private mode, transient
- * IndexedDB failure), fold those notes into IndexedDB so they are not hidden by
- * a later successful open. The localStorage copy is only removed once the
- * merge has been written.
+ * If a previous session fell back to localStorage, fold those notes into
+ * IndexedDB so a later successful open does not hide them.
  */
 async function recoverLocalFallback(notes: Note[]): Promise<Note[]> {
   const legacy = readLocal();
@@ -287,9 +241,6 @@ async function recoverLocalFallback(notes: Note[]): Promise<Note[]> {
   }
   const merged = changed ? [...byId.values()] : notes;
   if (changed) await saveNotes(merged);
-  // Only clear the fallback copy once the merge really landed in IndexedDB:
-  // saveNotes falls back to localStorage when the write itself fails, and
-  // deleting the only copy in that window would lose notes.
   if (getStorageMode() === 'indexeddb') {
     try {
       localStorage.removeItem(LS_KEY);
@@ -298,6 +249,31 @@ async function recoverLocalFallback(notes: Note[]): Promise<Note[]> {
     }
   }
   return merged;
+}
+
+/* ---------------- public API ---------------- */
+
+/** Load every note in the vault. */
+export async function loadNotes(): Promise<Note[]> {
+  try {
+    const db = await openDatabase();
+    const tx = db.transaction(STORE, 'readonly');
+    const request = tx.objectStore(STORE).getAll();
+    const notes = await new Promise<Note[]>((resolve, reject) => {
+      request.onsuccess = () => resolve(normalizeAll(request.result as unknown[]));
+      request.onerror = () => reject(request.error);
+    });
+    await txDone(tx);
+    mode = 'indexeddb';
+    if (notes.length === 0) {
+      const migrated = await migrateLegacyVault();
+      if (migrated.length > 0) return recoverLocalFallback(migrated);
+    }
+    return recoverLocalFallback(notes);
+  } catch {
+    mode = 'localstorage';
+    return readLocal();
+  }
 }
 
 /** Insert or update notes in one transaction. */
@@ -312,7 +288,7 @@ export async function saveNotes(notes: Note[]): Promise<void> {
     mode = 'indexeddb';
   } catch {
     mode = 'localstorage';
-    const byId = new Map(readLocal().map((n) => [n.id, n]));
+    const byId = new Map(readLocal().map((note) => [note.id, note]));
     for (const note of notes) byId.set(note.id, note);
     writeLocal([...byId.values()]);
   }
@@ -328,7 +304,7 @@ export async function deleteNoteFromDb(id: string): Promise<void> {
     mode = 'indexeddb';
   } catch {
     mode = 'localstorage';
-    writeLocal(readLocal().filter((n) => n.id !== id));
+    writeLocal(readLocal().filter((note) => note.id !== id));
   }
 }
 

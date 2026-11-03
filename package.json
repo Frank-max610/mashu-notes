@@ -1,9 +1,9 @@
 {
-  "name": "mashu-notes",
+  "name": "rixin-notes",
   "private": true,
-  "version": "0.3.1",
+  "version": "0.4.0",
   "type": "module",
-  "description": "麻薯 — 本地优先的生活记录 + Markdown 笔记本：饮食、健康、收支、日记连成一张可自由编辑的图，内置不联网的本地助手。",
+  "description": "日新 — 本地优先的生活记录与复盘笔记本：饮食、健康、收支、日记连成可编辑图谱，每日复盘与改进建议由本机生成。",
   "license": "MIT",
   "keywords": [
     "life-log",
@@ -14,8 +14,8 @@
     "notes",
     "local-first",
     "agent",
-    "obsidian-alternative",
-    "pwa"
+    "pwa",
+    "review"
   ],
   "engines": {
     "node": ">=22.12.0"
@@ -51,6 +51,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Frank-max610/mashu-notes.git"
+    "url": "git+https://github.com/Frank-max610/rixin-notes.git"
   }
 }

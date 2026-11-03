@@ -4,22 +4,25 @@ import { extractTags } from './links';
 
 /** Simple client-side preference storage (theme, onboarding flag). */
 
-const THEME_KEY = 'mochi.theme.v1';
-const ONBOARDED_KEY = 'mochi.onboarded.v1';
+const THEME_KEY = 'rixin.theme.v1';
+const ONBOARDED_KEY = 'rixin.onboarded.v1';
 
-const LEGACY_THEME_KEY = 'inkstone.theme.v1';
-const LEGACY_ONBOARDED_KEY = 'inkstone.onboarded.v1';
+/** Previous brands' keys, adopted once so upgrades keep their preferences. */
+const LEGACY_THEME_KEYS = ['mochi.theme.v1', 'inkstone.theme.v1'] as const;
+const LEGACY_ONBOARDED_KEYS = ['mochi.onboarded.v1', 'inkstone.onboarded.v1'] as const;
 
 export function getStoredTheme(): 'dark' | 'light' | 'system' {
   try {
     const value = localStorage.getItem(THEME_KEY);
     if (value === 'dark' || value === 'light' || value === 'system') return value;
-    // 0.1.x upgrade: adopt the old preference synchronously, before first paint.
-    const legacy = localStorage.getItem(LEGACY_THEME_KEY);
-    if (legacy === 'dark' || legacy === 'light' || legacy === 'system') {
-      localStorage.setItem(THEME_KEY, legacy);
-      localStorage.removeItem(LEGACY_THEME_KEY);
-      return legacy;
+    // Older brands: adopt the preference synchronously, before first paint.
+    for (const key of LEGACY_THEME_KEYS) {
+      const legacy = localStorage.getItem(key);
+      if (legacy === 'dark' || legacy === 'light' || legacy === 'system') {
+        localStorage.setItem(THEME_KEY, legacy);
+        localStorage.removeItem(key);
+        return legacy;
+      }
     }
   } catch {
     /* ignore */
@@ -38,11 +41,12 @@ export function setStoredTheme(theme: 'dark' | 'light' | 'system'): void {
 export function hasOnboarded(): boolean {
   try {
     if (localStorage.getItem(ONBOARDED_KEY) === '1') return true;
-    // 0.1.x upgrade: honour the old flag so seeding does not duplicate notes.
-    if (localStorage.getItem(LEGACY_ONBOARDED_KEY) === '1') {
-      localStorage.setItem(ONBOARDED_KEY, '1');
-      localStorage.removeItem(LEGACY_ONBOARDED_KEY);
-      return true;
+    for (const key of LEGACY_ONBOARDED_KEYS) {
+      if (localStorage.getItem(key) === '1') {
+        localStorage.setItem(ONBOARDED_KEY, '1');
+        localStorage.removeItem(key);
+        return true;
+      }
     }
     return false;
   } catch {
@@ -168,35 +172,56 @@ export function makeNote(input: NoteInput = {}): Note {
 
 /* ---------------- agent persona ---------------- */
 
-const AGENT_KEY = 'mochi.agent.v1';
+const AGENT_KEY = 'rixin.agent.v1';
+const LEGACY_AGENT_KEYS = ['mochi.agent.v1'] as const;
 
 export interface AgentAvatarOption {
   id: string;
   label: string;
-  emoji: string;
 }
 
+/** Abstract sigil avatars for the local agent (no mascots, no emoji defaults). */
 export const AGENT_AVATARS: readonly AgentAvatarOption[] = [
-  { id: 'mochi', label: '麻薯', emoji: '🍡' },
-  { id: 'cat', label: '猫猫', emoji: '🐱' },
-  { id: 'leaf', label: '叶子', emoji: '🌿' },
-  { id: 'sun', label: '太阳', emoji: '☀️' },
-  { id: 'star', label: '星星', emoji: '⭐' },
-  { id: 'book', label: '书本', emoji: '📖' },
-  { id: 'tea', label: '茶茶', emoji: '🍵' },
-  { id: 'bowl', label: '饭碗', emoji: '🍚' },
+  { id: 'seal', label: '印章' },
+  { id: 'initial', label: '首字' },
+  { id: 'ring', label: '圆环' },
+  { id: 'square', label: '方格' },
+  { id: 'triad', label: '三才' },
+  { id: 'spark', label: '星芒' },
+  { id: 'wave', label: '水纹' },
+  { id: 'grid', label: '经纬' },
 ];
 
-export const DEFAULT_AGENT_PERSONA: AgentPersona = { name: '小麻薯', avatar: 'mochi' };
+/** Older releases used emoji/mochi avatars; map them to the new default. */
+const LEGACY_AVATAR_IDS = new Set(['mochi', 'cat', 'leaf', 'sun', 'star', 'book', 'tea', 'bowl']);
+
+export const DEFAULT_AGENT_PERSONA: AgentPersona = { name: '知几', avatar: 'seal' };
+
+function personaFromRaw(raw: string | null): AgentPersona | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as Partial<AgentPersona>;
+    let name = typeof parsed.name === 'string' && parsed.name.trim() ? parsed.name.trim() : DEFAULT_AGENT_PERSONA.name;
+    if (name === '小麻薯' || name === '麻薯') name = DEFAULT_AGENT_PERSONA.name;
+    let avatar = typeof parsed.avatar === 'string' && parsed.avatar.trim() ? parsed.avatar.trim() : DEFAULT_AGENT_PERSONA.avatar;
+    if (LEGACY_AVATAR_IDS.has(avatar)) avatar = DEFAULT_AGENT_PERSONA.avatar;
+    return { name, avatar };
+  } catch {
+    return null;
+  }
+}
 
 export function getAgentPersona(): AgentPersona {
   try {
-    const raw = localStorage.getItem(AGENT_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as Partial<AgentPersona>;
-      const name = typeof parsed.name === 'string' && parsed.name.trim() ? parsed.name.trim() : DEFAULT_AGENT_PERSONA.name;
-      const avatar = typeof parsed.avatar === 'string' && parsed.avatar.trim() ? parsed.avatar.trim() : DEFAULT_AGENT_PERSONA.avatar;
-      return { name, avatar };
+    const stored = personaFromRaw(localStorage.getItem(AGENT_KEY));
+    if (stored) return stored;
+    for (const key of LEGACY_AGENT_KEYS) {
+      const legacy = personaFromRaw(localStorage.getItem(key));
+      if (legacy) {
+        localStorage.setItem(AGENT_KEY, JSON.stringify(legacy));
+        localStorage.removeItem(key);
+        return legacy;
+      }
     }
   } catch {
     /* ignore */
@@ -209,6 +234,88 @@ export function setAgentPersona(persona: AgentPersona): void {
     const name = persona.name.trim().slice(0, 12) || DEFAULT_AGENT_PERSONA.name;
     const avatar = persona.avatar.trim() || DEFAULT_AGENT_PERSONA.avatar;
     localStorage.setItem(AGENT_KEY, JSON.stringify({ name, avatar }));
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * Adopt every legacy preference key in one go and remove the old copies.
+ * Called once when the vault boots, so nothing from the 麻薯/砚 era lingers in
+ * localStorage even if that particular preference is never read by the UI.
+ */
+export function migrateLegacyPreferences(): void {
+  try {
+    const theme = localStorage.getItem(THEME_KEY);
+    if (theme !== 'dark' && theme !== 'light' && theme !== 'system') {
+      for (const key of LEGACY_THEME_KEYS) {
+        const legacy = localStorage.getItem(key);
+        if (legacy === 'dark' || legacy === 'light' || legacy === 'system') {
+          localStorage.setItem(THEME_KEY, legacy);
+          break;
+        }
+      }
+    }
+    if (localStorage.getItem(ONBOARDED_KEY) !== '1') {
+      for (const key of LEGACY_ONBOARDED_KEYS) {
+        if (localStorage.getItem(key) === '1') {
+          localStorage.setItem(ONBOARDED_KEY, '1');
+          break;
+        }
+      }
+    }
+    if (!localStorage.getItem(AGENT_KEY)) {
+      for (const key of LEGACY_AGENT_KEYS) {
+        const persona = personaFromRaw(localStorage.getItem(key));
+        if (persona) {
+          localStorage.setItem(AGENT_KEY, JSON.stringify(persona));
+          break;
+        }
+      }
+    }
+    if (localStorage.getItem(INSTALL_HINT_KEY) !== '1') {
+      for (const key of LEGACY_INSTALL_HINT_KEYS) {
+        if (localStorage.getItem(key) === '1') {
+          localStorage.setItem(INSTALL_HINT_KEY, '1');
+          break;
+        }
+      }
+    }
+    for (const key of [
+      ...LEGACY_THEME_KEYS,
+      ...LEGACY_ONBOARDED_KEYS,
+      ...LEGACY_AGENT_KEYS,
+      ...LEGACY_INSTALL_HINT_KEYS,
+    ]) {
+      localStorage.removeItem(key);
+    }
+  } catch {
+    /* ignore private-mode / quota errors */
+  }
+}
+
+const INSTALL_HINT_KEY = 'rixin.installHint.v1';
+const LEGACY_INSTALL_HINT_KEYS = ['mochi.installHint.v1'] as const;
+
+export function isInstallHintDismissed(): boolean {
+  try {
+    if (localStorage.getItem(INSTALL_HINT_KEY) === '1') return true;
+    for (const key of LEGACY_INSTALL_HINT_KEYS) {
+      if (localStorage.getItem(key) === '1') {
+        localStorage.setItem(INSTALL_HINT_KEY, '1');
+        localStorage.removeItem(key);
+        return true;
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return false;
+}
+
+export function dismissInstallHint(): void {
+  try {
+    localStorage.setItem(INSTALL_HINT_KEY, '1');
   } catch {
     /* ignore */
   }

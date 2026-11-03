@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate iOS Home Screen splash screens for 麻薯 (apple-touch-startup-image).
+"""Generate iOS Home Screen splash screens for 日新 (apple-touch-startup-image).
 
 Run with: npm run splash
 """
@@ -23,14 +23,16 @@ SIZES = [
     (750, 1334, "iphone-se"),
 ]
 
-BG_TOP = (247, 245, 240)
-BG_BOTTOM = (240, 237, 230)
-INK = (58, 53, 44)
-MUTED = (111, 103, 90)
+BG_TOP = (244, 241, 234)
+BG_BOTTOM = (236, 232, 223)
+INK = (22, 24, 28)
+MUTED = (92, 96, 103)
+VERMILION = (166, 61, 51)
+CREAM = (255, 248, 242)
 
 FONT_CANDIDATES = [
+    ("/System/Library/Fonts/Supplemental/Songti.ttc", 0),
     ("/System/Library/Fonts/PingFang.ttc", 2),
-    ("/System/Library/Fonts/PingFang.ttc", 0),
     ("/System/Library/Fonts/STHeiti Medium.ttc", 0),
     ("/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc", 0),
 ]
@@ -54,25 +56,36 @@ def render(width: int, height: int) -> Image.Image:
         color = tuple(round(BG_TOP[i] + (BG_BOTTOM[i] - BG_TOP[i]) * ratio) for i in range(3))
         draw.line([(0, y), (width, y)], fill=color)
 
-    cx, cy = width / 2, height / 2
-    radius = int(width * 0.09)
-    # a soft sage mochi blob
-    draw.ellipse((cx - radius, cy - radius * 1.9, cx + radius, cy + radius * 0.1), fill=(223, 233, 227))
-    draw.ellipse(
-        (cx - radius * 0.62, cy - radius * 1.55, cx + radius * 0.3, cy - radius * 0.95),
-        fill=(247, 245, 240),
+    cx, cy = width / 2, height * 0.46
+    seal = width * 0.34
+    draw.rectangle((cx - seal / 2, cy - seal / 2, cx + seal / 2, cy + seal / 2), fill=VERMILION)
+    inset = seal * 0.075
+    draw.rectangle(
+        (cx - seal / 2 + inset, cy - seal / 2 + inset, cx + seal / 2 - inset, cy + seal / 2 - inset),
+        outline=CREAM,
+        width=max(1, int(width * 0.0035)),
+    )
+    seal_font = load_font(int(seal * 0.46))
+    text = "日新"
+    box = draw.textbbox((0, 0), text, font=seal_font)
+    draw.text(
+        (cx - (box[2] - box[0]) / 2 - box[0], cy - (box[3] - box[1]) / 2 - box[1]),
+        text,
+        font=seal_font,
+        fill=CREAM,
     )
 
-    title_font = load_font(int(width * 0.12))
-    title = "麻薯"
+    title_font = load_font(int(width * 0.095))
+    title = "日新"
     box = draw.textbbox((0, 0), title, font=title_font)
-    draw.text((cx - (box[2] - box[0]) / 2 - box[0], cy + radius * 0.9), title, font=title_font, fill=INK)
+    title_y = cy + seal / 2 + height * 0.035
+    draw.text((cx - (box[2] - box[0]) / 2 - box[0], title_y), title, font=title_font, fill=INK)
 
-    subtitle_font = load_font(int(width * 0.032))
-    subtitle = "本地生活记录"
+    subtitle_font = load_font(int(width * 0.028))
+    subtitle = "日有所记 · 日有所新"
     box2 = draw.textbbox((0, 0), subtitle, font=subtitle_font)
     draw.text(
-        (cx - (box2[2] - box2[0]) / 2 - box2[0], cy + radius * 0.9 + (box[3] - box[1]) * 1.55),
+        (cx - (box2[2] - box2[0]) / 2 - box2[0], title_y + (box[3] - box[1]) * 1.35),
         subtitle,
         font=subtitle_font,
         fill=MUTED,
