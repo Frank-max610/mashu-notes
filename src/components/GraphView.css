@@ -1,5 +1,5 @@
-/* 麻薯 life graph — soft pastel canvas (taro night in dark theme).
-   Scoped under .graph-view; the paper app shell stays outside the panel frame. */
+/* 麻薯 life graph — Obsidian-style flat force graph (v0.8).
+   Theme-aware canvas; the app shell supplies the rounded card frame. */
 
 .graph-view {
   position: relative;
@@ -7,25 +7,12 @@
   height: 100%;
   overflow: hidden;
   background: var(--graph-panel);
-  border: 1px solid var(--graph-grid);
-  border-radius: var(--radius-s);
-  color: var(--graph-text);
-  font-family: var(--font-mono);
+  border-radius: var(--radius-l);
+  color: var(--text);
+  font-family: var(--font-sans);
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
-}
-
-/* Soft vignette under the canvas grid so the panel frame reads as a screen. */
-.graph-view::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(120% 92% at 50% 0%, transparent 52%, rgba(255, 255, 255, 0.5) 100%),
-    linear-gradient(180deg, rgba(232, 143, 168, 0.08), transparent 30%);
 }
 
 .graph-view .graph-canvas {
@@ -50,200 +37,159 @@
   cursor: crosshair;
 }
 
-/* ---------- panel header: LIFE GRAPH · NODES/EDGES ---------- */
-
-.graph-view .graph-panel-head {
-  position: absolute;
-  top: 9px;
-  left: 11px;
-  right: 56px;
-  z-index: 2;
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  overflow: hidden;
-  white-space: nowrap;
-  color: var(--graph-text-dim);
-  font-family: var(--font-mono);
-  font-size: 9.5px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  pointer-events: none;
-}
-
-.graph-view .graph-panel-title {
-  color: var(--graph-node-1);
-  font-weight: 600;
-}
-
-.graph-view .graph-panel-stats {
-  color: var(--graph-text-dim);
-}
-
-.graph-view .graph-panel-mode {
-  margin-left: auto;
-  color: var(--graph-text);
-}
-
-/* ---------- panel footer: MODE · SCALE ---------- */
-
-.graph-view .graph-panel-foot {
-  position: absolute;
-  right: 11px;
-  bottom: 9px;
-  z-index: 2;
-  display: flex;
-  gap: 12px;
-  color: var(--graph-text-dim);
-  font-family: var(--font-mono);
-  font-size: 9.5px;
-  letter-spacing: 0.08em;
-  pointer-events: none;
-}
-
-/* ---------- compact segmented toolbar (top-right) ---------- */
+/* ---------- edit toolbar (top-right): compact rounded glass pill ---------- */
 
 .graph-view .graph-toolbar {
   position: absolute;
-  top: 9px;
-  right: 9px;
+  top: 10px;
+  right: 10px;
   z-index: 3;
   display: flex;
-  flex-direction: column;
-  gap: 1px;
-  padding: 2px;
-  border: 1px solid var(--graph-grid);
-  border-radius: var(--radius-xs);
-  background: color-mix(in srgb, var(--graph-panel-2) 92%, transparent);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-1);
 }
 
 .graph-view .graph-btn {
-  width: 34px;
-  height: 34px;
-  border-radius: 2px;
-  color: var(--graph-text-dim);
-  background: transparent;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  color: var(--text-muted);
+  transition:
+    background var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease);
 }
 
 .graph-view .graph-btn:hover,
 .graph-view .graph-btn:active {
-  background: rgba(205, 138, 158, 0.14);
-  color: var(--graph-text);
+  background: var(--surface-2);
+  color: var(--text);
 }
 
 .graph-view .graph-btn[aria-pressed='true'] {
-  background: color-mix(in srgb, var(--graph-node-1) 20%, transparent);
-  color: var(--graph-node-1);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
 }
 
-.graph-view .graph-toolbar-sep {
-  height: 1px;
-  margin: 2px 3px;
-  background: var(--graph-grid);
+/* ---------- floating zoom / fit controls (bottom-right) ---------- */
+
+.graph-view .graph-view-controls {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-/* ---------- mode hint: terminal readout under the header ---------- */
+.graph-view .graph-btn--floating {
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-1);
+}
+
+.graph-view .graph-btn--floating:hover,
+.graph-view .graph-btn--floating:active {
+  background: var(--surface);
+  color: var(--text);
+}
+
+/* ---------- mode hint: small rounded chip, top-left ---------- */
 
 .graph-view .graph-hint {
   position: absolute;
-  top: 26px;
-  left: 11px;
+  top: 10px;
+  left: 10px;
   z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  max-width: min(70%, 260px);
-  padding: 3px 7px;
-  border: 1px solid color-mix(in srgb, var(--graph-node-1) 55%, transparent);
-  border-radius: 2px;
-  background: color-mix(in srgb, var(--graph-panel-2) 94%, transparent);
-  color: var(--graph-text);
-  font-family: var(--font-mono);
-  font-size: 9.5px;
-  letter-spacing: 0.03em;
+  max-width: calc(100% - 170px);
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-1);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
   line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   pointer-events: none;
 }
 
-.graph-view .graph-hint-tag {
-  flex: none;
-  padding: 0 4px;
-  border: 1px solid color-mix(in srgb, var(--graph-node-1) 70%, transparent);
-  color: var(--graph-node-1);
-  font-size: 8.5px;
-  letter-spacing: 0.08em;
-}
-
-/* ---------- legend: monospace chips with colour swatches ---------- */
+/* ---------- legend: rounded muted chips, bottom-left ---------- */
 
 .graph-view .graph-legend {
   position: absolute;
-  left: 9px;
-  bottom: 9px;
+  left: 10px;
+  bottom: 10px;
   z-index: 2;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px 10px;
-  max-width: calc(100% - 96px);
-  padding: 5px 8px;
-  border: 1px solid var(--graph-grid);
-  border-radius: var(--radius-xs);
-  background: color-mix(in srgb, var(--graph-panel-2) 82%, transparent);
-  color: var(--graph-text-dim);
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.05em;
-  line-height: 1.2;
+  gap: 6px;
+  max-width: calc(100% - 130px);
   pointer-events: none;
 }
 
 .graph-view .graph-legend-item {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
+  padding: 5px 9px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-1);
+  color: var(--text-muted);
+  font-size: 10.5px;
+  line-height: 1.2;
   white-space: nowrap;
 }
 
-.graph-view .graph-legend-swatch {
-  width: 7px;
-  height: 7px;
+.graph-view .graph-legend-dot {
+  width: 8px;
+  height: 8px;
   flex: none;
-  border-radius: 1px;
+  border-radius: 50%;
 }
 
-.graph-view .graph-legend-swatch--ghost {
-  width: 7px;
-  height: 7px;
+.graph-view .graph-legend-dot--ghost {
   background: transparent;
-  border: 1px dashed var(--graph-node-ghost);
+  border: 1.5px dashed var(--graph-node-ghost);
 }
 
-/* ---------- empty state: terminal copy, no illustration ---------- */
+/* ---------- empty state: quiet blank canvas ---------- */
 
 .graph-view .graph-empty {
   position: absolute;
   inset: 0;
-  z-index: 3;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0;
   padding: 24px;
   background: transparent;
-  color: var(--graph-text-dim);
-  font-family: var(--font-mono);
+  color: var(--text-muted);
   text-align: center;
+  pointer-events: none;
 }
 
 .graph-view .graph-empty-line {
-  font-size: 12px;
-  letter-spacing: 0.08em;
-}
-
-.graph-view .graph-empty-line::before {
-  content: '> ';
-  color: var(--graph-node-1);
+  font-size: var(--text-sm);
+  letter-spacing: 0.01em;
 }

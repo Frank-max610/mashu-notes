@@ -5,7 +5,7 @@
 一个本地优先的 **iPhone 生活记录与复盘 App**：饮食、健康、收支、日记和 Markdown 笔记放在一起，打开就是今日仪表盘；每晚看一眼复盘，每天做一点改进。**没有服务器，也没有账号**——装到主屏幕后，断网也能用。
 
 **在线试用（请用 Safari 打开）**：<https://frank-max610.github.io/mashu-notes/>
-**仓库**：[github.com/Frank-max610/mashu-notes](https://github.com/Frank-max610/mashu-notes) · 版本 **v0.7.0**
+**仓库**：[github.com/Frank-max610/mashu-notes](https://github.com/Frank-max610/mashu-notes) · 版本 **v0.8.0**
 
 [![Live demo](https://img.shields.io/badge/demo-live-e3a06a.svg)](https://frank-max610.github.io/mashu-notes/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-c9773c.svg)](LICENSE)
@@ -18,7 +18,7 @@
 
 麻薯，软糯的糯米团子，名字很日常，野心也很小：把生活里那些「今天吃了什么、睡了多久、钱花在哪、今天在想什么」的小事接住，然后每天看它一眼。
 
-0.7 继续保留软乎乎的语言，但把主色从粉色系换成了更暖、更中性的**暖杏色**：奶油纸底、杏色主色、暖沙/橄榄/奶油黄/灰蓝做辅助色，大圆角、蓬松暖阴影、圆润字体，还有一只暖奶油色的小麻薯吉祥物。默认浅色，夜里切到暖暖的「暖棕夜」深色主题。
+0.8 把生活图谱改成了 Obsidian 风格：主题自适应画布、实心节点按连接数变大、每个节点都有标签、细线连线；0.7 继续保留软乎乎的语言，但把主色从粉色系换成了更暖、更中性的**暖杏色**：奶油纸底、杏色主色、暖沙/橄榄/奶油黄/灰蓝做辅助色，大圆角、蓬松暖阴影、圆润字体，还有一只暖奶油色的小麻薯吉祥物。默认浅色，夜里切到暖暖的「暖棕夜」深色主题。
 
 > 内部机器名统一为 `mashu`（仓库、包名、数据库与存储键）；界面和文案里只叫「麻薯」。
 
