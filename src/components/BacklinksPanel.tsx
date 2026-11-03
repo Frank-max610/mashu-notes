@@ -23,12 +23,12 @@ export function BacklinksPanel({ note, notes, onOpenNote, onCreateNote }: Backli
   if (outgoing.length === 0 && backlinks.length === 0) return null;
 
   return (
-    <section className="backlinks-panel" aria-label="链接关系">
+    <section className="backlinks-panel" aria-label="关联">
       {outgoing.length > 0 ? (
         <div className="backlinks-panel__section">
           <div className="section-label backlinks-panel__heading">
             <Icon name="link" size={13} />
-            <span>链接到</span>
+            <span>连接到</span>
             <span className="badge">{outgoing.length}</span>
           </div>
           <div className="backlinks-panel__list">
@@ -69,7 +69,7 @@ export function BacklinksPanel({ note, notes, onOpenNote, onCreateNote }: Backli
         <div className="backlinks-panel__section">
           <div className="section-label backlinks-panel__heading">
             <Icon name="arrowRight" size={13} />
-            <span>被链接</span>
+            <span>来自</span>
             <span className="badge">{backlinks.length}</span>
           </div>
           <div className="backlinks-panel__list">

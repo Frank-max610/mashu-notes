@@ -75,7 +75,13 @@ const SHOTS = [
     hash: '#/note/seed-welcome',
     waitFor: '.editor-screen',
     delay: 500,
-    action: `document.querySelector('[aria-label="切换到编辑"]')?.click()`,
+    action: `(() => {
+      document.querySelector('[aria-label="更多操作"]')?.click();
+      setTimeout(() => {
+        const item = [...document.querySelectorAll('.sheet-item')].find((el) => el.textContent.includes('编辑正文'));
+        item?.click();
+      }, 350);
+    })()`,
     afterActionWaitFor: '.editor-textarea',
     afterActionDelay: 600,
   },

@@ -199,7 +199,7 @@ export function AgentPanel({
     node.scrollTo({ top: node.scrollHeight, behavior: reduce ? 'auto' : 'smooth' });
   }, [messages]);
 
-  const starterSuggestions = useMemo(() => AGENT_SUGGESTIONS.slice(0, 4), []);
+  const starterSuggestions = useMemo(() => AGENT_SUGGESTIONS.slice(0, 3), []);
   const onlyGreeting = messages.length === 1;
 
   const handleSend = (): void => {
@@ -243,7 +243,7 @@ export function AgentPanel({
         aria-live="polite"
         aria-label={`与${persona.name}的对话`}
       >
-        {messages.map((message) => (
+        {messages.map((message, index) => (
           <div className={`agent-screen__row agent-screen__row--${message.role}`} key={message.id}>
             <p className={`agent-screen__meta agent-screen__meta--${message.role}`}>
               {clock(message.at)}
@@ -311,7 +311,7 @@ export function AgentPanel({
                     </div>
                   ) : null}
 
-                  {message.suggestions && message.suggestions.length > 0 ? (
+                  {message.suggestions && message.suggestions.length > 0 && index === messages.length - 1 ? (
                     <div className="agent-screen__suggestions" role="group" aria-label="继续提问">
                       {message.suggestions.map((suggestion) => (
                         <button

@@ -2346,3 +2346,17 @@ button.settings-row:active {
   mask-image: linear-gradient(to right, #000 calc(100% - 26px), transparent);
   padding-right: 26px;
 }
+
+/* editor: single visible mode switch via More, quiet done action */
+.editor-done {
+  flex: none;
+  min-height: 40px;
+  padding: 0 10px;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--accent-ink);
+}
+
+.editor-header-meta .editor-dot {
+  opacity: 0.5;
+}

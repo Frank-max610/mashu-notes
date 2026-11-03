@@ -10,7 +10,7 @@ import type { AgentPersona, Note, NoteKind, NotePosition, RecordDraft, ThemeMode
 import type { KindFilter } from './screens/RecordsScreen';
 import { TodayScreen } from './screens/TodayScreen';
 import { RecordsScreen } from './screens/RecordsScreen';
-import { EditorScreen } from './screens/EditorScreen';
+import { EditorScreen, type Mode as EditorMode } from './screens/EditorScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { GraphView } from './components/GraphView';
 import { AgentPanel } from './components/AgentPanel';
@@ -44,6 +44,7 @@ export default function App() {
   const [toast, setToast] = useState<string | null>(null);
   const [noteMenu, setNoteMenu] = useState<Note | null>(null);
   const [editorMenuOpen, setEditorMenuOpen] = useState(false);
+  const [editorMode, setEditorMode] = useState<EditorMode>('preview');
   const [captureOpen, setCaptureOpen] = useState(false);
   const [captureKind, setCaptureKind] = useState<NoteKind | undefined>(undefined);
   const [nodeEditor, setNodeEditor] = useState<{ open: boolean; noteId: string | null; position?: NotePosition }>({
@@ -113,6 +114,11 @@ export default function App() {
     () => (route.name === 'note' ? api.notes.find((note) => note.id === route.id) ?? null : null),
     [api.notes, route],
   );
+
+  useEffect(() => {
+    if (!activeNote) return;
+    setEditorMode(activeNote.content.trim() ? 'preview' : 'edit');
+  }, [activeNote?.id]);
 
   useEffect(() => {
     if (!api.ready) return;
@@ -225,13 +231,22 @@ export default function App() {
   const editorMenuItems = useMemo<ActionSheetItem[]>(() => {
     if (!activeNote) return [];
     return [
-      { label: '编辑记录信息', icon: 'edit', onSelect: () => editRecord(activeNote) },
+      {
+        label: editorMode === 'edit' ? '完成编辑' : '编辑正文',
+        icon: 'edit',
+        onSelect: () => setEditorMode(editorMode === 'edit' ? 'preview' : 'edit'),
+      },
+      { label: '编辑记录信息', icon: 'tag', onSelect: () => editRecord(activeNote) },
+      {
+        label: activeNote.pinned ? '取消置顶' : '置顶',
+        icon: 'pin',
+        onSelect: () => api.togglePin(activeNote.id),
+      },
       { label: '复制 Markdown', icon: 'book', onSelect: () => void copyMarkdown(activeNote) },
       { label: '导出为 .md', icon: 'download', onSelect: () => exportMarkdown(activeNote) },
       { label: '删除', icon: 'trash', danger: true, onSelect: () => void removeNote(activeNote) },
     ];
-  }, [activeNote, copyMarkdown, editRecord, exportMarkdown, removeNote]);
-
+  }, [activeNote, api, copyMarkdown, editRecord, editorMode, exportMarkdown, removeNote]);
   const nodeEditorNote = useMemo(
     () => (nodeEditor.noteId ? api.notes.find((note) => note.id === nodeEditor.noteId) ?? null : null),
     [api.notes, nodeEditor.noteId],
@@ -464,9 +479,10 @@ export default function App() {
           key={activeNote.id}
           note={activeNote}
           notes={api.notes}
+          mode={editorMode}
+          onModeChange={setEditorMode}
           onChange={(patch) => api.updateNote(activeNote.id, patch)}
           onBack={goBack}
-          onTogglePin={() => api.togglePin(activeNote.id)}
           onMenu={() => setEditorMenuOpen(true)}
           onOpenNote={openNote}
           onCreateNote={(title) => void openOrCreateByTitle(title)}

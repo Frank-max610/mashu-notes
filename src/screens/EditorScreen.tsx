@@ -10,9 +10,10 @@ import { BacklinksPanel } from '../components/BacklinksPanel';
 export interface EditorScreenProps {
   note: Note;
   notes: Note[];
+  mode: Mode;
+  onModeChange: (mode: Mode) => void;
   onChange: (patch: NotePatch) => void;
   onBack: () => void;
-  onTogglePin: () => void;
   onMenu: () => void;
   onOpenNote: (id: string) => void;
   onCreateNote: (title: string) => void;
@@ -22,7 +23,7 @@ export interface EditorScreenProps {
   storageWarning?: string | null;
 }
 
-type Mode = 'edit' | 'preview';
+export type Mode = 'edit' | 'preview';
 
 interface SuggestState {
   query: string;
@@ -34,16 +35,16 @@ interface SuggestState {
 export function EditorScreen({
   note,
   notes,
+  mode,
+  onModeChange,
   onChange,
   onBack,
-  onTogglePin,
   onMenu,
   onOpenNote,
   onCreateNote,
   onEditRecord,
   storageWarning,
 }: EditorScreenProps) {
-  const [mode, setMode] = useState<Mode>(() => (note.content.trim() ? 'preview' : 'edit'));
   const [saveLabel, setSaveLabel] = useState('已保存');
   const [suggest, setSuggest] = useState<SuggestState | null>(null);
 
@@ -247,26 +248,18 @@ export function EditorScreen({
           <span className="editor-status">{words} 字</span>
 
         </div>
-        <button
-          type="button"
-          className="icon-btn"
-          aria-label={mode === 'edit' ? '切换到预览' : '切换到编辑'}
-          onClick={() => {
-            setMode(mode === 'edit' ? 'preview' : 'edit');
-            setSuggest(null);
-          }}
-        >
-          <Icon name={mode === 'edit' ? 'eye' : 'edit'} size={21} />
-        </button>
-        <button
-          type="button"
-          className={`icon-btn${note.pinned ? ' is-on' : ''}`}
-          aria-pressed={note.pinned}
-          aria-label={note.pinned ? '取消置顶' : '置顶笔记'}
-          onClick={onTogglePin}
-        >
-          <Icon name="pin" size={20} />
-        </button>
+        {mode === 'edit' ? (
+          <button
+            type="button"
+            className="editor-done"
+            onClick={() => {
+              onModeChange('preview');
+              setSuggest(null);
+            }}
+          >
+            完成
+          </button>
+        ) : null}
         <button type="button" className="icon-btn" aria-label="更多操作" onClick={onMenu}>
           <Icon name="more" size={20} />
         </button>
