@@ -62,7 +62,7 @@ const SHOTS = [
     afterActionWaitFor: '.capture-sheet__parse',
     afterActionDelay: 700,
   },
-  { file: 'graph.png', hash: '#/graph', waitFor: '.graph-view canvas', delay: 3000 },
+  { file: 'graph.png', hash: '#/graph', waitFor: '.graph-view canvas', delay: 1200, reducedMotion: true },
   { file: 'agent.png', hash: '#/agent', waitFor: '.agent-screen', delay: 900 },
   {
     file: 'editor.png',
@@ -225,6 +225,12 @@ async function capture(shot) {
       screenHeight: 844,
     });
     await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+
+    if (shot.reducedMotion) {
+      await cdp.send('Emulation.setEmulatedMedia', {
+        features: [{ name: 'prefers-reduced-motion', value: 'reduce' }],
+      });
+    }
 
     if (shot.ios) {
       await cdp.send('Emulation.setUserAgentOverride', {

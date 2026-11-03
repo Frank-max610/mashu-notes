@@ -496,9 +496,12 @@ const STAT_TOPIC_LABELS: Record<StatTopic, string> = {
 };
 
 const NUMBER_SIGNAL_RE =
-  /[？?]|多少|几[条次笔顿篇个项天]|怎么样|如何|趋势|平均|一共|总共|合计|统计|汇总|记了几/;
+  /多少|几[条次笔顿篇个项天]|趋势|平均|一共|总共|合计|统计|汇总|记了几|花|支出|收入|睡了|睡眠|步数|体重|心率|饮水|运动|热量|卡路里/;
+/** Stats answers require an actual life-data topic; generic questions must refuse. */
+const STATS_DOMAIN_RE =
+  /花|花钱|花费|花销|支出|收入|消费|睡眠|睡了|步数|走路|体重|心率|饮水|喝水|运动|热量|卡路里|饮食|吃了|餐|日记|记了|记录|笔记|计划|待办|任务|进度/;
 const SUMMARY_SIGNAL_RE = /总结|复盘|回顾|梳理/;
-const LOOKUP_ONLY_RE = /我记过|记过|记录过|有没有|是否|找一下|找找|查一下|关于|的记录|哪些记录|列出/;
+const LOOKUP_INTENT_RE = /我记过|记过|记录过|有没有|关于|的记录|找一下|找找|查一下|列出/;
 const REFLECTION_RE =
   /(?:给我|帮我|来点|来一些|提供|有什么|写几条|给点)[^。！？?]{0,6}建议|建议[？?]?$|怎么改进|如何改进|怎么调整|如何调整|怎么做得更好|怎么办|该不该|改进建议|优化建议/;
 const HELP_RE = /帮助|能做什么|你能做什么|怎么用|使用说明|会什么/;
@@ -1047,12 +1050,12 @@ function reflectionReply(notes: Note[], query: string): GroundedAnswer {
 /* ------------------------------------------------------------------ */
 
 function isStatsQuestion(query: string): boolean {
-  const numberSignal = NUMBER_SIGNAL_RE.test(query);
-  const summarySignal = SUMMARY_SIGNAL_RE.test(query);
-  if (LOOKUP_ONLY_RE.test(query) && !numberSignal && !summarySignal) return false;
-  if (numberSignal || summarySignal) return true;
-  // Plan questions read like status questions rather than numeric stats.
-  if (detectTopic(query) === 'plan' && /还有|什么|哪些|进度|完成|待办/.test(query)) return true;
+  if (SUMMARY_SIGNAL_RE.test(query)) return true;
+  // Any stats answer must be about a life-data topic the vault actually stores.
+  if (!STATS_DOMAIN_RE.test(query)) return false;
+  if (NUMBER_SIGNAL_RE.test(query)) return true;
+  if (/怎么样|如何|什么/.test(query)) return true;
+  if (/计划|待办|任务/.test(query) && /还有|哪些|多少|进度|完成/.test(query)) return true;
   return false;
 }
 
@@ -1078,7 +1081,9 @@ export function groundedAnswer(notes: Note[], query: string, now = new Date()): 
   if (!trimmed) return blankQueryAnswer();
   if (HELP_RE.test(trimmed)) return helpAnswer();
   if (REFLECTION_RE.test(trimmed)) return reflectionReply(notes, trimmed);
-  if (isStatsQuestion(trimmed)) return statsReply(notes, trimmed, now);
+  if (!LOOKUP_INTENT_RE.test(trimmed) && isStatsQuestion(trimmed)) {
+    return statsReply(notes, trimmed, now);
+  }
 
   const hits = searchKnowledge(notes, trimmed, LOOKUP_LIMIT);
   if (hits.length > 0) return lookupAnswer(notes, hits);

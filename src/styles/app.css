@@ -2579,3 +2579,5 @@ button.settings-row:active {
   color: var(--text);
   font-size: var(--text-sm);
 }
+
+.directory-select { min-height: 44px; }

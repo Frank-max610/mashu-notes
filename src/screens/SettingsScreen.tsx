@@ -19,7 +19,7 @@ import { MochiNode } from '../components/MochiNode';
 import { IosInstallCard } from '../components/IosInstallCard';
 import { DEFAULT_DIGEST_SCHEDULE, getDigestSchedule, setDigestSchedule } from '../lib/digest';
 
-const APP_VERSION = '0.9.0';
+const APP_VERSION = '1.0.0';
 
 export interface SettingsScreenProps {
   notes: Note[];

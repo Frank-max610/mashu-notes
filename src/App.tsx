@@ -504,7 +504,6 @@ export default function App() {
                   kind: 'note',
                   meta: { directory: { color } },
                 })
-                .then((note) => api.assignDirectory(note.id, note.id))
                 .then(() => notify('目录已创建'));
             }}
             onAssign={(noteId, dirId) => api.assignDirectory(noteId, dirId)}
