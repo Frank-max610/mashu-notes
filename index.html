@@ -24,10 +24,11 @@
             localStorage.getItem('rixin.theme.v1') ||
             localStorage.getItem('mochi.theme.v1') ||
             localStorage.getItem('inkstone.theme.v1');
-          var dark =
-            stored === 'dark' ||
-            (stored !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-          if (stored === 'light') dark = false;
+          // 麻薯 defaults to its dark theme until the user explicitly picks light.
+          var dark;
+          if (!stored || stored === 'dark') dark = true;
+          else if (stored === 'light') dark = false;
+          else dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
           if (dark) {
             document.documentElement.dataset.theme = 'dark';
             var meta = document.querySelector('meta[name="theme-color"]');

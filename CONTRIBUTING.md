@@ -1,20 +1,20 @@
 # 贡献指南
 
-感谢你愿意为日新（Rixin）出一份力。这是一个小而专注的项目：记录生活、每天复盘、把数据留在自己手里。我们更看重「安静好用、每天愿意打开」而不是堆功能，请先花几分钟读完这份指南。
+感谢你愿意为麻薯出一份力。这是一个小而专注的项目：记录生活、每天复盘、把数据留在自己手里。我们更看重「每天愿意打开、看着舒服」而不是堆功能，请先花几分钟读完这份指南。
 
 ## 命名约定
 
-- **面向用户的名称统一用「日新」**（英文 Rixin）：界面文案、README、截图 alt 文本、错误提示都写「日新」。
-- **机器名统一用 `rixin`**：仓库/包名 `rixin-notes`、数据库 `rixin`、localStorage 键 `rixin.*`、Service Worker 缓存 `rixin-v1`。
-- 更早版本使用过不同的内部代号和数据库名（如 `mochi` / `inkstone`）。它们**只允许出现在迁移代码、兼容说明和旧备份导入逻辑里**；新的代码与文案不要再使用旧名称，也不要把旧存储键当作新功能的一部分。
-- 仓库计划更名为 `rixin-notes`；引用仓库地址时使用 <https://github.com/Frank-max610/rixin-notes>，等改名完成后确认链接可访问。
+- **面向用户的名称统一用「麻薯」**：界面文案、README、截图 alt 文本、错误提示都写「麻薯」。
+- **机器名统一用 `mashu`**：仓库/包名 `mashu-notes`、数据库 `mashu`、localStorage 键 `mashu.*`、Service Worker 缓存 `mashu-v1`。
+- 更早版本使用过不同的内部代号和数据库名（如 `rixin` / `mochi` / `inkstone`）。它们**只允许出现在迁移代码、兼容说明和旧备份导入逻辑里**；新的代码与文案不要再使用旧名称，也不要把旧存储键当作新功能的一部分。
+- 仓库地址：<https://github.com/Frank-max610/mashu-notes>；线上演示：<https://frank-max610.github.io/mashu-notes/>。
 
 ## iOS / PWA 交付（零服务器）
 
 最终交付形态是**静态站点**，不是服务器应用：
 
 - `npm run build` 先做类型检查与 Vite 构建，再运行 `scripts/sw-precache.mjs` 把带 hash 的构建产物注入 `dist/sw.js` 的 `PRECACHE`。推送到 `main` 后由 `.github/workflows/deploy-pages.yml` 自动发布到 GitHub Pages。GitHub 只是免费的静态托管：维护者不需要 VPS、数据库、后台进程或密钥，也不做任何服务器运维。
-- 用户路径是 Safari 打开 HTTPS 地址 → 分享 → 添加到主屏幕；首次加载后 Service Worker（缓存名 `rixin-v1`）让应用离线可用。联网时重新打开主屏幕图标会拿到新版本（导航请求 network-first），没有更新弹窗或应用商店审核。
+- 用户路径是 Safari 打开 HTTPS 地址 → 分享 → 添加到主屏幕；首次加载后 Service Worker（缓存名 `mashu-v1`）让应用离线可用。联网时重新打开主屏幕图标会拿到新版本（导航请求 network-first），没有更新弹窗或应用商店审核。
 - iOS 细节要与代码保持一致：`apple-mobile-web-app-*` meta、`apple-touch-startup-image` 七种尺寸启动图（`npm run splash` 生成到 `public/splash/`）、`display: standalone`、安全区、手机表单 16px（避免 Safari 聚焦缩放）、JSON/Markdown 导出优先走 Web Share 文件分享（可存「文件」/ iCloud，回退普通下载）、离线/联网 toast、首次打开的安装提示。
 - `npm run share` 和 `npm run qr` 只是开发者真机调试工具，**不是用户路径**；不要因为调试方便就引入服务器、账号、云函数或任何运行时网络请求。
 - 手动测试矩阵：iPhone SE（小屏/安全区）、iPhone 15 尺寸各一遍；Safari 标签页与「添加到主屏幕」后的 standalone 各一遍。至少验证：离线重载、安装卡片与首次提示、16px 输入框不被放大、导出到「文件」、断网/恢复提示。
@@ -48,7 +48,7 @@ npm run dev        # http://localhost:5173
 | `npm run typecheck` | 只跑 `tsc --noEmit` |
 | `npm test` | 运行一次 Vitest（当前 202 个用例 / 9 个文件） |
 | `npm run test:watch` | Vitest watch 模式 |
-| `npm run icons` | 重新生成 `public/icons/` 下的朱砂印章图标（需要 Python 3 + Pillow） |
+| `npm run icons` | 重新生成 `public/icons/` 下的渐变品牌图标（需要 Python 3 + Pillow） |
 | `npm run splash` | 重新生成 `public/splash/` 下的 iPhone 启动图（需要 Python 3 + Pillow） |
 | `npm run qr` | 生成局域网访问地址的二维码 PNG（`docs/screenshots/lan-qr.png` + `lan-url.txt`） |
 | `npm run screenshots` | 驱动本机 Chrome 无头模式重新截取 README 截图（需要 Chrome；产物在 `docs/screenshots/`） |
@@ -88,10 +88,16 @@ npm run typecheck && npm test && npm run build
 - 命名：文件用 camelCase（`exportImport.ts`）或 PascalCase（`GraphView.tsx`）；变量/函数 camelCase；类型/组件 PascalCase；常量 UPPER_SNAKE_CASE。
 - 优先**具名导出**；目前只有入口组件 `App.tsx` 使用默认导出（供 `main.tsx` 挂载）。
 - 纯函数放在 `src/lib`，UI 组件放在 `src/components`，页面级组合放在 `src/screens`。
-- 样式统一手写 CSS + `src/styles/tokens.css` 里的设计变量，不要硬编码颜色或魔法数字。组件样式文件与组件同名（`GraphView.css`），类名加组件前缀。
-- **视觉约定（编辑设计）**：纸色底 + 墨色字 + **朱砂强调色 `#a63d33`**；标题用 `--font-display`（宋体），元信息/编号用 `--font-mono`；1px 细线（hairline）、小圆角（3–10px）、扁平导航。**不要**引入糖果色、粉紫渐变、爱心、彩带、贴纸或 emoji 装饰。图谱是例外：独立的**始终深色仪表盘**，只从 `--graph-*` token 取色（青/琥珀/青绿/紫/石板灰），28px 网格、1px 边、等宽标签。
+- 样式统一手写 CSS + `src/styles/tokens.css` 里的设计变量，不要硬编码颜色、渐变、圆角或动效曲线。组件样式文件与组件同名（`GraphView.css`），类名加组件前缀。
+- **视觉约定（v0.5 vibrant AI-native）**：
+  - **深色优先**：`:root` 是近黑画布（`--bg: #08090c`）+ 极光辉光；`:root[data-theme='light']` 是完整浅色主题。两个主题都要检查。
+  - **只用 token 的渐变与色**：品牌渐变 `--grad-brand`（sunset `#ff7a17` → magenta `#ff4d8d` → dusk `#8b5cf6`）、`--grad-soft`、`--grad-aurora`，辅助色 breeze `#a0c3ec` / lime `#b6f09c`；不要自己拼第二个品牌渐变。
+  - **药丸 + 玻璃 + 大圆角**：按钮/筛选/状态用 `--radius-full` 胶囊；卡片用 `--glass` + 大圆角（`--radius-l` / `--radius-xl`，14–24px）；悬浮导航用 backdrop blur；高光/阴影用 `--shadow-*` / `--shadow-glow`。
+  - **动效**：按压/弹出用 `--spring` / `--ease-bounce`，时长用 `--dur-*`；必须尊重 `prefers-reduced-motion`。
+  - **禁止回归旧设计语言**：不要引入宋体衬线标题、纸纹/纸质底色、朱砂印章式视觉；不要用 emoji 作为主要装饰；不要硬编码旧品牌色。
+  - **图谱是独立语言**：始终深色仪表盘，只从 `--graph-*` token 取色（sunset / violet / lime / breeze），28px 网格、1px 锐利连线、等宽标注。
 - 文案克制、准确、可操作：按钮写清动作（「记一笔」「保存记录」），错误提示写清下一步（「请导出备份」），不要卖萌或制造焦虑。
-- 触控目标不小于 40px（主要按钮与底部导航 44px+），适配安全区；尊重 `prefers-reduced-motion`；正文与控件对比度至少 WCAG AA。
+- 触控目标不小于 40px（主要按钮与底部导航 44px+），适配安全区；正文与控件对比度至少 WCAG AA。
 - 保持运行时依赖精简：目前只有 `react`、`react-dom`、`markdown-it`。新增运行时依赖需要先在 issue 里讨论。
 - **不允许**引入遥测、分析、CDN 字体/脚本或任何运行时网络请求；助手、简报不允许接入云端模型——隐私是项目的核心承诺。
 
@@ -109,19 +115,19 @@ npm run typecheck && npm test && npm run build
 | `src/lib/agent.ts` | 本地助手：一句话解析、问候、问答与建议、快捷问题 | 纯规则、确定性、不联网；改动要补 `tests/agent.test.ts` 用例 |
 | `src/lib/search.ts` | 全文搜索与标题补全 | 纯函数，便于测试 |
 | `src/lib/graph.ts` | 图谱构建（wiki / 手动 / 同日边、幽灵节点）与力导向布局 | 纯函数，布局需确定性（不依赖随机）；保存位置要归一化 0..1 |
-| `src/lib/db.ts` | IndexedDB（数据库 `rixin`，schema v2）/ localStorage 适配、旧库（`mochi` / `inkstone`）一次性迁移 | 改数据结构时升级 `DB_VERSION` 并在 upgrade 中就地补字段；旧备份必须仍能导入 |
+| `src/lib/db.ts` | IndexedDB（数据库 `mashu`，schema v2）/ localStorage 适配、旧库（`rixin` / `mochi` / `inkstone`）一次性迁移 | 改数据结构时升级 `DB_VERSION` 并在 upgrade 中就地补字段；旧备份必须仍能导入 |
 | `src/lib/store.ts` | `useNotes()` 单一状态源：记录 CRUD、图谱位置、手动连线、flush | 写入路径、防抖、`settleWrites` 与删除级联要谨慎 |
-| `src/lib/prefs.ts` | 主题、引导、助手人设与印记（`rixin.agent.v1`）、安装提示（`rixin.installHint.v1`）、`normalizeNote` / `makeNote` | 只碰 localStorage，失败要静默降级；旧助手名/旧头像 id 要映射到新默认 |
+| `src/lib/prefs.ts` | 主题、引导、助手人设与渐变头像（`mashu.agent.v1`）、安装提示（`mashu.installHint.v1`）、`normalizeNote` / `makeNote` | 只碰 localStorage，失败要静默降级；旧助手名/旧头像 id 要映射到新默认 |
 | `src/lib/seed.ts` | 首次运行的演示记录（生活记录 + 笔记） | 保持小而精，不要伪装成真实数据 |
-| `src/lib/exportImport.ts` | JSON（vault v2，`app: 'rixin'`）/ Markdown 导出、JSON 导入（含旧 `mochi` / `inkstone` 备份兼容）、合并 / 替换、`shareOrDownload` | 改格式时同步升 `VAULT_VERSION`，并保证旧版本仍可导入 |
+| `src/lib/exportImport.ts` | JSON（vault v2，`app: 'mashu'`）/ Markdown 导出、JSON 导入（含旧 `rixin` / `mochi` / `inkstone` 备份兼容）、合并 / 替换、`shareOrDownload` | 改格式时同步升 `VAULT_VERSION`，并保证旧版本仍可导入 |
 | `src/lib/format.ts` | 相对时间、日期、字节数等展示格式化 | 纯函数 |
 | `src/lib/useRoute.ts` | 轻量 hash 路由（`#/today`、`#/records`、`#/graph`、`#/agent`、`#/search`、`#/settings`、`#/note/:id`） | 导航统一用 `navigate` / `replaceRoute`；底部 5 个标签文案在 `TabBar.tsx` |
-| `src/components/` | 可复用 UI：BrandSeal、Sparkline、TabBar（扁平 5 标签导航，今日使用 sun 图标）、GraphView（深色仪表盘）、CaptureSheet、AgentPanel、AgentAvatar（8 种印记）、NodeEditorSheet、IosInstallCard 等 | 通过 props / callback 拿数据，不直接访问 `db.ts`；图谱触点较多，改交互要测触摸与鼠标 |
+| `src/components/` | 可复用 UI：BrandMark（渐变品牌标记）、Sparkline、TabBar（悬浮玻璃 5 标签导航）、GraphView（深色仪表盘）、CaptureSheet、AgentPanel、AgentAvatar（渐变头像：光晕/首字/圆环/方块/三角/星芒/水波/网格 + 自定义 emoji）、NodeEditorSheet、IosInstallCard 等 | 通过 props / callback 拿数据，不直接访问 `db.ts`；图谱触点较多，改交互要测触摸与鼠标 |
 | `src/screens/` | 页面级组件：TodayScreen（今日）、RecordsScreen（记录）、EditorScreen、SettingsScreen（我的/Apple 健康/安装卡片） | 负责布局与交互，数据由上层注入，不直接访问 `db.ts` |
-| `src/styles/` | `tokens.css` 设计变量（纸墨、朱砂、宋体/等宽、`--graph-*`）、`base.css` 基础样式与 iOS 16px 规则、`app.css` 外壳样式 | 新颜色/圆角/动效先加 token；不要写糖果色；不要在这里写组件私有样式 |
+| `src/styles/` | `tokens.css` 设计变量（深色优先、渐变、玻璃、圆角、`--graph-*`）、`base.css` 基础样式与 iOS 16px 规则、`app.css` 外壳样式 | 新颜色/渐变/圆角/动效先加 token；不要写死品牌色；不要在这里写组件私有样式 |
 | `tests/` | Vitest 单元测试（202 个用例 / 9 个文件：agent、brief、exportImport、graph、health、insights、links、markdown、search） | 文件命名为 `*.test.ts`，不要提交调试用的临时测试文件 |
-| `scripts/` | Node/Python 工具脚本（图标、启动图、SW 预缓存注入、局域网托管、截图、二维码） | 不参与前端构建；`sw-precache.mjs` 必须在 `vite build` 之后运行 |
-| `public/` | 静态资源、PWA manifest 与图标、iPhone 启动图（`splash/`）、`sw.js` | manifest 需与 `index.html` 保持一致；改离线壳资源时同步更新 `sw.js` 的 `CACHE` 版本（当前 `rixin-v1`） |
+| `scripts/` | Node/Python 工具脚本（渐变图标、启动图、SW 预缓存注入、局域网托管、截图、二维码） | 不参与前端构建；`sw-precache.mjs` 必须在 `vite build` 之后运行 |
+| `public/` | 静态资源、PWA manifest 与图标、favicon、iPhone 启动图（`splash/`）、`sw.js` | manifest 需与 `index.html` 保持一致；改离线壳资源时同步更新 `sw.js` 的 `CACHE` 版本（当前 `mashu-v1`） |
 | `.github/workflows/` | `ci.yml`（typecheck + test + build）、`deploy-pages.yml`（推 main 自动发布 GitHub Pages，维护者无需服务器） | 改构建命令时两个 workflow 都要同步 |
 
 如果你要改的是公共 API（`types.ts` 的接口、组件 props、存储格式、导出信封），请同时在 PR 描述里说明影响范围与迁移方式。
@@ -137,7 +143,7 @@ npm run typecheck && npm test && npm run build
 - 图谱相关改动请覆盖：wiki / 手动 / 同日三种边、去重优先级、幽灵节点、保存位置与固定节点布局。
 - 测试里请覆盖：空输入、中文文本、代码块内的「假链接」、大小写与空白差异、旧版备份兼容。
 - 不要为了测试引入新的运行时依赖；如果确实需要新测试工具（例如 DOM 测试环境），先在 issue 里讨论。
-- UI 交互目前没有自动化测试，修改 UI 时请在 PR 里附上真机/窄屏截图或录屏，并确认浅色 / 深色 / 图谱仪表盘都正常。
+- UI 交互目前没有自动化测试，修改 UI 时请在 PR 里附上真机/窄屏截图或录屏，并确认深色 / 浅色 / 图谱仪表盘都正常。
 
 ## 如何新增一个功能
 
@@ -146,10 +152,10 @@ npm run typecheck && npm test && npm run build
 1. **想清楚数据从哪来。** 优先从 `Note.content` 或已有的 `NoteMeta` 派生，不要新增需要手动同步的冗余字段。
 2. **写纯逻辑模块。** 在 `src/lib/` 新建 `myFeature.ts`（或扩展已有模块），输入输出都是普通数据，不碰 React 和 DOM。
 3. **先写测试。** 在 `tests/myFeature.test.ts` 写失败用例，`npm run test:watch` 看着它变绿。
-4. **做组件。** 在 `src/components/` 新建 `MyFeature.tsx` + `MyFeature.css`，道具驱动、具名导出、样式加前缀；触控目标 40px+，适配安全区、浅色/深色、`prefers-reduced-motion`；只用 tokens 里的颜色与圆角。
+4. **做组件。** 在 `src/components/` 新建 `MyFeature.tsx` + `MyFeature.css`，道具驱动、具名导出、样式加前缀；触控目标 40px+，适配安全区、深色/浅色、`prefers-reduced-motion`；只使用 tokens 里的渐变、玻璃、圆角与动效。
 5. **接线。** 在页面级组件或 `App.tsx` 里把 store 的数据和 callback 传进去；需要新增页面时，在 `src/lib/useRoute.ts` 的 `Route` / `parseRoute` / `routeToHash` 中登记路由，并在 `TabBar.tsx` 补导航。需要新增 store 方法时，在 `store.ts` 的 `NotesApi` 里补充并考虑持久化。
-6. **考虑存储兼容。** 如果新增持久化字段：升级 `db.ts` 的 `DB_VERSION` 并在 upgrade 中就地补默认值、同步更新 `prefs.ts` 的 `normalizeNote`、必要时升 `VAULT_VERSION` 并写迁移测试；旧的 JSON 备份必须仍能导入。
-7. **考虑离线壳。** 新增顶层静态资源时确认构建后 `sw-precache.mjs` 会把它写入 `PRECACHE`（`splash/` 由 iOS 直接读取，被有意排除）；手改缓存策略时递增 `sw.js` 的 `CACHE` 版本（当前 `rixin-v1`）。
+6. **考虑存储兼容。** 如果新增持久化字段：升级 `db.ts` 的 `DB_VERSION` 并在 upgrade 中就地补默认值、同步更新 `prefs.ts` 的 `normalizeNote`、必要时升 `VAULT_VERSION` 并写迁移测试；旧版（含更早品牌的）JSON 备份必须仍能导入。
+7. **考虑离线壳。** 新增顶层静态资源时确认构建后 `sw-precache.mjs` 会把它写入 `PRECACHE`（`splash/` 由 iOS 直接读取，被有意排除）；手改缓存策略时递增 `sw.js` 的 `CACHE` 版本（当前 `mashu-v1`）。
 8. **更新文档与截图。** 用户可见的功能更新 README 功能表/路线图；架构改动更新 `docs/ARCHITECTURE.md`；数据或隐私相关更新 `docs/PRIVACY.md`（尤其是 Apple 健康与导出）；UI 改完跑 `npm run screenshots` 刷新截图（需要先构建并在另一个终端运行 `npm run share`）。
 
 ### 常见改动的落点
@@ -157,9 +163,9 @@ npm run typecheck && npm test && npm run build
 - **新增记录类型**：`types.ts` 的 `NoteKind` → `kinds.ts` 的 `NOTE_KINDS` / `KIND_INFO` → `tokens.css` 的 `--kind-*` 与图谱 `--graph-node-*` → `normalizeNote` 的 kind 校验 → 列表/筛选/图谱/统计/简报/助手/节点编辑面板。
 - **新增简报规则**：`brief.ts` 的规则与阈值 → `tests/brief.test.ts` → 必要时在 `TodayScreen` 增补展示；保持 deterministic。
 - **新增健康别名 / 单位**：`health.ts` 的 `TYPE_ALIASES` / `convertValue` → `tests/health.test.ts` 样例；不要让解析器产生重复记录（同日靠 `replaceId`）。
-- **新增印记头像**：`prefs.ts` 的 `AGENT_AVATARS` → `AgentAvatar.tsx` 的 sigil 绘制；保持 24px 网格、1.5px 线条、无糖果色。
+- **新增渐变头像**：`prefs.ts` 的 `AGENT_AVATARS` → `AgentAvatar.tsx` 的渐变与 glyph；只使用品牌/辅助色，保持圆角与玻璃质感一致。
 - **新增图谱交互**：`GraphView` 的 props 回调 → `App.tsx` 接线 → `store.ts` 的持久化方法 → `tests/graph.test.ts`。
-- **调整视觉**：只改 `tokens.css` 与组件 CSS，避免在组件里写死颜色；纸墨主题、深色主题与图谱仪表盘三套都要检查。
+- **调整视觉**：只改 `tokens.css` 与组件 CSS，避免在组件里写死颜色/渐变；深色主题、浅色主题与图谱仪表盘三套都要检查。
 
 ## 提交信息规范
 
@@ -185,14 +191,14 @@ npm run typecheck && npm test && npm run build
 - `chore` 杂项（依赖、工具）
 - `ci` CI 配置
 
-`scope` 用模块名，例如 `brief`、`health`、`today`、`records`、`graph`、`agent`、`sigil`、`design`、`store`、`a11y`、`readme`、`ci`。示例：
+`scope` 用模块名，例如 `brief`、`health`、`today`、`records`、`graph`、`agent`、`avatar`、`brand`、`design`、`store`、`a11y`、`readme`、`ci`。示例：
 
 ```text
-feat(brief): compare yesterday with the trailing 7 logged days
-feat(health): dedupe same-day metrics with replaceId
-test(brief): cover empty history and sparse weeks
-style(tokens): drop the last candy gradients
-docs(readme): explain the Rixin name and Apple Health limits
+feat(today): add a streak pill to the greeting header
+feat(avatar): add gradient wave preset for the assistant
+fix(health): keep same-day dedupe when the file repeats a metric
+style(tokens): refresh the midnight glass palette
+docs(readme): explain the vibrant AI-native redesign
 ```
 
 一个 PR 尽量只做一件事；逻辑改动和格式化改动分开提交。
@@ -208,12 +214,12 @@ docs(readme): explain the Rixin name and Apple Health limits
 - [ ] 没有新增未讨论的运行时依赖
 - [ ] 没有引入遥测、分析、运行时网络请求或云端模型调用，也没有引入服务器/账号/云函数（零服务器交付约束）
 - [ ] iOS/PWA 改动验证过：Safari 标签页 + 添加到主屏幕、断网重载、安装卡片与首次提示、16px 输入框不被放大、导出到「文件」
-- [ ] UI 改动在 375px 宽度下检查过，并在浅色 / 深色 / 图谱仪表盘三种外观下检查过
-- [ ] 视觉改动只改 token / 组件 CSS，没有引入糖果色、粉紫渐变、emoji 装饰或大圆角
+- [ ] UI 改动在 375px 宽度下检查过，并在深色 / 浅色 / 图谱仪表盘三种外观下检查过
+- [ ] 视觉改动只使用 token：没有写死品牌色/渐变；没有回归宋体衬线、纸纹、朱砂印章等旧设计语言；尊重 `prefers-reduced-motion`
 - [ ] Apple 健康相关改动验证过：JSON/CSV/URL 三种入口、单位换算、同日去重；测试数据使用脱敏样例
-- [ ] 涉及存储格式的改动：版本号、迁移、旧备份导入与 `normalizeNote` 都已覆盖
+- [ ] 涉及存储格式的改动：版本号、迁移（含更早品牌的旧库/旧键）、旧备份导入与 `normalizeNote` 都已覆盖
 - [ ] 涉及离线壳/静态资源的改动，已确认 `sw-precache.mjs` 或 `CACHE` 版本正确
-- [ ] 新增/变更的用户可见文案是中文，安静、清楚、不含旧产品名
+- [ ] 新增/变更的用户可见文案是中文，清楚、当前品牌名只有「麻薯」
 - [ ] 相关文档（README / ARCHITECTURE / PRIVACY）已同步
 - [ ] PR 描述写清「改了什么、为什么、怎么验证的」，UI 改动附截图
 - [ ] 提交信息符合 Conventional Commits
@@ -222,7 +228,7 @@ docs(readme): explain the Rixin name and Apple Health limits
 
 - 提 bug 前先搜索已有 issue；请附上浏览器/系统版本、复现步骤、期望行为，以及**当前使用的存储方式**（IndexedDB 还是 localStorage 回退，「我的」页可见）。
 - **不要在公开 issue 里粘贴真实生活记录、Apple 健康导出或完整备份文件**——收支、体重、睡眠、心率等信息很私人。需要提供数据时请使用演示记录或自行脱敏的样例 JSON/CSV。
-- 新功能建议先开 issue 讨论范围，避免写完 PR 才发现方向不一致。特别大的改动（同步、插件系统、存储格式、Apple Health 直连方案）请先达成共识。
+- 新功能建议先开 issue 讨论范围，避免写完 PR 才发现方向不一致。特别大的改动（同步、插件系统、存储格式、Apple Health 直连方案、视觉体系）请先达成共识。
 - 安全或隐私问题请不要公开提交 issue，先通过维护者的 GitHub 主页联系方式私下沟通。
 - Review 时对事不对人；维护者可能会为了保持项目精简而拒绝某些功能，这不代表你的贡献没有价值。
 
