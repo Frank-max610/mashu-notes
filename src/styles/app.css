@@ -1749,13 +1749,6 @@ button.settings-row:active {
 
 /* ---------- v0.6 pastel additions ---------- */
 
-.hero-mascot {
-  flex: none;
-  width: 74px;
-  height: 74px;
-  margin: -4px -2px 0 0;
-  filter: drop-shadow(0 8px 14px rgba(226, 130, 155, 0.22));
-}
 
 .today-hero .hero-top {
   align-items: flex-start;
@@ -1901,9 +1894,9 @@ button.settings-row:active {
 
 .quick-chip {
   flex: none;
-  min-height: 32px;
-  padding: 5px 11px;
-  font-size: var(--text-xs);
+  min-height: 44px;
+  padding: 8px 14px;
+  font-size: var(--text-sm);
 }
 
 .quick-dot {

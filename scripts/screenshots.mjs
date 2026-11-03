@@ -41,12 +41,12 @@ const PROFILE_DIR = resolve(tmpdir(), `rixin-chrome-${Date.now()}`);
 const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
 
 const SHOTS = [
-  { file: 'today.png', hash: '#/today', waitFor: '.brief-block', delay: 1000 },
-  { file: 'records.png', hash: '#/records', waitFor: '.note-card', delay: 800 },
+  { file: 'today.png', hash: '#/today', waitFor: '.home-capture', delay: 1000 },
+  { file: 'records.png', hash: '#/records', waitFor: '.record-row', delay: 800 },
   {
     file: 'capture.png',
     hash: '#/records',
-    waitFor: '.note-card',
+    waitFor: '.record-row',
     delay: 500,
     action: `(() => {
       document.querySelector('[aria-label="记一笔"]')?.click();
@@ -59,7 +59,7 @@ const SHOTS = [
         input.dispatchEvent(new Event('input', { bubbles: true }));
       }, 400);
     })()`,
-    afterActionWaitFor: '.capture-sheet__preview',
+    afterActionWaitFor: '.capture-sheet__parse',
     afterActionDelay: 700,
   },
   { file: 'graph.png', hash: '#/graph', waitFor: '.graph-view canvas', delay: 3000 },
@@ -88,13 +88,13 @@ const SHOTS = [
   {
     file: 'search.png',
     hash: '#/search',
-    waitFor: '.search-screen__input',
+    waitFor: '.search-input',
     delay: 500,
-    action: `(() => { const input = document.querySelector('.search-screen__input'); if (!input) return; input.focus(); const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set; setter.call(input, '麻薯'); input.dispatchEvent(new Event('input', { bubbles: true })); })()`,
-    afterActionWaitFor: '.search-screen mark',
+    action: `(() => { const input = document.querySelector('.search-input'); if (!input) return; input.focus(); const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set; setter.call(input, '麻薯'); input.dispatchEvent(new Event('input', { bubbles: true })); })()`,
+    afterActionWaitFor: '.record-snippet mark',
     afterActionDelay: 600,
   },
-  { file: 'settings.png', hash: '#/settings', waitFor: '.agent-persona', delay: 800 },
+  { file: 'settings.png', hash: '#/settings', waitFor: '.settings-card', delay: 800 },
   {
     file: 'install.png',
     hash: '#/settings',
@@ -106,7 +106,7 @@ const SHOTS = [
   {
     file: 'dark-today.png',
     hash: '#/today',
-    waitFor: '.brief-block',
+    waitFor: '.home-capture',
     delay: 800,
     theme: 'dark',
   },
