@@ -1,14 +1,14 @@
 # 麻薯
 
-**把日子过得软一点。**
+**把日子过得暖一点。**
 
 一个本地优先的 **iPhone 生活记录与复盘 App**：饮食、健康、收支、日记和 Markdown 笔记放在一起，打开就是今日仪表盘；每晚看一眼复盘，每天做一点改进。**没有服务器，也没有账号**——装到主屏幕后，断网也能用。
 
 **在线试用（请用 Safari 打开）**：<https://frank-max610.github.io/mashu-notes/>
-**仓库**：[github.com/Frank-max610/mashu-notes](https://github.com/Frank-max610/mashu-notes) · 版本 **v0.6.0**
+**仓库**：[github.com/Frank-max610/mashu-notes](https://github.com/Frank-max610/mashu-notes) · 版本 **v0.7.0**
 
-[![Live demo](https://img.shields.io/badge/demo-live-ea8fa8.svg)](https://frank-max610.github.io/mashu-notes/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-d9557f.svg)](LICENSE)
+[![Live demo](https://img.shields.io/badge/demo-live-e3a06a.svg)](https://frank-max610.github.io/mashu-notes/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-c9773c.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19-61dafb.svg?logo=react&logoColor=1b1b24)](https://react.dev/)
 
@@ -18,7 +18,7 @@
 
 麻薯，软糯的糯米团子，名字很日常，野心也很小：把生活里那些「今天吃了什么、睡了多久、钱花在哪、今天在想什么」的小事接住，然后每天看它一眼。
 
-0.6 把 0.2 的软乎乎少女风带回来了，但**调淡了一点**：奶油纸底、雾玫瑰主色（不是糖果粉）、薰衣草/薄荷/奶油黄做辅助色，大圆角、蓬松粉彩阴影、圆润字体，还有一只戴草莓帽的小麻薯吉祥物。默认浅色，夜里可以切到柔和的「芋泥夜」深色主题。
+0.7 继续保留软乎乎的语言，但把主色从粉色系换成了更暖、更中性的**暖杏色**：奶油纸底、杏色主色、暖沙/橄榄/奶油黄/灰蓝做辅助色，大圆角、蓬松暖阴影、圆润字体，还有一只暖奶油色的小麻薯吉祥物。默认浅色，夜里切到暖暖的「暖棕夜」深色主题。
 
 > 内部机器名统一为 `mashu`（仓库、包名、数据库与存储键）；界面和文案里只叫「麻薯」。
 
@@ -40,16 +40,16 @@
 
 **备份与换机**：所有记录只保存在这台设备的浏览器存储里。定期在「我的 → 导出全部记录（JSON）」里导出，iOS 会弹出系统分享面板，选择存到「文件」或 iCloud 云盘；换手机时在新手机「导入记录」即可（合并或替换）。**清除 Safari 网站数据会删除记录**，请勿把它当作备份。
 
-## 设计语言：soft pastel，调淡一点
+## 设计语言：暖杏色，暖一点
 
-0.5 的深色 AI 原生界面在 0.6 交还给初代的「草莓牛奶」气质，但收住了饱和度：
+0.6 的软乎乎语言在 0.7 收暖：不再以粉色为主，改用更中性的暖杏色：
 
-- **奶油纸底**：`--bg: #fdf8f6`，衬着雾玫瑰 `--accent: #ea8fa8` / `--accent-strong: #d9557f`；不是高饱和糖果粉。
-- **辅助色**：薰衣草/芋泥 `#a98bd6`、薄荷 `#8fd4b6`、奶油黄 `#f4c97a`、微风蓝 `#a9c6e8`；品牌渐变是粉 → 薰衣草，用于 logo、问候标题和强调数字。
-- **圆润与蓬松**：`ui-rounded` 圆体（SF Pro Rounded / PingFang SC），超大圆角（12 / 16 / 20 / 26 / 32px），按钮和筛选是胖乎乎的胶囊；卡片浮在奶油纸上，阴影是粉彩的、软软的。
-- **吉祥物与 emoji**：一只戴草莓帽的小麻薯（`Mascot`）出现在首页 hero、助手页和品牌标记里；助手头像换成软萌 emoji（麻薯 / 猫猫 / 叶子 / 太阳 / 星星 / 书本 / 茶茶 / 饭碗）或自定义 emoji。
-- **浅色默认，芋泥夜相伴**：白天是奶油纸 + 雾玫瑰；深色是柔和的芋泥紫 `#201a27`，不是纯黑或霓虹黑。
-- **图谱也变软了**：粉彩网格、玫瑰/薰衣草/薄荷/奶油黄/微风蓝节点，保留等宽标注与清晰连线；不再有硬核深色霓虹仪表盘。
+- **奶油纸底**：`--bg: #faf6f0`，主色暖杏 `--accent: #e3a06a` / `--accent-strong: #c9773c` / `--accent-ink: #a85b28`；不是糖果粉，也不是冷粉。
+- **辅助色**：暖沙/焦糖 `#b98a4e`、软橄榄 `#a8bb87`、奶油黄 `#e8c07a`、灰蓝 `#9db8c4`；正文是暖棕 `#43392f`。品牌渐变是暖杏 → 焦糖（`#f3bf8f` → `#e3a06a` → `#c98a52`），用于 logo、问候标题和强调数字。
+- **圆润与蓬松**：`ui-rounded` 圆体（SF Pro Rounded / PingFang SC），超大圆角（12 / 16 / 20 / 26 / 32px），按钮和筛选是胖乎乎的胶囊；卡片浮在奶油纸上，阴影是暖色的、软软的。
+- **吉祥物与 emoji**：一只暖奶油 + 焦糖配色的小麻薯（`Mascot`）出现在首页 hero、助手页和品牌标记里；助手头像换成软萌 emoji（麻薯 / 猫猫 / 叶子 / 太阳 / 星星 / 书本 / 茶茶 / 饭碗）或自定义 emoji。
+- **浅色默认，暖棕夜相伴**：白天是奶油纸 + 暖杏；深色是暖棕夜色 `#241d18`，配杏色高光，不再是紫色调。
+- **图谱也变暖了**：暖色网格，暖杏/暖沙/橄榄/奶油黄/灰蓝节点，保留等宽标注与清晰连线；不再有硬核深色霓虹仪表盘。
 - **动效**：弹一弹的按压（spring / bounce）、面板轻轻浮入；全部尊重 `prefers-reduced-motion`。
 
 ## 功能
@@ -58,11 +58,11 @@
 
 | 功能 | 说明 |
 | --- | --- |
-| **问候与连续记录** | 顶部按时间问候，旁边是戴草莓帽的小麻薯；今天有记录时显示「已记 N 笔 · 连续 N 天」。 |
+| **问候与连续记录** | 顶部按时间问候，旁边是暖奶油色的小麻薯；今天有记录时显示「已记 N 笔 · 连续 N 天」。 |
 | **问问小助手** | 一块圆滚滚的 ask bar，点开就能问「今天花了多少？这周睡得怎么样？」。 |
 | **昨日复盘** | 用事实性的短句总结昨天：花了多少、吃了什么、睡了多久、走了多少步、记了几条。对比基准是「昨天之前有记录的最近 7 天」，避免稀疏记录把平均值带偏。 |
 | **今日改进** | 根据昨天的偏差给出 2–3 条具体、可执行的建议（例如提前 30 分钟睡、把支出控制在某个范围、走 20 分钟、喝够水），并优先保留做得好的部分。 |
-| **四张 7 日指标卡** | 支出 / 摄入 / 睡眠 / 记录四条 7 日趋势，带柔和的粉彩卡片和极简 SVG sparkline。 |
+| **四张 7 日指标卡** | 支出 / 摄入 / 睡眠 / 记录四条 7 日趋势，带柔和的暖色卡片和极简 SVG sparkline。 |
 | **快捷记录与今日时间线** | 「记饮食 / 记健康 / 记一笔 / 问助手」快捷入口；下方按时间列出今天的记录，点开即可编辑。 |
 | **完全本地** | 简报由 `src/lib/brief.ts` 的纯函数生成，同样的记录 + 同样的时间必得同样的结果；没有推送服务器，也不上传任何内容。 |
 
@@ -76,11 +76,11 @@
 | **一句话快速记录** | 写「午饭牛肉面 32 元 620 大卡」，本地解析成一条饮食记录；也可以选类型后补填快捷字段，并查看解析置信度。 |
 | **双向链接与反向链接** | 正文里写 `[[记录名]]` 或 `[[记录名\|别名]]`；目标不存在时标记「未创建」。 |
 
-### 图谱：粉彩生活地图
+### 图谱：暖色生活地图
 
 | 功能 | 说明 |
 | --- | --- |
-| **粉彩画布** | 图谱是一张柔软的粉彩地图：浅色主题是奶油粉网格，芋泥夜是深芋色网格；节点用玫瑰 / 薰衣草 / 薄荷 / 奶油黄 / 微风蓝，等宽标注和 1px 连线保留。 |
+| **暖色画布** | 图谱是一张柔软的暖色地图：浅色主题是奶油暖网格，暖棕夜是暖棕网格；节点用暖杏 / 暖沙 / 橄榄 / 奶油黄 / 灰蓝，等宽标注和 1px 连线保留。 |
 | **三类边，一眼区分** | `wiki` 边实线；手动连线更亮并带中点刻度；同日记录边虚线。幽灵节点（未创建的链接）是虚线菱形。 |
 | **完整编辑能力** | 点选节点在记录面板里改标题/类型/结构化字段/手动连线；拖动节点保存归一化位置；工具栏可「添加」（点空白处）与「连线」（依次点两个节点）；支持缩放、适应画布、重新布局。 |
 
@@ -119,13 +119,13 @@
 
 ## 截图
 
-> 默认是浅色奶油纸界面，最后一张 `dark-today.png` 是「芋泥夜」深色主题；截图由 `npm run screenshots` 驱动本机 Chrome 生成，视觉以实际运行效果为准。
+> 默认是浅色奶油纸界面，最后一张 `dark-today.png` 是「暖棕夜」深色主题；截图由 `npm run screenshots` 驱动本机 Chrome 生成，视觉以实际运行效果为准。
 
 | 今日（浅色） | 记录 | 快速记录 |
 | :---: | :---: | :---: |
 | ![今日｜问候、小麻薯与指标卡](docs/screenshots/today.png) | ![记录列表](docs/screenshots/records.png) | ![快速记录](docs/screenshots/capture.png) |
 
-| 图谱（粉彩） | 助手 | 编辑器（预览） |
+| 图谱（暖色） | 助手 | 编辑器（预览） |
 | :---: | :---: | :---: |
 | ![生活图谱](docs/screenshots/graph.png) | ![助手](docs/screenshots/agent.png) | ![编辑器预览](docs/screenshots/editor.png) |
 
@@ -133,16 +133,16 @@
 | :---: | :---: | :---: |
 | ![编辑器编辑](docs/screenshots/editor-edit.png) | ![搜索](docs/screenshots/search.png) | ![我的](docs/screenshots/settings.png) |
 
-| 装到 iPhone 上 | 今日（芋泥夜） | 空记录 |
+| 装到 iPhone 上 | 今日（暖棕夜） | 空记录 |
 | :---: | :---: | :---: |
-| ![装到 iPhone 上](docs/screenshots/install.png) | ![芋泥夜主题今日](docs/screenshots/dark-today.png) | ![空记录](docs/screenshots/empty-records.png) |
+| ![装到 iPhone 上](docs/screenshots/install.png) | ![暖棕夜主题今日](docs/screenshots/dark-today.png) | ![空记录](docs/screenshots/empty-records.png) |
 
 ## 数据与隐私
 
 - **没有后端、没有账号、没有遥测。** 应用不依赖服务端接口；静态文件由 GitHub Pages 托管。运行时的网络访问只来自加载应用自身的静态文件，以及你在笔记里主动写入的外链/图片。
 - **记录保存在设备本地。** 默认 IndexedDB（数据库 `mashu`，schema v2），不可用时回退 localStorage；首次加载会请求持久化存储权限，降低被自动清理的概率。
 - **Apple 健康数据只在设备上解析。** 导入的 JSON/CSV 或快捷指令 URL 数据不会上传；解析、单位换算和同日去重都在浏览器内存中完成，随后写入本地记录。
-- **旧数据会自动迁移。** 更早版本使用过不同的内部代号与数据库名（`rixin` / `mochi` / `inkstone`），0.6 会在首次打开时把记录与偏好迁移到 `mashu`，成功写入后才删除旧副本；旧版 JSON 备份也兼容导入。迁移前仍建议先导出一份备份。
+- **旧数据会自动迁移。** 更早版本使用过不同的内部代号与数据库名（`rixin` / `mochi` / `inkstone`），0.7 会在首次打开时把记录与偏好迁移到 `mashu`，成功写入后才删除旧副本；旧版 JSON 备份也兼容导入。迁移前仍建议先导出一份备份。
 - **每台设备、每个地址都是独立的库。** 浏览器按 origin 隔离数据；固定用同一个地址访问，不要假定 Safari 页面和主屏幕应用会自动同步。
 - **应用壳缓存不含记录。** Service Worker 只缓存 HTML/CSS/JS 等静态资源（缓存 `mashu-v1`），IndexedDB / localStorage 中的记录不会被写入缓存。
 - **生活数据比较敏感。** 收支、体重、睡眠都是私人信息；浏览器存储不是端到端加密的，请像保护任何本地文件一样保护设备。导出的 JSON/Markdown 是**明文**，请妥善保管；iCloud 只是你选择的文件存放位置，应用不做 iCloud 同步。
@@ -183,7 +183,7 @@ mashu-notes/
 │   ├── manifest.webmanifest      # PWA 清单
 │   └── sw.js                     # Service Worker（构建后注入 hash 资源清单）
 ├── scripts/
-│   ├── make_icons.py             # 生成吉祥物品牌图标（Python + Pillow）
+│   ├── make_icons.py             # 生成暖色吉祥物品牌图标（Python + Pillow）
 │   ├── make_splash.py            # 生成 iPhone 启动图（Python + Pillow）
 │   ├── sw-precache.mjs           # 构建后把 hash 资源写入 sw.js 的 PRECACHE
 │   ├── qr.mjs                    # 生成局域网二维码 PNG
@@ -210,7 +210,7 @@ mashu-notes/
 │   │   ├── exportImport.ts       # JSON（vault v2，`app: mashu`）/ Markdown 导入导出
 │   │   ├── format.ts             # 时间 / 字节 / 数字格式化
 │   │   └── useRoute.ts           # 轻量 hash 路由
-│   ├── styles/                   # tokens.css（粉彩/奶油/芋泥夜/图谱）、base.css、app.css
+│   ├── styles/                   # tokens.css（暖杏/奶油纸/暖棕夜/图谱）、base.css、app.css
 │   ├── App.tsx                   # 应用外壳：路由、主题、快速记录、图谱、助手、Apple 健康导入
 │   └── main.tsx                  # React 挂载入口 + Service Worker 注册
 ├── tests/                        # Vitest 单元测试（9 个文件 / 202 个用例）
@@ -235,8 +235,8 @@ mashu-notes/
 | 状态 | **单一 `useNotes()` hook** | 内存乐观更新 + 防抖写入，输入不等 I/O |
 | 简报 | **纯函数 `buildDailyBrief`** | 规则确定、可测试；昨日 vs 最近 7 个有记录日，本地生成 |
 | 健康导入 | **纯函数解析 + 草稿去重** | JSON/CSV/URL 三种输入，单位换算与同日 `replaceId` 更新 |
-| 图谱 | **Canvas 2D + 确定性力导向 + 粉彩画布** | 纯函数布局；绘制与交互分离，支持完整编辑 |
-| 视觉 | **手写 CSS + 设计变量** | 粉彩、圆角、软阴影、emoji 头像；不引入 UI 框架 |
+| 图谱 | **Canvas 2D + 确定性力导向 + 暖色画布** | 纯函数布局；绘制与交互分离，支持完整编辑 |
+| 视觉 | **手写 CSS + 设计变量** | 暖杏、圆角、暖阴影、emoji 头像；不引入 UI 框架 |
 | 测试 | **Vitest（node 环境）** | brief / health / agent / graph 等纯逻辑可直接测 |
 | 托管 | **GitHub Actions → GitHub Pages** | 免费静态托管，推 `main` 自动发布；维护者零服务器运维 |
 
@@ -253,11 +253,11 @@ mashu-notes/
 
 ### 为什么又变回可爱风？
 
-0.6 把初代麻薯的软乎乎气质带回来了：奶油纸、雾玫瑰、薰衣草/薄荷/奶油黄、圆角、蓬松阴影，还有小麻薯吉祥物。0.5 的深色 AI 原生视觉只是中间一版，不是这个产品最终的样子——我们觉得麻薯本来就该是软的、可爱的。
+0.7 继续保留初代麻薯的软乎乎气质：圆角、暖奶油、吉祥物、emoji 头像都还在，但主色换成了更暖、更中性的**暖杏色**（不是粉/紫色调）。0.5 的深色 AI 原生视觉只是中间一版，不是这个产品最终的样子——麻薯本来就该是软的、暖的、可爱的。
 
 ### 和 0.2 的少女风有什么不同？
 
-0.2 更糖果、更高饱和；0.6 是「调淡过」的版本：主色从糖果粉换成雾玫瑰（`#ea8fa8` / `#d9557f`），底色是奶油纸 `#fdf8f6`，粉彩阴影更轻，圆角更大但排版更克制。它还保留了 0.3–0.5 长出来的全部功能（生活记录、今日复盘、Apple 健康、图谱编辑、零服务器 PWA），不是回到 0.2 的功能。
+0.2 更糖果、更高饱和；0.7 是「温暖化」的版本：主色从粉色系换成暖杏（`#e3a06a` / `#c9773c`），底色是奶油纸 `#faf6f0`，辅助色是暖沙 `#b98a4e`、软橄榄 `#a8bb87`、奶油黄 `#e8c07a`、灰蓝 `#9db8c4`，暖阴影更轻，整体更中性。它还保留了 0.3–0.6 长出来的全部功能（生活记录、今日复盘、Apple 健康、图谱编辑、零服务器 PWA），不是回到 0.2 的功能。
 
 ### 数据迁移会丢吗？
 
@@ -314,7 +314,7 @@ PWA 不需要 Apple 开发者账号、签名和审核，更新也简单：推代
 
 ### 和 Obsidian 有什么区别？
 
-Obsidian 是通用 Markdown 知识库，插件生态成熟，文件存在本地文件夹；麻薯更小、更软，iPhone-first，面向「生活记录 + 每日复盘」：有结构化字段、每日简报、Apple 健康导入和可编辑生活图谱，助手与简报完全离线。它没有插件生态、没有本地文件夹 vault、没有内置同步。需要文件级 Markdown、插件和多端同步时，Obsidian 仍然更合适。
+Obsidian 是通用 Markdown 知识库，插件生态成熟，文件存在本地文件夹；麻薯更小、更暖，iPhone-first，面向「生活记录 + 每日复盘」：有结构化字段、每日简报、Apple 健康导入和可编辑生活图谱，助手与简报完全离线。它没有插件生态、没有本地文件夹 vault、没有内置同步。需要文件级 Markdown、插件和多端同步时，Obsidian 仍然更合适。
 
 ### 支持哪些 Markdown 语法？
 
@@ -326,14 +326,13 @@ Obsidian 是通用 Markdown 知识库，插件生态成熟，文件存在本地�
 
 ## 路线图
 
-已完成（0.6.0）：
+已完成（0.7.0）：
 
-- [x] 软乎乎粉彩设计回归：奶油纸 #fdf8f6、雾玫瑰 #ea8fa8/#d9557f、薰衣草/薄荷/奶油黄、大圆角 12–32px、蓬松粉彩阴影、圆润字体
-- [x] 小麻薯吉祥物（Mascot）+ 8 种 emoji 头像（麻薯/猫猫/叶子/太阳/星星/书本/茶茶/饭碗）+ 自定义 emoji；默认小麻薯
-- [x] 默认浅色 + 柔和「芋泥夜」深色主题（#201a27）
-- [x] 粉彩生活图谱：粉彩网格、玫瑰/薰衣草/薄荷/奶油黄/微风蓝节点，保留完整编辑
-- [x] 吉祥物品牌图标、favicon 与七种 iPhone 启动图重新生成
-- [x] 今日仪表盘保留：问候 + 小麻薯 + 连续记录 + ask bar + 昨日复盘 + 今日改进 + 4 张粉彩指标卡 + 快捷记录 + 时间线
+- [x] 暖杏色设计：奶油纸 `#faf6f0`、暖杏 `#e3a06a` / `#c9773c` / `#a85b28`、暖沙/橄榄/奶油黄/灰蓝、12–32px 大圆角、暖阴影、圆润字体
+- [x] 小麻薯吉祥物与图标/启动图换成暖奶油 + 焦糖配色；8 种 emoji 头像 + 自定义 emoji，默认小麻薯
+- [x] 默认浅色 + 「暖棕夜」深色主题（`#241d18`，杏色高光），不再使用紫色调
+- [x] 暖色生活图谱：暖色网格、暖杏/暖沙/橄榄/奶油黄/灰蓝节点，保留完整编辑
+- [x] 今日仪表盘保留：问候 + 小麻薯 + 连续记录 + ask bar + 昨日复盘 + 今日改进 + 4 张暖色指标卡 + 快捷记录 + 时间线
 - [x] Apple 健康导入与每日简报保持行为不变（JSON/CSV/快捷指令、同日去重）
 - [x] 存储统一为 `mashu`：旧数据库/旧键自动迁移，旧备份兼容导入
 - [x] Service Worker 缓存 `mashu-v1`，构建自动注入 hash 资源清单
@@ -367,12 +366,12 @@ npm run typecheck && npm test && npm run build
 
 ## English
 
-**Mashu (麻薯)** is a local-first life journal and Markdown notebook for iPhone. Meals, health, spending, diaries and notes live together behind a daily dashboard: a greeting with the little mochi mascot, a streak line, a round "ask the assistant" bar, yesterday's review, today's suggestions, four pastel seven-day sparklines, quick captures and today's timeline.
+**Mashu (麻薯)** is a local-first life journal and Markdown notebook for iPhone. Meals, health, spending, diaries and notes live together behind a daily dashboard: a greeting with the little mochi mascot, a streak line, a round "ask the assistant" bar, yesterday's review, today's suggestions, four warm seven-day sparklines, quick captures and today's timeline.
 
 - **No server, no account.** The whole app is a static site auto-deployed by GitHub Actions to GitHub Pages (free static hosting; the maintainer runs zero server operations). Open it in Safari, Share → Add to Home Screen, and it works offline after the first load.
-- **Soft pastel design (v0.6).** Cream paper `#fdf8f6`, muted rose `#ea8fa8` / `#d9557f`, lavender `#a98bd6`, mint `#8fd4b6` and butter `#f4c97a`, a pink → lavender brand gradient, oversized rounded corners (12–32px), puffy pastel shadows, a rounded typeface, and a cute mochi mascot. Light by default, with a soft taro-night dark theme (`#201a27`).
-- **Dashboard first, floating pastel navigation**: Today / Records / Graph / Agent / Me. The full record list lives in Records; search opens from the header.
-- **A pastel life graph**: a soft grid, rose / lavender / mint / butter / breeze nodes, monospaced chrome, clear edges (wiki solid, manual brighter with a midpoint tick, same-day dashed) and dashed-diamond ghost notes. Full editing: select, edit, add, drag, connect, reset layout, fit, pinch-zoom. Both light and taro-night themes.
+- **Warm apricot design (v0.7).** Cream paper `#faf6f0`, warm apricot `#e3a06a` / `#c9773c` / `#a85b28`, warm sand `#b98a4e`, olive `#a8bb87`, butter `#e8c07a`, dusty blue `#9db8c4`, and warm brown text `#43392f`; an apricot → caramel brand gradient, oversized rounded corners (12–32px), soft warm shadows, a rounded typeface, and a warm-cream mochi mascot. Light by default, with a warm brown night theme (`#241d18`) and apricot highlights.
+- **Dashboard first, floating warm navigation**: Today / Records / Graph / Agent / Me. The full record list lives in Records; search opens from the header.
+- **A warm life graph**: a soft warm grid, apricot / sand / olive / butter / dusty-blue nodes, monospaced chrome, clear edges (wiki solid, manual brighter with a midpoint tick, same-day dashed) and dashed-diamond ghost notes. Full editing: select, edit, add, drag, connect, reset layout, fit, pinch-zoom. Both light and warm-brown-night themes.
 - **A local agent named 小麻薯** with the mochi mascot or seven cute emoji avatars (cat, leaf, sun, star, book, tea, rice bowl) plus a custom emoji/character. Fully local rule-based heuristics — not an LLM, no model API, no telemetry.
 - **Apple Health / Watch import**: parse Apple-Health-style JSON, CSV or a `?health=` Shortcuts payload, with unit conversion (lb/g/L/min), HealthKit aliases, and same-day deduplication. Honest limit: a web app cannot read HealthKit directly — the current paths are file import and Shortcuts; a native iOS shell is a roadmap option, not included.
 - **Storage migration**: the database is now `mashu`; old local data is adopted once and removed after a successful write, and old JSON backups still import. Service worker cache `mashu-v1`.

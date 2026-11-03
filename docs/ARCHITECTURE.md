@@ -2,7 +2,7 @@
 
 麻薯（Mashu）是一个**纯前端、本地优先**的单页应用：一个静态 `index.html` + 打包后的 JS/CSS，没有服务器、没有数据库服务、没有账号系统。这份文档说明代码如何组织、数据如何在浏览器里流动、今日简报与 Apple 健康导入如何工作，以及哪些地方适合扩展。
 
-当前版本 **0.6.0**：把 0.5 的深色 AI 原生视觉替换回**软乎乎粉彩**（奶油纸、雾玫瑰、薰衣草/薄荷/奶油黄、超大圆角、蓬松粉彩阴影、圆润字体、小麻薯吉祥物 + emoji 头像、粉彩图谱），默认浅色 + 柔和「芋泥夜」深色。存储、今日简报、Apple 健康导入、图谱编辑与零服务器 PWA 交付的行为保持不变。
+当前版本 **0.7.0**：把整体视觉调暖为**暖杏色**（奶油纸、暖杏主色、暖沙/橄榄/奶油黄/灰蓝辅助色、超大圆角、暖色阴影、圆润字体、暖奶油色小麻薯吉祥物 + emoji 头像、暖色图谱），默认浅色 + 暖棕色「暖棕夜」深色主题。存储、今日简报、Apple 健康导入、图谱编辑与零服务器 PWA 交付的行为保持不变。
 
 ## 1. 总览
 
@@ -12,7 +12,7 @@
 - **确定性。** 简报、助手、健康解析都是纯函数：同一份记录、同一个输入与同一个 `now` 必得同样的结果；不联网、不调用模型。
 - **零第三方服务。** 运行时不发网络请求，唯一的网络访问来自用户在笔记里主动写入的外链/图片。
 - **静态交付、零服务器。** 构建产物由 GitHub Actions 自动发布到 GitHub Pages（免费静态托管）；用户从 Safari 安装到主屏幕后离线使用。维护者不需要 VPS、数据库或任何服务器运维。
-- **粉彩视觉。** 设计变量集中在 `src/styles/tokens.css`：奶油纸 `#fdf8f6`、雾玫瑰 `#ea8fa8` / `#d9557f`、薰衣草 `#a98bd6`、薄荷 `#8fd4b6`、奶油黄 `#f4c97a`、超大圆角（12–32px）、蓬松粉彩阴影、`ui-rounded` 字体；深色是芋泥夜 `#201a27`。图谱使用自己的粉彩 `--graph-*` 调色板。
+- **暖杏视觉。** 设计变量集中在 `src/styles/tokens.css`：奶油纸 `#faf6f0`、暖杏 `#e3a06a` / `#c9773c` / `#a85b28`、暖沙 `#b98a4e`、软橄榄 `#a8bb87`、奶油黄 `#e8c07a`、灰蓝 `#9db8c4`、暖棕正文 `#43392f`、超大圆角（12–32px）、暖色软阴影、`ui-rounded` 字体；深色是暖棕夜 `#241d18`，配杏色高光。图谱使用自己的暖色 `--graph-*` 调色板。
 
 ```text
 index.html
@@ -40,14 +40,14 @@ src/main.tsx ──挂载（StrictMode）──▶ src/App.tsx（应用外壳：
 
 ### 启动
 
-1. 浏览器加载 `index.html`，执行 `src/main.tsx`，React 挂载根组件。`index.html` 在首帧前按已存偏好 / `prefers-color-scheme` 设置 `data-theme`；应用的主题偏好**默认浅色**（`#fdf8f6`），可切换深色「芋泥夜」或跟随系统。`<head>` 包含 `apple-mobile-web-app-*` meta、`theme-color` 与七种 iPhone 尺寸的 `apple-touch-startup-image` 启动图链接（由 `npm run splash` 生成）。
+1. 浏览器加载 `index.html`，执行 `src/main.tsx`，React 挂载根组件。`index.html` 在首帧前按已存偏好 / `prefers-color-scheme` 设置 `data-theme`；应用的主题偏好**默认浅色**（`#faf6f0`），可切换深色「暖棕夜」或跟随系统。`<head>` 包含 `apple-mobile-web-app-*` meta、`theme-color` 与七种 iPhone 尺寸的 `apple-touch-startup-image` 启动图链接（由 `npm run splash` 生成）。
 2. `useNotes()` 初始化（模块级共享 Promise，只执行一次，避免 StrictMode 下重复播种）：
    - `loadNotes()` 打开 IndexedDB `mashu` v2，读出 `notes` 仓库的全部记录；若从 v1 升级，会在 `onupgradeneeded` 中逐条 `normalizeNote()` 补齐字段。
    - 若 `mashu` 库为空，会尝试迁移更早版本的数据库（`rixin` / `mochi` / `inkstone`）与旧 localStorage 记录；合并按 id 去重，写入成功后才删除旧副本（详见「持久化与迁移」）。
    - 读取/迁移旧偏好：主题、引导标记、助手人设、安装提示都从旧键复制到 `mashu.*` 后删除旧键。
    - 空库且从未引导（`mashu.onboarded.v1 !== '1'`）时，写入 `seed.ts` 的演示记录并标记已引导。
    - 排序后写入内存状态并 `setReady(true)`，随后请求 `navigator.storage.persist()`。
-3. 各页面从 `useNotes()` 读取记录与操作函数；`App` 通过 `useRoute()` 订阅 hash 变化决定渲染页面。主题偏好写入 `<html data-theme>`，并更新 `theme-color` meta（浅色 `#fdf8f6` / 深色芋泥夜 `#201a27`）。
+3. 各页面从 `useNotes()` 读取记录与操作函数；`App` 通过 `useRoute()` 订阅 hash 变化决定渲染页面。主题偏好写入 `<html data-theme>`，并更新 `theme-color` meta（浅色 `#faf6f0` / 深色暖棕夜 `#241d18`）。
 4. 生产构建在 `load` 后注册 `sw.js`；只在安全上下文（HTTPS / localhost）成功，失败静默忽略。
 
 ### 路由与导航
@@ -56,37 +56,37 @@ src/main.tsx ──挂载（StrictMode）──▶ src/App.tsx（应用外壳：
 
 | 路由 | 页面 | 底部导航 |
 | --- | --- | --- |
-| `#/today`（默认） | 今日：问候 + 小麻薯 + 连续记录 + ask bar + 昨日复盘 + 今日改进 + 4 张 7 日粉彩指标卡 + 快捷记录 + 今日时间线 | 今日 / TODAY |
+| `#/today`（默认） | 今日：问候 + 小麻薯 + 连续记录 + ask bar + 昨日复盘 + 今日改进 + 4 张 7 日暖色指标卡 + 快捷记录 + 今日时间线 | 今日 / TODAY |
 | `#/records` | 记录：全量列表、按天分组、类型筛选、空状态 | 记录 / RECORDS |
-| `#/graph` | 生活图谱（粉彩画布，浅色/芋泥夜主题） | 图谱 / GRAPH |
+| `#/graph` | 生活图谱（暖色画布，浅色/暖棕夜主题） | 图谱 / GRAPH |
 | `#/agent` | 本地助手（小麻薯） | 助手 / AGENT |
 | `#/search` | 搜索（今日/记录页头部的搜索图标进入） | （无） |
 | `#/settings` | 我的：助手人设、Apple 健康、数据、存储、外观、安装卡片 | 我的 / ME |
 | `#/note/<id>` | 编辑器 | （无） |
 
 - `parseRoute()` / `routeToHash()` 解析与序列化；`navigate()` push 历史记录（手机返回手势可用），`replaceRoute()` 替换当前记录。空 hash 与未知路由都回落到 `today`；旧的 `#/notes` 兼容映射到 `records`。
-- 底部导航是**粉彩悬浮 5 标签导航**（今日 / 记录 / 图谱 / 助手 / 我的，带中文标签 + 等宽英文小字）；快速记录入口在「今日」快捷按钮与「记录」页的「记一笔」。
+- 底部导航是**暖色悬浮 5 标签导航**（今日 / 记录 / 图谱 / 助手 / 我的，带中文标签 + 等宽英文小字）；快速记录入口在「今日」快捷按钮与「记录」页的「记一笔」。
 - `App` 用 `returnToRef` 记录进入编辑器前的来源页，返回时回到原页面。
 - hash 路由让静态托管（含子路径）与局域网地址都不需要服务端 rewrite；`scripts/serve.mjs` 对无扩展名路径做了 SPA fallback。
 
-### 设计系统（v0.6 soft pastel）
+### 设计系统（v0.7 暖杏色）
 
-- **浅色默认**：`:root` 是奶油纸（`--bg: #fdf8f6`、粉白 surface、粉彩阴影）；`:root[data-theme='dark']` 是柔和芋泥夜（`--bg: #201a27`、深芋 surface），不是纯黑/霓虹黑。主题值 `ThemeMode`（`dark` / `light` / `system`），默认 `light`，持久化在 `mashu.theme.v1`；「我的 → 外观」用分段控件切换。
-- **颜色 token**：主色雾玫瑰 `--accent: #ea8fa8` / `--accent-strong: #d9557f`；辅助薰衣草/芋泥 `--taro: #a98bd6`、薄荷 `--mint: #8fd4b6`、奶油黄 `--butter: #f4c97a`、微风蓝 `--breeze: #a9c6e8`。`--grad-brand` 是粉（`#f2a9bd`）→ 雾玫瑰（`#e88fa8`）→ 薰衣草（`#b9a0e0`），用于品牌标记、问候标题的渐变字和强调数字。
+- **浅色默认**：`:root` 是奶油纸（`--bg: #faf6f0`、暖白 surface、暖色阴影）；`:root[data-theme='dark']` 是暖棕夜（`--bg: #241d18`、暖棕 surface），配杏色高光。主题值 `ThemeMode`（`dark` / `light` / `system`），默认 `light`，持久化在 `mashu.theme.v1`；「我的 → 外观」用分段控件切换。
+- **颜色 token**：主色暖杏 `--accent: #e3a06a` / `--accent-strong: #c9773c` / `--accent-ink: #a85b28`；辅助暖沙/焦糖 `--taro: #b98a4e`、软橄榄 `--mint: #a8bb87`、奶油黄 `--butter: #e8c07a`、灰蓝 `--breeze: #9db8c4`；正文是暖棕 `#43392f`。`--grad-brand` 是暖杏 → 焦糖（`#f3bf8f` → `#e3a06a` → `#c98a52`），用于品牌标记、问候标题的渐变字和强调数字。
 - **字体**：`--font-sans` 以 `ui-rounded` / SF Pro Rounded / PingFang SC 开头；`--font-display` 同为圆体；`--font-mono` 保留等宽用于编号/图谱标注。
-- **形状与材质**：圆角只用 token：`--radius-xs` 12 / `--radius-s` 16 / `--radius-m` 20 / `--radius-l` 26 / `--radius-xl` 32 / `--radius-full` 胶囊。卡片是奶油白/粉白大圆角面板，阴影用 `--shadow-1/2/pop/glow` 的粉彩阴影（不是黑色重投影）；底部 `tabbar` 是粉彩悬浮条。
-- **吉祥物与头像**：`Mascot` 是一只戴草莓帽的小麻薯（variants：happy / wink / sleepy / love，可选 bob 动画），出现在 TodayScreen hero、AgentPanel/AgentAvatar 和品牌标记 `MashuMark`；`AgentAvatar` 用 emoji（麻薯 / 猫猫 / 叶子 / 太阳 / 星星 / 书本 / 茶茶 / 饭碗）+ 自定义 emoji。
+- **形状与材质**：圆角只用 token：`--radius-xs` 12 / `--radius-s` 16 / `--radius-m` 20 / `--radius-l` 26 / `--radius-xl` 32 / `--radius-full` 胶囊。卡片是奶油白/暖白大圆角面板，阴影用 `--shadow-1/2/pop/glow` 的暖色阴影（不是黑色重投影）；底部 `tabbar` 是暖色悬浮条。
+- **吉祥物与头像**：`Mascot` 是一只暖奶油 + 焦糖配色的小麻薯（variants：happy / wink / sleepy / love，可选 bob 动画），出现在 TodayScreen hero、AgentPanel/AgentAvatar 和品牌标记 `MashuMark`；`AgentAvatar` 用 emoji（麻薯 / 猫猫 / 叶子 / 太阳 / 星星 / 书本 / 茶茶 / 饭碗）+ 自定义 emoji。
 - **仪表盘细节**：问候 + 连续记录 pill + 圆滚滚 ask bar + 四张按记录类型着色的 7 日指标卡（`--kind-*`）+ 快捷记录 + 时间线。
 - **动效**：`--spring` / `--ease-bounce` 用于按压与浮入，`--dur-*` 控制时长；`prefers-reduced-motion` 下时长归零。
-- **图谱是粉彩画布**：`GraphView` 只读 `--graph-*`；浅色 `--graph-panel: #fff5f8`、粉彩网格，芋泥夜 `--graph-panel: #241d2b`、深芋网格；节点取玫瑰/薰衣草/薄荷/奶油黄/微风蓝；保留 mono 标注、1px 清晰连线、幽灵虚线菱形；不做霓虹发光。
-- **禁止回归旧设计**：不引入 0.5 的深色 AI 原生/极光霓虹/玻璃悬浮语言，也不引入 0.4 的宋体/纸纹/朱砂印章编辑语言；主色是调淡的雾玫瑰，不是高饱和糖果粉。
+- **图谱是暖色画布**：`GraphView` 只读 `--graph-*`；浅色 `--graph-panel: #fdf7f0`、暖色网格，暖棕夜 `--graph-panel: #241c15`、暖棕网格；节点取暖杏/暖沙/橄榄/奶油黄/灰蓝；保留 mono 标注、1px 清晰连线、幽灵虚线菱形；不做霓虹发光。
+- **禁止回归旧设计**：不引入 0.5 的深色 AI 原生/极光霓虹/玻璃悬浮语言，也不引入 0.4 的宋体/纸纹/朱砂印章编辑语言；主色是暖杏，不是糖果粉或冷粉。
 
 ### iOS / PWA 交付与离线壳
 
 **交付模型：静态站点 + 主屏幕安装，没有服务器。**
 
 - `npm run build` = `tsc --noEmit` + `vite build` + `node scripts/sw-precache.mjs`。最后一步读取 `dist/` 的真实 hash 产物（排除 `sw.js` 与 `splash/`），把它们写进 `dist/sw.js` 的 `PRECACHE`，这样离线壳能缓存完整应用。推送到 `main` 后 `.github/workflows/deploy-pages.yml` 自动发布到 GitHub Pages；GitHub 只是免费静态托管，维护者零服务器运维。
-- 用户路径：Safari 打开 HTTPS 地址 → 分享 → 添加到主屏幕；安装后 `display: standalone`。`index.html` 提供 apple meta 与启动图；`manifest.webmanifest` 声明 `name: 麻薯`、`background_color: #fdf8f6`、`theme_color: #fdf8f6`、图标与 standalone。
+- 用户路径：Safari 打开 HTTPS 地址 → 分享 → 添加到主屏幕；安装后 `display: standalone`。`index.html` 提供 apple meta 与启动图；`manifest.webmanifest` 声明 `name: 麻薯`、`background_color: #faf6f0`、`theme_color: #faf6f0`、图标与 standalone。
 - **安装引导**：`IosInstallCard` 渲染「我的 → 装到 iPhone 上」卡片（Safari 步骤、是否已安装、在线/离线壳/无需服务器/数据不出设备状态胶囊）；`TodayScreen` 在 iPhone 非 standalone 首次打开时显示一行安装提示，关闭状态存 `mashu.installHint.v1`。
 - **Service Worker 生命周期**：`install` 预缓存应用壳（开发版是基础清单，正式版由 `sw-precache.mjs` 注入全部 hash 资源），`activate` 清理旧缓存并 `clients.claim()`；导航 network-first（在线取最新页面并写回缓存，离线回退缓存的 `index.html`），其他同源 GET cache-first。缓存名 `mashu-v1` 手工递增。结果是**联网时重新打开主屏幕图标即可获得新版本**，没有更新弹窗。
 - **离线边界**：只缓存静态资源，不读取/缓存/上传 IndexedDB 或 localStorage 中的记录；断网时今日简报、记录、助手、图谱继续在本地工作。
@@ -100,7 +100,7 @@ src/main.tsx ──挂载（StrictMode）──▶ src/App.tsx（应用外壳：
    - 先取**昨天**的 `DaySummary`（来自 `insights.ts`），再取「昨天之前有记录的最近 7 天」（D-8 … D-2）作为对比基准；平均值只对**当天有该指标记录**的日子求均值，避免稀疏记录把均值带偏。
    - 生成 `summary`（一句话）、`review`（2–4 条事实性的昨日复盘）、`suggestions`（2–3 条今日改进）、`trends`（支出 / 摄入 / 睡眠 / 记录 4 张卡，含 tone 与 detail）。
    - 规则阈值集中在文件顶部：支出高于 7 日均值 1.2 倍视为偏高、低于 0.7 倍视为节省；热量 1.2 倍；睡眠 < 7h 视为偏少、≥ 7.5h 视为不错、偏差 0.5h 才在文案里比较；步数 < 5000 提示多走、≥ 8000 肯定；饮水 < 1500ml 提示补水。所有日期按本地时区。
-3. `TodayScreen` 把简报渲染成「昨日复盘 / REVIEW」与「今日改进 / ADJUST」两段、四张带 `Sparkline` 的粉彩指标卡、建议列表、快捷记录和今日时间线；完整列表在「记录」页。
+3. `TodayScreen` 把简报渲染成「昨日复盘 / REVIEW」与「今日改进 / ADJUST」两段、四张带 `Sparkline` 的暖色指标卡、建议列表、快捷记录和今日时间线；完整列表在「记录」页。
 4. **没有推送服务器**：简报在打开应用时即时生成。需要固定时间提醒时，用户用 iOS「快捷指令 → 自动化 → 每天」添加「打开麻薯」——到点由系统打开应用，简报仍在本地生成。
 
 ### 编辑一条记录
@@ -133,8 +133,8 @@ src/main.tsx ──挂载（StrictMode）──▶ src/App.tsx（应用外壳：
 
 ### 生活图谱编辑
 
-1. `GraphView` 用 `buildGraph(notes)` 派生节点与三类边，再以确定性力导向布局绘制在 Canvas 上；画布是**粉彩图谱**（浅色奶油粉网格 / 芋泥夜深芋网格、mono 标注、1px 清晰边）。
-2. 视觉：节点按类型取 `--graph-node-1..5`（玫瑰 / 薰衣草 / 薄荷 / 奶油黄 / 微风蓝）；wiki 边细实线、manual 边更亮并在中点画刻度、day 边虚线；幽灵节点是虚线菱形。
+1. `GraphView` 用 `buildGraph(notes)` 派生节点与三类边，再以确定性力导向布局绘制在 Canvas 上；画布是**暖色图谱**（浅色奶油暖网格 / 暖棕夜暖棕网格、mono 标注、1px 清晰边）。
+2. 视觉：节点按类型取 `--graph-node-1..5`（暖杏 / 暖沙 / 橄榄 / 奶油黄 / 灰蓝）；wiki 边细实线、manual 边更亮并在中点画刻度、day 边虚线；幽灵节点是虚线菱形。
 3. 交互（受控组件，所有写操作回调 `App`）：点节点选中并在 `NodeEditorSheet` 编辑/删除；再次点同一节点打开笔记；拖动结束用归一化坐标持久化；工具栏「添加」后点空白处新建；「连线」依次点两个节点建立手动连线；另有放大 / 缩小 / 适应 / 重新布局。
 4. `store.setNodePosition()` / `addManualLink()` / `removeManualLink()` / `resetNodePositions()` 负责持久化；位置 0..1 归一化。
 
@@ -190,18 +190,18 @@ src/main.tsx ──挂载（StrictMode）──▶ src/App.tsx（应用外壳：
 ### `src/components/` 与 `src/screens/`
 
 - `components/` 是可复用、**道具驱动**的 UI：
-  - `Mascot`（小麻薯吉祥物；variants happy/wink/sleepy/love，bob 动画）与 `MashuMark`（品牌标记）、`Sparkline`（7 日趋势 SVG）、`TabBar`（粉彩悬浮 5 标签导航，今日使用 sun 图标）；
-  - `GraphView`（Canvas 粉彩图谱：选择、拖动、添加、连线、缩放、重新布局）；
+  - `Mascot`（小麻薯吉祥物；variants happy/wink/sleepy/love，bob 动画）与 `MashuMark`（品牌标记）、`Sparkline`（7 日趋势 SVG）、`TabBar`（暖色悬浮 5 标签导航，今日使用 sun 图标）；
+  - `GraphView`（Canvas 暖色图谱：选择、拖动、添加、连线、缩放、重新布局）；
   - `CaptureSheet`（一句话快速记录 + 快捷字段 + 解析预览）；
   - `AgentPanel`（小麻薯对话与草稿确认）、`AgentAvatar`（麻薯/猫猫/叶子/太阳/星星/书本/茶茶/饭碗 + 自定义 emoji）；
   - `NodeEditorSheet`（新增/编辑节点：标题、类型、结构化字段、手动连线、删除）；
   - `IosInstallCard`（Safari 安装步骤与状态胶囊）、`NoteCard`、`Icon`、`EditorToolbar`、`MarkdownPreview`、`BacklinksPanel`、`SearchScreen`。
-- `screens/` 是页面级组合：`TodayScreen`（品牌标记/日期、问候 + 小麻薯、连续记录、ask bar、昨日复盘、今日改进、4 张粉彩指标卡、快捷记录、今日时间线）、`RecordsScreen`（全量列表、类型筛选、按天分组、空状态）、`EditorScreen`（Markdown 编辑/预览、记录信息入口、反向链接）、`SettingsScreen`（我的：智能体人设、Apple 健康、安装卡片、数据导入导出、存储、外观、关于）。
-- 样式手写 CSS：`tokens.css`（奶油纸/雾玫瑰/芋泥夜、粉彩、圆角、软阴影、`--graph-*`）、`base.css`（reset、通用类、动效降级、iOS 16px 规则）、`app.css`（外壳与页面）；组件私有样式与组件同名并带前缀。没有 CSS 框架。
+- `screens/` 是页面级组合：`TodayScreen`（品牌标记/日期、问候 + 小麻薯、连续记录、ask bar、昨日复盘、今日改进、4 张暖色指标卡、快捷记录、今日时间线）、`RecordsScreen`（全量列表、类型筛选、按天分组、空状态）、`EditorScreen`（Markdown 编辑/预览、记录信息入口、反向链接）、`SettingsScreen`（我的：智能体人设、Apple 健康、安装卡片、数据导入导出、存储、外观、关于）。
+- 样式手写 CSS：`tokens.css`（奶油纸/暖杏/暖棕夜、暖色、圆角、软阴影、`--graph-*`）、`base.css`（reset、通用类、动效降级、iOS 16px 规则）、`app.css`（外壳与页面）；组件私有样式与组件同名并带前缀。没有 CSS 框架。
 
 ## 4. 数据模型
 
-唯一持久化的实体仍是 `Note`（`src/lib/types.ts`），0.6 未改表结构：
+唯一持久化的实体仍是 `Note`（`src/lib/types.ts`），0.7 未改表结构：
 
 ```ts
 export type NoteKind = 'note' | 'diary' | 'food' | 'health' | 'finance';
@@ -277,7 +277,7 @@ export interface NoteMeta {
 
 1. 用 `summarizeDay(notes, yesterday)` 得到昨天；用 `summarizeRange(notes, 9, now)` 取 D-8 … D-2 的「有记录日」求每个指标的均值（只对有该指标记录的天数求平均）。
 2. 生成 `summary`、`review`（支出 / 饮食 / 睡眠 / 步数 / 饮水 / 日记，最多 4 条事实句）与 `suggestions`（偏差优先，其次肯定做得好的地方，最后用中性记录提示兜底，取前 3 条，至少 2 条）。
-3. `trends` 固定四张卡（支出 / 摄入 / 睡眠 / 记录），每张带 `value`、`detail`、`tone`（good/warn/neutral）；`TodayScreen` 用 `--kind-*` 给粉彩卡片着色并配 7 日 sparkline。
+3. `trends` 固定四张卡（支出 / 摄入 / 睡眠 / 记录），每张带 `value`、`detail`、`tone`（good/warn/neutral）；`TodayScreen` 用 `--kind-*` 给暖色卡片着色并配 7 日 sparkline。
 4. 阈值：支出 1.2× / 0.7×、热量 1.2×、睡眠 `< 7h` / `≥ 7.5h`、步数 `< 5000` / `≥ 8000`、饮水 `< 1500ml`；无历史时用中性文案。
 5. **没有推送服务器**；固定时间提醒由 iOS 快捷指令个人自动化「打开麻薯」实现，属于系统能力。
 
@@ -316,7 +316,7 @@ interface GraphViewProps {
 ```
 
 - `onSelectNote` → 打开/关闭 `NodeEditorSheet`；`onMoveNote` → `store.setNodePosition()`（归一化防抖写入）；`onCreateNoteAt` → 新建模式并带位置；`onLinkNotes` → `store.addManualLink()`；`onRequestResetLayout` → `store.resetNodePositions()`。
-- 画布绘制只读 `--graph-*` token；`GRID_SIZE = 28`；节点按 `KIND_COLOR_VARS` 映射粉彩色（玫瑰 / 薰衣草 / 薄荷 / 奶油黄 / 微风蓝）；`ghost` 画虚线菱形；`wiki` / `manual` / `day` 三种边分别用细实线、亮线 + 中点刻度、虚线绘制。
+- 画布绘制只读 `--graph-*` token；`GRID_SIZE = 28`；节点按 `KIND_COLOR_VARS` 映射暖色（暖杏 / 暖沙 / 橄榄 / 奶油黄 / 灰蓝）；`ghost` 画虚线菱形；`wiki` / `manual` / `day` 三种边分别用细实线、亮线 + 中点刻度、虚线绘制。
 
 ## 10. 持久化与迁移
 
@@ -410,7 +410,7 @@ HTML 字符串 → MarkdownPreview 注入 DOM（点击 data-wiki-target 跳转/�
 - **写入不阻塞输入**：乐观更新 + 350ms 防抖 + 生命周期 flush；删除前等待落盘。
 - **健康导入**：解析 O(samples)，聚合按「日期+指标」分组 O(samples log samples)（排序）；只在导入时执行。
 - **图谱**：指纹变化才重建模型；Canvas 2D + RAF；拖动结束才持久化；固定节点不参与积分；O(n²) 斥力适合数百节点，更大规模需要空间网格/Worker（路线图）。
-- **视觉**：粉彩阴影、圆角与 spring 动效只在合成层；`prefers-reduced-motion` 下关闭动效；吉祥物/emoji 都是轻量内联 SVG/文本，不增加网络请求。
+- **视觉**：暖色阴影、圆角与 spring 动效只在合成层；`prefers-reduced-motion` 下关闭动效；吉祥物/emoji 都是轻量内联 SVG/文本，不增加网络请求。
 - **助手**：O(文本长度) 规则匹配 + O(n) 统计，无网络/无模型推理，毫秒级。
 - **SW 缓存**：构建时静态注入 hash 清单，运行时不做额外计算。
 - **可优化点**：派生结果按 `updatedAt` 缓存、长列表虚拟化、图布局 Worker、增量索引、sparkline/图表数据缓存。
@@ -422,7 +422,7 @@ HTML 字符串 → MarkdownPreview 注入 DOM（点击 data-wiki-target 跳转/�
 | 新记录类型 | `types.ts` → `kinds.ts` → `tokens.css` → `prefs.normalizeNote` | 更新 `NoteKind`、`NOTE_KINDS` / `KIND_INFO`、`--kind-*` 与图谱 `--graph-node-*`，并检查列表/指标卡/简报/助手/节点编辑 |
 | 新简报规则 | `src/lib/brief.ts` | 加阈值/文案并补 `tests/brief.test.ts`；保持 deterministic、只用本地记录 |
 | 新健康别名 / 单位 | `src/lib/health.ts` | 扩展 `TYPE_ALIASES` / `convertValue`，补 `tests/health.test.ts`；保持同日聚合与 `replaceId` 语义 |
-| 新 emoji 头像 / 吉祥物表情 | `prefs.ts` 的 `AGENT_AVATARS` + `AgentAvatar.tsx` / `Mascot.tsx` | 使用粉彩/圆角 token；emoji 作为头像内容即可，不引入外部图片 |
+| 新 emoji 头像 / 吉祥物表情 | `prefs.ts` 的 `AGENT_AVATARS` + `AgentAvatar.tsx` / `Mascot.tsx` | 使用暖色/圆角 token；emoji 作为头像内容即可，不引入外部图片 |
 | 新图谱交互 | `GraphView` props → `App` 接线 → `store` 持久化方法 | 受控组件；布局逻辑留在 `graph.ts` 并测试 |
 | 原生 HealthKit 壳 | 新目录（例如 `ios/`，Swift + HealthKit）+ 复用现有 web 构建 | 需要 Apple 开发者账号、权限文案与审核；不改变现有零服务器 PWA 路径 |
 | 新存储后端 / 迁移 | `src/lib/db.ts` + `prefs.normalizeNote` | 升 `DB_VERSION` 就地补字段；改导出格式同步升 `VAULT_VERSION` 并兼容旧备份 |
@@ -447,13 +447,13 @@ HTML 字符串 → MarkdownPreview 注入 DOM（点击 data-wiki-target 跳转/�
 - 浏览器清站点数据即删除记录；`localStorage` 回退模式容量约 5MB。
 - 启动图覆盖当前七种 iPhone 尺寸；新机型需要更新 `npm run splash` 的尺寸表。
 - `npm run screenshots` / `qr` / `splash` / `icons` 依赖本机 Chrome / Python 环境，属于发布工具。
-- 粉彩配色与 emoji 头像依赖系统 emoji 字体；不同 iOS 版本上 emoji 外观可能略有差异。
+- 暖色配色与 emoji 头像依赖系统 emoji 字体；不同 iOS 版本上 emoji 外观可能略有差异。
 
 ## 16. 测试与验证
 
 - **单元测试**：Vitest（node 环境）共 **202 个用例 / 9 个文件**：`agent`、`brief`、`exportImport`、`graph`、`health`、`insights`、`links`、`markdown`、`search`。纯逻辑（简报规则、健康解析/换算/去重、图谱边、导入合并）必须先测后改。
 - **手动矩阵**：iPhone SE（小屏/安全区）与 iPhone 15 尺寸；Safari 标签页与「添加到主屏幕」standalone 各一遍。至少覆盖：离线重载、安装卡片与首次提示、16px 输入不缩放、导出「文件」、断网/恢复 toast、联网重开后加载新版本。
-- **视觉回归**：默认浅色与芋泥夜主题各走一遍首页/记录/图谱/助手/我的；确认粉彩、圆角、软阴影、小麻薯与 emoji 头像正常，`prefers-reduced-motion` 下不播放动效。
+- **视觉回归**：默认浅色与暖棕夜主题各走一遍首页/记录/图谱/助手/我的；确认暖色、圆角、软阴影、小麻薯与 emoji 头像正常，`prefers-reduced-motion` 下不播放动效。
 - **功能回归**：健康 JSON/CSV/URL 三种导入路径、同日重复导入不产生重复记录、简报在空数据/稀疏数据下的文案、图谱三类边与幽灵菱形、迁移链（`rixin` / `mochi` / `inkstone` → `mashu`）后记录与偏好不丢。
 - **发布校验**：`npm run typecheck && npm test && npm run build`；构建后确认 `dist/sw.js` 的 `PRECACHE` 已注入 hash 资源、`dist/splash/` 存在七张启动图。
 

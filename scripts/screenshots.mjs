@@ -238,6 +238,15 @@ async function capture(shot) {
           static now() { return FIXED; }
         }
         window.Date = FrozenDate;
+        try {
+          Object.defineProperty(navigator, 'storage', {
+            configurable: true,
+            value: {
+              estimate: () => Promise.resolve({ usage: 1600000, quota: 10000000000 }),
+              persist: () => Promise.resolve(true),
+            },
+          });
+        } catch (error) { /* ignore */ }
       })()`,
     });
 
