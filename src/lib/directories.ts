@@ -75,6 +75,7 @@ export function suggestDirectoryForNote(note: Note, notes: Note[]): Note | null 
   const directories = directoryList(notes);
   if (directories.length === 0) return null;
   if (note.meta.plan || note.meta.directory) return null;
+  if (note.tags.includes('模板') || note.title.startsWith('模板')) return null;
   const haystack = `${note.title} ${note.content} ${note.tags.join(' ')}`.toLowerCase();
   const kindWords = KIND_DIRECTORY_WORDS[note.kind] ?? [];
   let best: Note | null = null;
