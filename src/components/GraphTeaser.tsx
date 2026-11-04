@@ -11,13 +11,17 @@ export interface GraphTeaserProps {
 
 /** The life graph is the product's front door, not a hidden utility. */
 export function GraphTeaser({ notes, onOpenGraph, onOpenDirectories }: GraphTeaserProps) {
-  const directories = useMemo(() => directoryList(notes).slice(0, 3), [notes]);
+  const allDirectories = useMemo(() => directoryList(notes), [notes]);
+  const directories = useMemo(() => allDirectories.slice(0, 3), [allDirectories]);
   const counts = useMemo(
     () => directories.map((directory) => notesInDirectory(notes, directory.id).length),
     [directories, notes],
   );
-  const memberTotal = counts.reduce((sum, count) => sum + count, 0);
-  const hasDirs = directories.length > 0;
+  const memberTotal = useMemo(
+    () => notes.filter((note) => note.dirId && !note.meta.directory && !note.archivedAt).length,
+    [notes],
+  );
+  const hasDirs = allDirectories.length > 0;
   const hubs = hasDirs
     ? directories.map((directory, index) => ({
         color: directoryColor(directory),
@@ -87,10 +91,10 @@ export function GraphTeaser({ notes, onOpenGraph, onOpenDirectories }: GraphTeas
         <div className="graph-teaser-copy">
           <span className="graph-teaser-eyebrow">生活图谱</span>
           <span className="graph-teaser-title">
-            {hasDirs ? `${directories.length} 个目录，${memberTotal} 条记录连在一起` : '你的生活，正在长成一张图'}
+            {hasDirs ? `${allDirectories.length} 个目录，组成你的生活网络` : '你的生活，正在长成一张图'}
           </span>
           <span className="graph-teaser-hint">
-            {hasDirs ? '点开看看它们的关系' : '建一个目录，图谱就从这里长出来'}
+            {hasDirs ? '每个小球是一个目录，点开编辑内容' : '建一个目录，图谱就从这里长出来'}
           </span>
           <span className="graph-teaser-cta">
             打开图谱 <Icon name="arrowRight" size={14} />
@@ -98,13 +102,13 @@ export function GraphTeaser({ notes, onOpenGraph, onOpenDirectories }: GraphTeas
         </div>
       </button>
       <div className="graph-teaser-foot">
-        <span>记录、目录、关系，都在一张图里</span>
+        <span>一个小球 = 一个生活目录</span>
         {!hasDirs ? (
           <button type="button" className="graph-teaser-build" onClick={onOpenDirectories}>
             先建目录
           </button>
         ) : (
-          <span className="mono">{notes.length} 条记录</span>
+          <span className="mono">{memberTotal} 条内容</span>
         )}
       </div>
     </section>

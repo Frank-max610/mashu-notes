@@ -23,6 +23,7 @@ export type Route =
   | { name: 'settings' }
   | { name: 'more' }
   | { name: 'directories' }
+  | { name: 'directory'; id: string }
   | { name: 'note'; id: string };
 
 export function parseRoute(hash: string): Route {
@@ -49,7 +50,9 @@ export function parseRoute(hash: string): Route {
     case 'more':
       return { name: 'more' };
     case 'directories':
-      return { name: 'directories' };
+      return segments[1]
+        ? { name: 'directory', id: decodeURIComponent(segments[1]) }
+        : { name: 'directories' };
     case 'graph':
       return { name: 'graph' };
     case 'agent':
@@ -71,6 +74,8 @@ export function routeToHash(route: Route): string {
   switch (route.name) {
     case 'note':
       return `#/note/${encodeURIComponent(route.id)}`;
+    case 'directory':
+      return `#/directories/${encodeURIComponent(route.id)}`;
     case 'today':
       return '#/today';
     default:

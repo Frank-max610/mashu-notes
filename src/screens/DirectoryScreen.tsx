@@ -9,10 +9,11 @@ export interface DirectoryScreenProps {
   onAssign: (noteId: string, dirId: string | null) => void;
   onDeleteDirectory: (directory: Note) => void;
   onOpenNote: (id: string) => void;
+  onOpenDirectory: (id: string) => void;
 }
 
 /** 知识库目录 — users create their own folders; notes and the graph follow them. */
-export function DirectoryScreen({ notes, onCreate, onAssign, onDeleteDirectory, onOpenNote }: DirectoryScreenProps) {
+export function DirectoryScreen({ notes, onCreate, onAssign, onDeleteDirectory, onOpenNote, onOpenDirectory }: DirectoryScreenProps) {
   const [name, setName] = useState('');
   const [color, setColor] = useState(DIRECTORY_COLORS[0]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -24,6 +25,7 @@ export function DirectoryScreen({ notes, onCreate, onAssign, onDeleteDirectory, 
     if (!value) return;
     onCreate(value, color);
     setName('');
+    setColor(DIRECTORY_COLORS[(directories.length + 1) % DIRECTORY_COLORS.length] ?? color);
   };
 
   return (
@@ -80,11 +82,19 @@ export function DirectoryScreen({ notes, onCreate, onAssign, onDeleteDirectory, 
                     <button
                       type="button"
                       className="directory-main"
+                      onClick={() => onOpenDirectory(directory.id)}
+                    >
+                      <span className="directory-name">{directory.title}</span>
+                      <span className="directory-meta">{countInDirectory(notes, directory.id)} 条记录 · 点开编辑内容</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="record-more"
+                      aria-label={`${expanded ? '收起' : '展开'}目录 ${directory.title} 成员`}
                       aria-expanded={expanded}
                       onClick={() => setExpandedId(expanded ? null : directory.id)}
                     >
-                      <span className="directory-name">{directory.title}</span>
-                      <span className="directory-meta">{countInDirectory(notes, directory.id)} 条记录 · {expanded ? '收起' : '展开'}</span>
+                      <Icon name={expanded ? 'chevronDown' : 'arrowRight'} size={15} />
                     </button>
                     <button type="button" className="record-more" aria-label={`删除目录 ${directory.title}`} onClick={() => onDeleteDirectory(directory)}>
                       <Icon name="trash" size={16} />

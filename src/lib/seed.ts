@@ -165,10 +165,18 @@ const NOTES: SeedSpec[] = [
 ];
 
 /** Build the demo vault with stable relative timestamps. */
+const DIRECTORIES: SeedSpec[] = [
+  { id: 'seed-dir-health', title: '身体健康', content: '#目录', minutesAgo: 72, meta: { directory: { color: '#627a4e' } } },
+  { id: 'seed-dir-work', title: '工作', content: '#目录', minutesAgo: 74, meta: { directory: { color: '#65788a' } } },
+  { id: 'seed-dir-learn', title: '学习', content: '#目录', minutesAgo: 76, meta: { directory: { color: '#9a7112' } } },
+  { id: 'seed-dir-finance', title: '理财', content: '#目录', minutesAgo: 78, meta: { directory: { color: '#b45d35' } } },
+  { id: 'seed-dir-life', title: '生活', content: '#目录', minutesAgo: 80, meta: { directory: { color: '#8a5a7a' } } },
+];
+
 export function createSeedNotes(): Note[] {
   const now = Date.now();
   const life = DAYS.flatMap(daySpecs);
-  return [...NOTES, ...life].map((seed) => {
+  return [...NOTES, ...DIRECTORIES, ...life].map((seed) => {
     const occurredAt = now - seed.minutesAgo * 60_000;
     const note = makeNote({
       title: seed.title,
@@ -182,6 +190,17 @@ export function createSeedNotes(): Note[] {
     note.pinned = seed.pinned ?? false;
     if (seed.id === 'seed-plan-reading') note.meta.plan = { status: 'doing', dueAt: occurredAt + 3 * 86_400_000 };
     if (seed.id === 'seed-plan-walk') note.meta.plan = { status: 'todo', dueAt: occurredAt + 86_400_000 };
+    if (!note.meta.directory && !note.meta.plan && !note.tags.some((tag) => ['模板', '使用手册', '开始', '计划'].includes(tag))) {
+      const dirByKind: Record<string, string> = {
+        health: 'seed-dir-health',
+        finance: 'seed-dir-finance',
+        diary: 'seed-dir-life',
+        food: 'seed-dir-life',
+        note: 'seed-dir-work',
+      };
+      const dirId = dirByKind[note.kind];
+      if (dirId) note.dirId = dirId;
+    }
     return note;
   });
 }

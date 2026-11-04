@@ -14,9 +14,12 @@ import { EditorScreen, type Mode as EditorMode } from './screens/EditorScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { MoreScreen } from './screens/MoreScreen';
 import { DirectoryScreen } from './screens/DirectoryScreen';
+import { DirectoryDetailScreen } from './screens/DirectoryDetailScreen';
 import { PlanScreen } from './screens/PlanScreen';
 import { ProfileScreen, HealthScreen, FinanceScreen, TemplatesScreen, ArchiveScreen, AttachmentsScreen } from './screens/ModulesScreens';
 import { getHiddenModules, setModuleHidden, type ModuleId } from './lib/modules';
+import { getAutoFileEnabled, suggestDirectoryForNote } from './lib/directories';
+import { FloatingAgent } from './components/FloatingAgent';
 import { GraphView } from './components/GraphView';
 import { AgentPanel } from './components/AgentPanel';
 import { CaptureSheet } from './components/CaptureSheet';
@@ -77,6 +80,7 @@ export default function App() {
   const [dailyDigest, setDailyDigest] = useState<DailyDigest | null>(null);
   const [captureOpen, setCaptureOpen] = useState(false);
   const [captureKind, setCaptureKind] = useState<NoteKind | undefined>(undefined);
+  const [captureDirId, setCaptureDirId] = useState<string | null>(null);
   const [nodeEditor, setNodeEditor] = useState<{ open: boolean; noteId: string | null; position?: NotePosition }>({
     open: false,
     noteId: null,
@@ -189,8 +193,9 @@ export default function App() {
     [route],
   );
 
-  const openCapture = useCallback((kind?: NoteKind) => {
+  const openCapture = useCallback((kind?: NoteKind, dirId?: string) => {
     setCaptureKind(kind);
+    setCaptureDirId(dirId ?? null);
     setCaptureOpen(true);
   }, []);
 
@@ -202,9 +207,19 @@ export default function App() {
         kind: draft.kind,
         meta: draft.meta,
       });
-      notify(`已记下：${note.title}`);
+      const targetDirId =
+        captureDirId ??
+        (getAutoFileEnabled() ? suggestDirectoryForNote(note, api.notes)?.id : undefined);
+      if (targetDirId) {
+        api.assignDirectory(note.id, targetDirId);
+        const directory = api.notes.find((item) => item.id === targetDirId);
+        notify(directory ? `已记下，并收进「${directory.title}」` : `已记下：${note.title}`);
+      } else {
+        notify(`已记下：${note.title}`);
+      }
+      setCaptureDirId(null);
     },
-    [api.createNote, notify],
+    [api.notes, api.createNote, api.assignDirectory, captureDirId, notify],
   );
 
   const openOrCreateByTitle = useCallback(
@@ -518,6 +533,38 @@ export default function App() {
         );
       case 'attachments':
         return <AttachmentsScreen />;
+      case 'directory': {
+        const directory = api.notes.find((note) => note.id === route.id && note.meta.directory);
+        if (!directory) {
+          return (
+            <div className="screen module-screen">
+              <div className="screen-body empty">
+                <p className="empty-title">目录不存在</p>
+                <button type="button" className="btn btn-primary" onClick={() => navigate({ name: 'directories' })}>
+                  回到知识库目录
+                </button>
+              </div>
+            </div>
+          );
+        }
+        return (
+          <DirectoryDetailScreen
+            directory={directory}
+            notes={api.notes}
+            onBack={() => navigate({ name: 'directories' })}
+            onOpenNote={openNote}
+            onAdd={() => openCapture(undefined, directory.id)}
+            onDeleteDirectory={() => {
+              for (const note of api.notes) {
+                if (note.dirId === directory.id) api.assignDirectory(note.id, null);
+              }
+              void api.deleteNote(directory.id);
+              navigate({ name: 'directories' });
+              notify('目录已删除，内容已移出');
+            }}
+          />
+        );
+      }
       case 'directories':
         return (
           <DirectoryScreen
@@ -533,6 +580,7 @@ export default function App() {
                 .then(() => notify('目录已创建'));
             }}
             onAssign={(noteId, dirId) => api.assignDirectory(noteId, dirId)}
+            onOpenDirectory={(id) => navigate({ name: 'directory', id })}
             onDeleteDirectory={(directory) => {
               for (const note of api.notes) {
                 if (note.dirId === directory.id) api.assignDirectory(note.id, null);
@@ -581,7 +629,9 @@ export default function App() {
                 }}
                 fullscreen={graphFullscreen}
                 onToggleFullscreen={() => setGraphFullscreen((value) => !value)}
-                onOpenDirectory={() => navigate({ name: 'directories' })}
+                onOpenDirectory={(id) => navigate({ name: 'directory', id })}
+                directoriesOnly
+                onCreateDirectory={() => navigate({ name: 'directories' })}
               />
             </div>
           </div>
@@ -691,7 +741,10 @@ export default function App() {
       <CaptureSheet
         open={captureOpen}
         initialKind={captureKind}
-        onClose={() => setCaptureOpen(false)}
+        onClose={() => {
+          setCaptureOpen(false);
+          setCaptureDirId(null);
+        }}
         onSave={saveDraft}
       />
 
@@ -711,6 +764,14 @@ export default function App() {
         }
         onOpenNote={openNote}
       />
+
+      {!editing && route.name !== 'graph' ? (
+        <FloatingAgent
+          persona={persona}
+          onCapture={() => openCapture()}
+          onOpenAgent={() => navigate({ name: 'agent' })}
+        />
+      ) : null}
 
       {toast ? (
         <div className="toast" role="status" aria-live="polite">

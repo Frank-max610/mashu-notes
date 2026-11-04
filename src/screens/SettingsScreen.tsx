@@ -18,8 +18,9 @@ import { AgentAvatar } from '../components/AgentAvatar';
 import { MochiNode } from '../components/MochiNode';
 import { IosInstallCard } from '../components/IosInstallCard';
 import { DEFAULT_DIGEST_SCHEDULE, getDigestSchedule, setDigestSchedule } from '../lib/digest';
+import { getAutoFileEnabled, setAutoFileEnabled } from '../lib/directories';
 
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.2.0';
 
 export interface SettingsScreenProps {
   notes: Note[];
@@ -87,6 +88,7 @@ export function SettingsScreen({
   const [healthDetailsOpen, setHealthDetailsOpen] = useState(false);
   const [personaOpen, setPersonaOpen] = useState(false);
   const [digestSchedule, setDigestScheduleState] = useState(() => getDigestSchedule());
+  const [autoFile, setAutoFile] = useState(() => getAutoFileEnabled());
   const healthInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -398,6 +400,22 @@ export function SettingsScreen({
                 aria-label="每日汇总时间"
               />
             </div>
+            <label className="settings-row module-toggle">
+              <span className="settings-row-icon"><Icon name="graph" size={18} /></span>
+              <span className="settings-row-text">
+                <span className="settings-row-label">记录自动收进图谱</span>
+                <span className="settings-row-hint">按内容和目录名，把新记录自动放进对应目录</span>
+              </span>
+              <input
+                type="checkbox"
+                checked={autoFile}
+                onChange={(event) => {
+                  setAutoFileEnabled(event.target.checked);
+                  setAutoFile(event.target.checked);
+                }}
+                aria-label="记录自动收进图谱"
+              />
+            </label>
             <button type="button" className="settings-row" onClick={onGenerateDigest}>
               <span className="settings-row-icon"><Icon name="sparkles" size={18} /></span>
               <span className="settings-row-text">

@@ -12,7 +12,7 @@ const STEPS = [
     id: 'graph',
     eyebrow: '生活图谱',
     title: '看见生活的形状',
-    body: '记录不是流水账。你建的每个目录都会在图上长成一个分支，连起来就是你生活的样子。',
+    body: '每个小球是一个生活目录，比如身体健康、工作、学习、理财。点开小球才能编辑里面的内容；整个网络，代表你。',
     graph: true,
   },
   {
@@ -84,7 +84,7 @@ export function Onboarding({ onDone }: OnboardingProps) {
               <g className="hub hub--read"><circle cx="212" cy="182" r="14" /><text x="212" y="212">阅读</text></g>
               <g className="hub hub--center"><circle cx="160" cy="118" r="17" /><text x="160" y="151">你</text></g>
             </svg>
-            <p className="onboarding-graph-caption">你创建几个目录，图谱就长几个分支。</p>
+            <p className="onboarding-graph-caption">一个小球 = 一个目录；整个网络代表你。</p>
           </div>
         ) : (
           <div className={`onboarding-visual onboarding-visual--${step.id}`} aria-hidden="true">

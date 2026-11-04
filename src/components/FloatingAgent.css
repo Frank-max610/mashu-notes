@@ -1,0 +1,64 @@
+.floating-agent {
+  position: fixed;
+  right: 16px;
+  bottom: calc(92px + var(--safe-bottom));
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 8px 22px rgba(44, 41, 37, 0.14);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.floating-agent:active { transform: scale(0.96); }
+
+.floating-agent-ring {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+  opacity: 0.25;
+  animation: floating-agent-breathe 3200ms ease-in-out infinite;
+}
+
+.floating-agent-plus {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fffaf3;
+  border: 2px solid var(--surface);
+  font-size: 13px;
+  line-height: 1;
+}
+
+.floating-agent-dot {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--kind-health);
+  border: 1px solid var(--surface);
+}
+
+@keyframes floating-agent-breathe {
+  0%, 100% { transform: scale(1); opacity: 0.22; }
+  50% { transform: scale(1.08); opacity: 0.4; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floating-agent-ring { animation: none; }
+}

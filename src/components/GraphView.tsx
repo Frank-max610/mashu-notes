@@ -48,6 +48,10 @@ export interface GraphViewProps {
   onToggleFullscreen?: () => void;
   /** Optional: directory inspector "打开目录" action (hidden when absent). */
   onOpenDirectory?: (id: string) => void;
+  /** Directory-network mode: nodes are only user-created directories. */
+  directoriesOnly?: boolean;
+  /** Optional: empty directory graph CTA. */
+  onCreateDirectory?: () => void;
 }
 
 type GraphMode = 'idle' | 'add' | 'connect';
@@ -645,6 +649,8 @@ export function GraphView({
   fullscreen = false,
   onToggleFullscreen,
   onOpenDirectory,
+  directoriesOnly = false,
+  onCreateDirectory,
 }: GraphViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -676,7 +682,7 @@ export function GraphView({
   const [legendOpen, setLegendOpen] = useState<boolean>(false);
   const [hasGhost, setHasGhost] = useState<boolean>(false);
   /** 记录 (all notes) vs 目录 (directories + cross-directory relations only). */
-  const [dirView, setDirView] = useState<'all' | 'directories'>('all');
+  const [dirView, setDirView] = useState<'all' | 'directories'>(directoriesOnly ? 'directories' : 'all');
 
   // Latest props kept in refs so the canvas loop always sees fresh values
   // without being torn down and rebuilt on every React render.
@@ -692,6 +698,7 @@ export function GraphView({
   const onLinkRef = useRef(onLinkNotes);
   const onResetRef = useRef(onRequestResetLayout);
   const onDeleteRef = useRef(onDeleteNote);
+  const onOpenDirectoryRef = useRef(onOpenDirectory);
   activeIdRef.current = activeNoteId;
   selectedIdRef.current = selectedNoteId;
   modeRef.current = mode;
@@ -704,6 +711,7 @@ export function GraphView({
   onLinkRef.current = onLinkNotes;
   onResetRef.current = onRequestResetLayout;
   onDeleteRef.current = onDeleteNote;
+  onOpenDirectoryRef.current = onOpenDirectory;
 
   /** Read theme-aware canvas tokens (cached per app theme). */
   function getPalette(): Palette {
@@ -935,6 +943,49 @@ export function GraphView({
         context.moveTo(source.x, source.y);
         context.lineTo(target.x, target.y);
         context.stroke();
+      }
+
+      // The whole network is a person: a quiet centre node ties the directory
+      // balls together. It is decorative, not a selectable note.
+      if (directories.length >= 2) {
+        let cx = 0;
+        let cy = 0;
+        for (const node of directories) {
+          cx += node.x;
+          cy += node.y;
+        }
+        cx /= directories.length;
+        cy /= directories.length;
+        context.globalAlpha = 0.28;
+        context.strokeStyle = palette.edge;
+        context.lineWidth = 1 / view.scale;
+        context.setLineDash([2 / view.scale, 5 / view.scale]);
+        for (const node of directories) {
+          context.beginPath();
+          context.moveTo(cx, cy);
+          context.lineTo(node.x, node.y);
+          context.stroke();
+        }
+        context.setLineDash([]);
+        context.globalAlpha = 0.9;
+        context.beginPath();
+        context.arc(cx, cy, 11, 0, Math.PI * 2);
+        context.fillStyle = palette.surface;
+        context.fill();
+        context.strokeStyle = palette.accent;
+        context.lineWidth = 1.4 / view.scale;
+        context.stroke();
+        context.beginPath();
+        context.arc(cx, cy, 4, 0, Math.PI * 2);
+        context.fillStyle = palette.accent;
+        context.fill();
+        context.globalAlpha = 0.75;
+        context.fillStyle = palette.textMuted;
+        context.font = `${11 / view.scale}px ${palette.fontSans}`;
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        context.fillText('你', cx, cy + 24);
+        context.globalAlpha = 1;
       }
     } else {
       // Directory threads sit under the regular links, tinted by their branch.
@@ -1561,6 +1612,11 @@ export function GraphView({
       return;
     }
 
+    if (dirViewRef.current === 'directories' && node.directory && onOpenDirectoryRef.current) {
+      onOpenDirectoryRef.current(node.id);
+      return;
+    }
+
     // Idle / add mode: select (opens the inspector), second tap opens the note.
     const now = performance.now();
     const last = lastTapRef.current;
@@ -2104,7 +2160,7 @@ export function GraphView({
           ? '连线模式 · 再选第二个节点'
           : '连线模式 · 选择第一个节点'
         : dirView === 'directories'
-          ? '目录视图 · 点目录查看成员'
+          ? '目录视图 · 点小球打开目录内容'
           : null;
 
   const directories = directoryList(notes);
@@ -2190,7 +2246,7 @@ export function GraphView({
         role="img"
         aria-label="生活图谱画布，可拖动平移、双指缩放，拖动节点调整位置"
       />
-      {notes.length > 0 ? (
+      {(directoriesOnly ? directories.length > 0 : notes.length > 0) ? (
         <>
           <div className="graph-floating-title">
             <div className="graph-floating-title-row">
@@ -2210,12 +2266,12 @@ export function GraphView({
             </div>
             <p className="graph-floating-meta">
               {directoryOnly
-                ? `${directories.length} 个目录 · 目录视图`
+                ? `${directories.length} 个目录 · 整个网络代表你`
                 : `${visibleNoteCount} 条记录${hasDirectories ? ` · ${directories.length} 个目录` : ''}`}
               {mode === 'add' ? ' · 添加模式' : mode === 'connect' ? ' · 连线模式' : ''}
             </p>
           </div>
-          {hasDirectories ? (
+          {!directoriesOnly && hasDirectories ? (
             <div className="graph-view-toggle" role="group" aria-label="图谱视图">
               <button
                 type="button"
@@ -2520,8 +2576,19 @@ export function GraphView({
         </>
       ) : (
         <div className="graph-empty">
-          <div className="graph-empty-title">记下第一件事</div>
-          <div className="graph-empty-text">图谱会从这里长出来</div>
+          <div className="graph-empty-title">
+            {directoriesOnly ? '还没有目录' : '记下第一件事'}
+          </div>
+          <div className="graph-empty-text">
+            {directoriesOnly
+              ? '先创建一个目录，比如身体健康、工作、学习、理财；一个小球就是一个目录。'
+              : '图谱会从这里长出来'}
+          </div>
+          {directoriesOnly && onCreateDirectory ? (
+            <button type="button" className="btn btn-primary graph-empty-cta" onClick={onCreateDirectory}>
+              创建目录
+            </button>
+          ) : null}
         </div>
       )}
     </div>
