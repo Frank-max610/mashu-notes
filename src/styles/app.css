@@ -2701,7 +2701,7 @@ button.settings-row:active {
 .calendar-compose-input { width: 100%; min-height: 76px; border: 0; background: transparent; resize: vertical; color: var(--text); font-family: var(--font-sans); font-size: var(--text-base); line-height: 1.6; }
 .calendar-compose-input:focus { outline: none; }
 .calendar-compose-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-top: 1px solid var(--border); padding-top: 8px; }
-.calendar-save { min-height: 40px; padding: 0 18px; }
+.calendar-save { min-height: 44px; padding: 0 18px; }
 .calendar-entries { display: flex; flex-direction: column; }
 .calendar-entry { display: flex; align-items: center; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--border); text-align: left; }
 .calendar-entry-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-faint); flex: none; }
@@ -2736,6 +2736,6 @@ button.settings-row:active {
 .today-reminder-text strong { font-size: var(--text-sm); font-weight: 600; }
 .today-reminder-text span { color: var(--text-muted); font-size: var(--text-xs); }
 .today-reminder-actions { display: flex; gap: 6px; flex: none; }
-.today-reminder-actions .chip { min-height: 32px; padding: 4px 9px; font-size: var(--text-xs); }
-.today-reminder-close { flex: none; width: 28px; height: 28px; display: grid; place-items: center; color: var(--text-faint); }
+.today-reminder-actions .chip { min-height: 44px; padding: 8px 12px; font-size: var(--text-xs); }
+.today-reminder-close { flex: none; width: 44px; height: 44px; display: grid; place-items: center; color: var(--text-faint); }
 .health-sync-entry { margin-bottom: 4px; border-bottom: 1px solid var(--border); }

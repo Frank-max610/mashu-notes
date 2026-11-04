@@ -539,7 +539,7 @@ export default function App() {
               });
             }}
             onCreatePlan={(title, dueAt) => {
-              void api.createNote({ title, content: '', meta: { plan: { status: 'todo', dueAt } } });
+              void api.createNote({ title, content: '', meta: { occurredAt: dueAt, plan: { status: 'todo', dueAt } } });
               notify('计划已加到这一天');
             }}
             onOpenDirectories={() => navigate({ name: 'directories' })}
@@ -807,7 +807,7 @@ export default function App() {
         onOpenNote={openNote}
       />
 
-      {!editing && route.name !== 'graph' ? (
+      {!editing && route.name !== 'graph' && route.name !== 'agent' ? (
         <FloatingAgent
           persona={persona}
           onTalk={() => navigate({ name: 'agent' })}

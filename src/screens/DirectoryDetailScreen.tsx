@@ -57,6 +57,7 @@ export function DirectoryDetailScreen({ directory, notes, onBack, onOpenNote, on
         <section className="directory-composer" aria-label={`在${directory.title}里写作`}>
           <textarea
             className="directory-composer-input"
+            aria-label={`在${directory.title}里写点什么`}
             value={draft}
             autoFocus
             rows={4}

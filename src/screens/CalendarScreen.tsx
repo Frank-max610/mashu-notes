@@ -136,6 +136,7 @@ export function CalendarScreen({ notes, onOpenNote, onSaveDiary, onCreatePlan, o
             </div>
             <textarea
               className="calendar-compose-input"
+              aria-label="写这一天"
               rows={3}
               value={draft}
               placeholder={mode === 'plan' ? '给这一天加一个计划…' : isToday ? '今天发生了什么…' : `补写 ${selectedDate.getMonth() + 1} 月 ${selectedDate.getDate()} 日…`}
