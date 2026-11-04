@@ -956,10 +956,12 @@ export function GraphView({
         }
         cx /= directories.length;
         cy /= directories.length;
-        context.globalAlpha = 0.28;
-        context.strokeStyle = palette.edge;
-        context.lineWidth = 1 / view.scale;
-        context.setLineDash([2 / view.scale, 5 / view.scale]);
+        // Slightly stronger + thicker spokes so the person-level network reads
+        // as one connected map at a glance.
+        context.globalAlpha = 0.34;
+        context.strokeStyle = palette.textMuted;
+        context.lineWidth = 2.4 / view.scale;
+        context.setLineDash([3 / view.scale, 5 / view.scale]);
         for (const node of directories) {
           context.beginPath();
           context.moveTo(cx, cy);
@@ -973,7 +975,7 @@ export function GraphView({
         context.fillStyle = palette.surface;
         context.fill();
         context.strokeStyle = palette.accent;
-        context.lineWidth = 1.4 / view.scale;
+        context.lineWidth = 1.8 / view.scale;
         context.stroke();
         context.beginPath();
         context.arc(cx, cy, 4, 0, Math.PI * 2);
