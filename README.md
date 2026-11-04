@@ -5,7 +5,7 @@
 一个本地优先的 **iPhone 生活操作系统**：饮食、健康、收支、日记和 Markdown 笔记放在一起，以安静的「今日」驾驶舱开始，用生活图谱把一切连起来。**没有服务器，也没有账号**——装到主屏幕后，断网也能用。
 
 **在线试用（请用 Safari 打开）**：<https://frank-max610.github.io/mashu-notes/>
-**仓库**：[github.com/Frank-max610/mashu-notes](https://github.com/Frank-max610/mashu-notes) · 版本 **v1.0.0**
+**仓库**：[github.com/Frank-max610/mashu-notes](https://github.com/Frank-max610/mashu-notes) · 版本 **v1.1.0**
 
 [![Live demo](https://img.shields.io/badge/demo-live-c8783f.svg)](https://frank-max610.github.io/mashu-notes/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-b36a35.svg)](LICENSE)
@@ -20,7 +20,7 @@
 
 - **去掉了卡通吉祥物**，改用 **Mochi Node** 品牌符号：一颗暖色主节点 + 几颗卫星节点 + 细轨道，出现在页头、助手人设、App 图标、favicon 和启动图里；不再有脸、表情或水果帽。
 - **变小、变安静**：首屏 hero 收敛到 34–38px，只留一个高权重动作（一句话记录条）；不再用大卡片墙、渐变标题、发光或霓虹。
-- **今日是驾驶舱**：问候 + 一句话输入 + 2×2 紧凑指标 + 「1 条洞察 + 3 个数字 + 查看完整复盘」+ 轻量建议；7 日 sparkline 和时间线在下方，不抢注意力。
+- **今日是驾驶舱**：问候 + 一句话输入 + 昨日复盘 + 轻量建议；图谱和时间线后来成为第一视觉锚点。不抢注意力。
 - **图谱变成真正的力导向画布**：拖拽会带动邻居、松手后回弹，按连接数决定节点大小，默认只显示重要标签，悬停/选中才展开一度邻居。
 - **阅读优先的编辑器**：打开是渲染后的 Markdown，只有进入编辑才出现工具栏和原文；所有操作收进「更多」。
 - **渐进式快速记录**：一句话是主角，一行紧凑解析卡确认，结构化字段藏在「展开详情」里，固定 52px 的保存按钮。
@@ -54,7 +54,17 @@
 - **每日汇总**：助手每天可以基于**昨天**生成一次汇总，按知识库目录分组（未分类排最后），每节 2–3 条具体 highlights，附一句总结与 2–3 条从事实推导出的建议；`sourceIds` 指向真实记录。历史存在本地 `mashu.digest.v1`（新→旧、按 dateKey 去重、最多 14 条）；计划 `mashu.digest.schedule.v1` 默认**开启、每天 08:00**。应用在选定时间之后打开时自动生成（每天一次），也可以在「更多 → 设置 → 自动化 → 立即生成今日汇总」手动触发，汇总会以一条助手消息出现并带来源 chips。
 - **有依据的助手**：助手先查你的知识库（`src/lib/knowledge.ts`：确定性的 CJK bigram 检索；目录笔记、归档、计划条目不进入语料）。lookup 会引用真实记录并给出 source ids；统计类回答会写「依据是「你的 N 条记录」」并列出底层记录；没有相关记录时返回明确拒绝「你的知识库里没有找到与「X」相关的记录。可以先在经历库记一条，或换个关键词。」，**绝不编造**。来源 chips 《记录标题》可点击打开本地记录；记一笔和 help 流程保持原样。
 - **零服务器诚实说明**：没有后台任务或真正的远程推送。汇总只在应用打开后按本机时间生成；想要准点提醒，用 iOS「快捷指令 → 自动化 → 每天」打开麻薯——这是系统能力，不是服务器。
-- **导航变化**：底部导航是 **今日 / 经历 / 计划 / 助手 / 更多**；图谱、知识库目录、设置都在「更多」里，设置不再是底部 tab。个人画像 / 健康数据 / 理财 / 模板 / 归档 / 附件等 LifeOS 模块也从「更多」进入。
+- **导航变化**：底部导航是 **今日 / 经历 / 图谱 / 助手 / 更多**；图谱是主 tab；知识库目录、设置、计划及个人画像 / 健康数据 / 理财 / 模板 / 归档 / 附件等 LifeOS 模块都在「更多」里。
+
+## v1.1 图谱优先的第一印象
+
+用户反馈「图谱是最大卖点却被埋起来了」；1.1 把图谱变成打开应用后第一眼看到的东西，并减少首屏的碎片：
+
+- **启动 splash**：每次冷启动先显示居中的 Mochi Node + 轨道节点 + 「麻薯」+ slogan「记录每一天」+ 进度线，约 **1.6s** 后自动进入（`prefers-reduced-motion` 下 **450ms**）。不联网、不请求额外资源。
+- **首次 4 屏导览**：splash 之后只出现一次（`mashu.onboarded.v1` 不存在时）。第一屏就是图谱承诺「生活图谱 / 看见生活的形状」，配大型 hub-and-branch 插画与「你创建几个目录，图谱就长几个分支」；之后是「一句话记录」「目录由你决定」「有依据的助手」。支持跳过 / 上一步 / 下一步，第一屏有次要 CTA「直接看图谱」（完成并跳到图谱），最后一屏主 CTA「开始记录」（完成并回到今日）。
+- **图谱成为主 tab**：底部导航是 **今日 / 经历 / 图谱 / 助手 / 更多**，图谱在中间；**计划移入「更多」**，设置、知识库目录与其余模块也仍在「更多」。
+- **今日首屏更聚焦**：hero + 一句话记录 + 4 个快捷 chips，然后第一视觉锚点是大型 **图谱 teaser 卡**（迷你 hub/branch SVG、生活图谱标签、目录/记录数量文案、「打开图谱」CTA；没有目录时显示「先建目录」），接着是紧凑的昨日复盘卡，最后只保留最近 **3 条记录**。移除了独立的指标区、7 日 sparkline 区块和长今日时间线；header 副标题是「记录每一天」。
+- **可重复查看**：更多 → 新手导览可重播；`?nointro=1` 会跳过 splash 和导览（截图/自动化用）。
 
 ## 没有服务器，也没有账号
 
@@ -76,16 +86,15 @@
 
 ## 功能
 
-### 今日：安静的驾驶舱
+### 今日：图谱优先的安静驾驶舱
 
 | 功能 | 说明 |
 | --- | --- |
-| **小 hero** | 「晚上好。」+「今天发生了什么？」+ 一句状态（已记录 N 件事 / 从一句话开始），最大 34–38px。 |
-| **唯一高权重动作** | 首页只有一条自然语言记录条「记下现在发生的事…」，点开进入渐进式快速记录。 |
-| **2×2 紧凑指标** | 支出 / 摄入 / 睡眠 / 记录四个数字，无卡片、无描边堆叠，只用细分隔线。 |
-| **昨日复盘** | 1 条洞察 + 3 个数字 + 「查看完整复盘」展开：默认只给结论，细节按需展开。 |
-| **轻建议** | 最多 3 条朴素建议（无数据时 1 条），不抢主视觉；不对比、不打分。 |
-| **7 日趋势与今日时间线** | sparkline 和时间线在折叠线以下；今天没有记录时只显示一句平静提示。 |
+| **小 hero** | 「晚上好。」+「今天发生了什么？」+ 一句状态（已记录 N 件事 / 从一句话开始），header 副标题「记录每一天」。 |
+| **单一高权重动作** | 首页只有一条自然语言记录条「记下现在发生的事…」，点开进入渐进式快速记录；下方最多 4 个快捷 chips（饮食/健康/收支/日记）。 |
+| **图谱 teaser 卡** | 首屏第一视觉锚点：迷你 hub/branch SVG、生活图谱标签、目录/记录数量、「打开图谱」CTA；没有目录时显示「先建目录」。 |
+| **紧凑昨日复盘** | 1 条洞察 + 3 个数字 + 「查看完整复盘」展开；不再有独立指标区和 7 日 sparkline 区块。 |
+| **最近记录** | 只保留最近 3 条，完整时间线在「经历」tab。 |
 | **完全本地** | 简报由 `src/lib/brief.ts` 的纯函数生成，同样的记录 + 同样的时间必得同样的结果；没有推送服务器，也不上传任何内容。 |
 
 ### 经历与搜索
@@ -176,7 +185,11 @@
 
 ## 截图
 
-> 默认是浅色暖纸界面，`dark-today.png` 是暖炭色深色主题；截图由 `npm run screenshots` 驱动本机 Chrome 生成，共 16 张应用截图，视觉以实际运行效果为准。
+> 默认是浅色暖纸界面，`dark-today.png` 是暖炭色深色主题；截图由 `npm run screenshots` 驱动本机 Chrome 生成，共 19 张应用截图（`?nointro=1` 用于跳过启动动画/导览），视觉以实际运行效果为准。
+
+| 启动 splash | 首次新手导览 | 今日·图谱 teaser |
+| :---: | :---: | :---: |
+| ![启动 splash｜Mochi Node 与「记录每一天」](docs/screenshots/splash.png) | ![图谱优先的新手导览](docs/screenshots/onboarding.png) | ![今日的图谱 teaser](docs/screenshots/today-graph.png) |
 
 | 今日（浅色） | 经历 | 快速记录 |
 | :---: | :---: | :---: |
@@ -208,6 +221,7 @@
 - **记录保存在设备本地。** 默认 IndexedDB（数据库 `mashu`，schema v2），不可用时回退 localStorage；首次加载会请求持久化存储权限，降低被自动清理的概率。
 - **Apple 健康数据只在设备上解析。** 导入的 JSON/CSV 或快捷指令 URL 数据不会上传；解析、单位换算和同日去重都在浏览器内存中完成，随后写入本地记录。
 - **知识库目录与每日汇总也在本地。** 目录是普通笔记（`meta.directory` + `dirId`），会随 JSON 备份一起导出/恢复；每日汇总历史存在 `mashu.digest.v1`（最多 14 条），计划存在 `mashu.digest.schedule.v1`；有依据的助手在本地检索并给出 source ids，来源 chips 只打开本地记录。没有新增网络请求或云端存储。
+- **启动/导览只是本地偏好。** splash 和 4 屏新手导览不联网、不统计；`mashu.onboarded.v1` 只记录是否看过导览，`mashu.modules.v1` 只记录模块可见性，两者都在本机 localStorage。
 - **旧数据会自动迁移。** 更早版本使用过不同的内部代号与数据库名（`rixin` / `mochi` / `inkstone`），1.0 会在首次打开时把记录与偏好迁移到 `mashu`，成功写入后才删除旧副本；旧版 JSON 备份也兼容导入。迁移前仍建议先导出一份备份。
 - **每台设备、每个地址都是独立的库。** 浏览器按 origin 隔离数据；固定用同一个地址访问，不要假定 Safari 页面和主屏幕应用会自动同步。
 - **应用壳缓存不含记录。** Service Worker 只缓存 HTML/CSS/JS 等静态资源（缓存 `mashu-v1`），IndexedDB / localStorage 中的记录不会被写入缓存。
@@ -241,7 +255,7 @@ mashu-notes/
 ├── docs/
 │   ├── ARCHITECTURE.md           # 架构、数据流、迁移与扩展点
 │   ├── PRIVACY.md                # 隐私说明
-│   └── screenshots/              # 16 张应用截图 + npm run qr 生成物
+│   └── screenshots/              # 19 张应用截图 + npm run qr 生成物
 ├── public/
 │   ├── icons/                    # Mochi Node PWA 图标（npm run icons 生成）
 │   ├── splash/                   # iPhone 启动图（npm run splash 生成）
@@ -256,7 +270,7 @@ mashu-notes/
 │   ├── screenshots.mjs           # 用本机 Chrome 截取 README 截图
 │   └── serve.mjs                 # 局域网静态服务（仅开发者调试）
 ├── src/
-│   ├── components/               # MochiNode、RecordRow、Sparkline、GraphView、CaptureSheet、AgentPanel…
+│   ├── components/               # SplashScreen、Onboarding、GraphTeaser、MochiNode、RecordRow、GraphView、CaptureSheet、AgentPanel…
 │   ├── screens/                  # TodayScreen（今日）、RecordsScreen（经历）、DirectoryScreen（目录）、MoreScreen（更多）、EditorScreen、SettingsScreen…
 │   ├── lib/                      # 核心逻辑（纯函数 + 浏览器适配层）
 │   │   ├── types.ts              # 数据模型（Note / NoteMeta / dirId / meta.directory / meta.plan / archivedAt…）
@@ -281,7 +295,7 @@ mashu-notes/
 │   │   ├── format.ts             # 时间 / 字节 / 数字格式化
 │   │   └── useRoute.ts           # 轻量 hash 路由
 │   ├── styles/                   # tokens.css（语义 token）、base.css、app.css
-│   ├── App.tsx                   # 应用外壳：路由、主题、快速记录、图谱、助手、Apple 健康导入
+│   ├── App.tsx                   # 应用外壳：启动 splash/新手导览、路由、主题、快速记录、图谱、助手、Apple 健康导入
 │   └── main.tsx                  # React 挂载入口 + Service Worker 注册
 ├── tests/                        # Vitest 单元测试（11 个文件 / 274 个用例）
 ├── index.html                    # HTML 入口、iOS meta、apple-touch-startup-image
@@ -328,11 +342,39 @@ mashu-notes/
 
 ### 为什么整体变小、变安静？
 
-0.8 之前的信息密度和装饰偏多：大标题、渐变、卡片、吉祥物都在争夺注意力。0.9 把 hero 收小、只留一个高权重动作、指标变成 2×2 数字、复盘默认只给 1 条洞察 + 3 个数字；需要细节时再展开。目标是「打开就知道今天怎么样」，而不是「打开先看一屏 UI」。
+0.8 之前的信息密度和装饰偏多：大标题、渐变、卡片、吉祥物都在争夺注意力。0.9 把 hero 收小、只留一个高权重动作、复盘默认只给 1 条洞察 + 3 个数字；1.1 进一步把图谱设为第一视觉锚点、去掉首屏指标区和长列表。目标是「打开就知道今天怎么样」，而不是「打开先看一屏 UI」。
 
 ### 和 0.8 有什么区别？
 
 0.8 的生活图谱是 Obsidian 风格：主题自适应、每个节点都有标签、实心节点按连接数变大。0.9 是一次完整的 LifeOS 重构：去掉吉祥物、换成 Mochi Node；今日变成安静驾驶舱；记录变时间线；编辑器变成阅读优先；图谱变成真正的力导向画布（拖拽带动邻居、稀疏标签、悬停邻居、Node Inspector）；快速记录改成渐进披露；设置改成消费级 IA；深色变成暖炭色。功能（记录、复盘、Apple 健康、零服务器 PWA）没有减少。
+
+### 为什么打开先有动画？
+
+每次冷启动会先显示约 **1.6s** 的品牌 splash（Mochi Node + 「麻薯」+「记录每一天」），让第一印象落在图谱/品牌上；系统开启「减少动态效果」时缩短到 **450ms**。它不请求网络、不做统计；想跳过（截图/自动化）可以在 URL 加上 `?nointro=1`。
+
+### 新手引导只出现一次吗？
+
+是。splash 之后、首次打开且 `mashu.onboarded.v1` 不存在时会显示 4 屏图谱优先导览；完成或跳过会把 `mashu.onboarded.v1` 记为 `1`，之后不再自动出现。它只是在本地 localStorage 存一个偏好。
+
+### 怎么再看新手导览？
+
+「更多 → 新手导览」可以随时重播；第一屏有「直接看图谱」，最后一屏「开始记录」会回到今日。`?nointro=1` 会在本次加载同时跳过 splash 和导览。
+
+### 图谱为什么放在底部？
+
+用户反馈图谱才是麻薯最大的卖点，但之前被埋在「更多」里。1.1 把它提升为底部中间的 primary tab（今日 / 经历 / 图谱 / 助手 / 更多），今日首屏也用图谱 teaser 卡作为第一视觉锚点。
+
+### 计划去哪了？
+
+计划仍是 LifeOS 模块，只是从底部 tab 移到了「更多 → 计划」；个人画像/健康数据/理财/模板/归档/附件和知识库目录也都在「更多」里。
+
+### 今日为什么变短？
+
+1.1 把今日从「一屏指标 + sparkline + 长列表」收敛成：hero + 一句话记录 + 4 个快捷 chips → 图谱 teaser → 紧凑昨日复盘 → 最近 3 条记录。完整时间线在「经历」，图谱是首屏的主角；这是为了减少碎片感、提高打开的欲望。
+
+### 数据仍然本地吗？
+
+仍然。splash、导览、图谱 teaser 都在本机渲染；`mashu.onboarded.v1` 只是本地偏好。记录仍在 IndexedDB（DB `mashu`），SW 缓存 `mashu-v1` 不变，没有新增网络请求或账号。
 
 ### 目录和图谱的关系？
 
@@ -417,20 +459,29 @@ Obsidian 是通用 Markdown 知识库，插件生态成熟，文件存在本地�
 
 ## 路线图
 
+已完成（1.1.0）：
+
+- [x] 冷启动 splash：Mochi Node + 「记录每一天」，约 1.6s（减少动态效果 450ms）
+- [x] 图谱优先的 4 屏首次导览：生活图谱 / 一句话记录 / 目录 / 有依据的助手；跳过/上一步/下一步、直接看图谱、开始记录
+- [x] 图谱提升为底部主 tab（今日/经历/图谱/助手/更多），计划移入「更多」
+- [x] 今日首屏 declutter：图谱 teaser 作为第一视觉锚点、紧凑复盘、最近 3 条记录；移除独立指标区/7 日 sparkline/长今日时间线
+- [x] 新手导览可从「更多」重播；`?nointro=1` 跳过启动动画/导览
+- [x] 测试 274 / 11 个文件；存储、迁移、导出、Apple 健康与零服务器 PWA 保持不变
+
 已完成（1.0.0）：
 
 - [x] 知识库目录：创建/颜色/成员计数/展开/移入移出；删除目录只解除归属，不删除记录；目录随备份导入导出
 - [x] 图谱目录：目录枢纽/目录色/成员分支、记录/目录切换、跨目录关系、目录 inspector 与打开目录
 - [x] 每日汇总：按目录汇总昨天、2–3 条 highlights/建议/sourceIds；本地历史最多 14 条；默认 08:00、打开应用后生成，可开关/改时间/立即生成
 - [x] 有依据的助手：确定性知识库检索、lookup 引用、统计「依据 N 条记录」、无依据时明确拒绝、可点击来源 chips
-- [x] LifeOS 模块与更多：今日/经历/计划/助手/更多导航；目录、图谱、设置及画像/健康/理财/模板/归档从「更多」进入
+- [x] LifeOS 模块与更多：知识库目录、设置、计划及画像/健康/理财/模板/归档都从「更多」进入
 - [x] 测试 274 / 11 个文件；存储、迁移、导出、Apple 健康与零服务器 PWA 保持不变
 
 已完成（0.9.0）：
 
 - [x] LifeOS 视觉重构：语义 token（浅色暖纸 / 深色暖炭）、34–38px Display、20px 页边距、16–20px 卡片、几乎无阴影、chips 胶囊、66px 底部导航
 - [x] Mochi Node 品牌替换卡通吉祥物；App 图标、favicon、启动图与助手人设同步
-- [x] 今日安静驾驶舱：小 hero、单一记录条、2×2 指标、1 洞察 + 3 数字 + 可展开复盘、轻建议
+- [x] 今日安静驾驶舱：小 hero、单一记录条、1 洞察 + 3 数字 + 可展开复盘、轻建议
 - [x] 记录时间线、置顶条、边缘淡出 chips；sticky 搜索 + 复用记录行 + 空状态
 - [x] 阅读优先编辑器：渲染 Markdown、编辑态工具栏、More 操作、连接到/来自
 - [x] 助手去控制台化：Mochi Node、正文流、紧凑确认卡、克制的欢迎与追问
@@ -467,16 +518,17 @@ npm run typecheck && npm test && npm run build
 
 ## English
 
-**Mashu (麻薯)** is a local-first **life operating system** for iPhone: meals, health, spending, diaries and notes live together behind a quiet daily cockpit, connected by a living life graph. Version 1.0.0 adds a user-created knowledge base, directory-aware graph, daily digest and a grounded assistant (Warm Minimalism × Living Data).
+**Mashu (麻薯)** is a local-first **life operating system** for iPhone: meals, health, spending, diaries and notes live together behind a quiet daily cockpit, connected by a living life graph. Version 1.1.0 makes the graph the front door: an animated splash, a graph-first onboarding, a 图谱 primary tab and a graph teaser on Today.
 
 - **No server, no account.** The whole app is a static site auto-deployed by GitHub Actions to GitHub Pages (free static hosting; the maintainer runs zero server operations). Open it in Safari, Share → Add to Home Screen, and it works offline after the first load.
-- **Warm Minimalism, semantic tokens.** Light: warm paper `#F7F3EC` / `#FCFAF6` surface / `#2C2925` text / `#C8783F` accent. Dark: warm charcoal `#171410` / `#211D18` surface / `#F3ECE4` text / `#E6A062` accent. Display 34–38, H1 28–32, body 16–17, meta 12–13, mono data 13–15; 20px page padding, 28–36px section gaps, 16–20px cards, near-invisible shadows, no glow/neon; chips are the only pills; 66px bottom nav with a light active block (今日 / 经历 / 计划 / 助手 / 更多).
+- **Graph-first launch (v1.1).** A cold-start splash shows the Mochi Node mark,「麻薯」and「记录每一天」for ~1.6s (450ms with reduced motion); a four-slide, graph-first onboarding runs once (`mashu.onboarded.v1`), with skip/back/next, 直接看图谱 and 开始记录. Bottom navigation is 今日 / 经历 / 图谱 / 助手 / 更多 with the graph in the centre; 计划 moved into 更多. Today is decluttered: hero + capture + four quick chips, a large graph teaser card as the first visual anchor, the compact yesterday review, then only 3 recent records (no standalone metric grid, no 7-day sparkline block, no long today timeline). `?nointro=1` skips splash/onboarding for screenshots and automation.
+- **Warm Minimalism, semantic tokens.** Light: warm paper `#F7F3EC` / `#FCFAF6` surface / `#2C2925` text / `#C8783F` accent. Dark: warm charcoal `#171410` / `#211D18` surface / `#F3ECE4` text / `#E6A062` accent. Display 34–38, H1 28–32, body 16–17, meta 12–13, mono data 13–15; 20px page padding, 28–36px section gaps, 16–20px cards, near-invisible shadows, no glow/neon; chips are the only pills; 66px bottom nav with a light active block (今日 / 经历 / 图谱 / 助手 / 更多).
 - **User-created knowledge directories.** Directory notes carry `meta.directory` (name + colour); regular notes point to them via `dirId`. Create, colour, assign/unassign and delete directories — deleting a directory only unassigns its members, it never deletes notes. Directory notes are ordinary notes, so the JSON vault export/import includes them automatically.
 - **Directory-aware life graph.** Directory hubs are larger coloured nodes with always-on labels; members inherit the directory colour and cluster weakly around their hub (N directories = N branches). A 记录 / 目录 toggle switches to a directory-only view showing exactly the user directories plus cross-directory relations; the directory inspector lists members and offers 打开目录. Force/drag/pan/zoom/pinch/add/link/reset/fit/fullscreen still work; archived and plan notes stay out of the graph.
 - **Daily digest.** Once a day the assistant reviews yesterday grouped by directory (未分类 last), with 2–3 concrete highlights per section, a one-sentence summary, 2–3 fact-derived suggestions and source ids. History lives locally in `mashu.digest.v1` (newest first, deduped by dateKey, max 14); the schedule lives in `mashu.digest.schedule.v1` (default enabled at 08:00). It is generated when the app opens after the chosen time, or via 更多 → 设置 → 自动化 → 立即生成今日汇总. No background push: real reminders use an iOS Shortcut automation.
 - **Grounded assistant.** `src/lib/knowledge.ts` runs deterministic CJK-bigram retrieval over your notes (directory notes, archived and plan items excluded). Lookups quote real notes and return source ids; stats say “依据你的 N 条记录” and cite the underlying notes; with nothing relevant it returns the exact refusal “你的知识库里没有找到与「X」相关的记录…”. Source chips are tappable and open local notes; capture (“奶茶 18 元”) and help flows are unchanged. Everything is on-device — no model API, no telemetry.
 - **Mochi Node brand.** A warm centre dot with a few satellite nodes on thin orbits, used in headers, the assistant persona, app icons, favicon and splash screens. No cartoon mascot.
-- **Quiet cockpit Today**: small hero greeting, one natural-language capture bar, 4 compact 2×2 metrics, yesterday review as 1 insight + 3 numbers + expandable full review, at most 3 plain suggestions, 7-day sparklines and today's timeline below the fold.
+- **Quiet cockpit Today**: small hero greeting, one natural-language capture bar, four quick chips, the large graph teaser card as the first visual anchor, the compact yesterday review, and only 3 recent records. No standalone metric grid, no 7-day sparkline block and no long today timeline; the full timeline lives in 经历 and the graph is one tap away (and a primary tab).
 - **Records & search**: day-grouped timeline rows, compact pinned strip, edge-faded filter chips; sticky search with reusable record rows, light highlights, recent items when idle and a calm no-results state.
 - **Reading-first editor**: rendered Markdown by default, raw text and toolbar only in edit mode, all actions in More, quiet Done, Connections worded as 连接到 / 来自.
 - **Assistant without the console**: Mochi Node + 小麻薯 + 本地处理 · 仅你可见; body-flow messages, plain time meta, compact confirm cards, at most 3 welcome actions, follow-up chips only on the latest message. Fully local rule-based — not an LLM, no model API, no telemetry.

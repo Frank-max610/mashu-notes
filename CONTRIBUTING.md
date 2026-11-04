@@ -90,13 +90,14 @@ npm run typecheck && npm test && npm run build
 - 纯函数放在 `src/lib`，UI 组件放在 `src/components`，页面级组合放在 `src/screens`。
 - 样式统一手写 CSS + `src/styles/tokens.css` 里的**语义 token**，页面/组件不写死颜色、间距、圆角或阴影。组件样式文件与组件同名（`GraphView.css`），类名加组件前缀。
 
-### LifeOS 视觉规则（v1.0，源：设计文档 §04）
+### LifeOS 视觉规则（v1.1，源：设计文档 §04）
 
 - **只用语义 token**：`--bg` / `--surface` / `--surface-2` / `--text` / `--text-muted` / `--border` / `--accent` / `--accent-soft` / `--danger` / `--kind-*`；浅色与深色映射同一批名字，禁止按页面手写颜色。
 - **两套主题**：浅色暖纸 `#F7F3EC`（surface `#FCFAF6`、surface-2 `#F1EAE1`、正文 `#2C2925`、次级 `#756D63`、边框 `#E5DBCF`、主色 `#C8783F`、主色浅底 `#F2DFC9`、danger `#B34B36`）；深色暖炭 `#171410`（surface `#211D18`、surface-2 `#28221D`、正文 `#F3ECE4`、次级 `#B8ABA0`、边框 `#3B332C`、主色 `#E6A062`、主色浅底 `#463024`、danger `#D56A56`）。默认浅色。
 - **字号只用 scale**：Display 34–38 / H1 28–32 / H2 20–22 / Body 16–17 / Meta 12–13 / Data mono 13–15；不要用圆体或衬线标题。
 - **布局**：页面左右 20px；区块间距 28–36；卡片圆角 16–20；按钮 14–16；阴影几乎不可见（`--shadow-1/2`），**禁止 glow/neon/渐变光晕**；`--grad-brand` 不是装饰渐变。
-- **控件**：只有 chip 是胶囊；按钮是普通圆角矩形；底部导航固定 66px，激活项是浅色块，导航为 **今日 / 经历 / 计划 / 助手 / 更多**；设置、图谱、知识库目录从「更多」进入；图标统一一套线性图标（`Icon`，约 2px 视觉线条）。
+- **控件**：只有 chip 是胶囊；按钮是普通圆角矩形；底部导航固定 66px，激活项是浅色块，导航为 **今日 / 经历 / 图谱 / 助手 / 更多**（图谱在中间）；设置、知识库目录、计划及其余模块从「更多」进入；图标统一一套线性图标（`Icon`，约 2px 视觉线条）。
+- **启动与导览**：splash 每次冷启动显示（Mochi Node + 「记录每一天」），约 1.6s；`prefers-reduced-motion` 下 450ms；首启 4 屏新手导览只在 `mashu.onboarded.v1` 不存在时出现，第一屏必须是「生活图谱 / 看见生活的形状」。`?nointro=1` 必须跳过 splash + 导览（截图/自动化）。
 - **分类色只用于节点/标签/小面积状态**：日记 `#65788A`、饮食 `#B45D35`、健康 `#627A4E`、财务 `#9A7112`、笔记 `#7D7164`；不要拿它们铺大面积背景。
 - **品牌符号**：只用 `MochiNode`（暖色主节点 + 卫星节点 + 细轨道），一屏最多出现一次；**不要**再引入卡通吉祥物、脸、贴纸或 emoji 装饰。
 - **动效**：页面进入 220–320ms、按压 120–180ms、sheet ease-out、图谱 settle 1–2s；必须尊重 `prefers-reduced-motion`（tokens 会把时长归零）。
@@ -105,7 +106,10 @@ npm run typecheck && npm test && npm run build
 
 ### 组件级约定
 
-- `TodayScreen` 是安静驾驶舱：小 hero（问候 + 一个问题）、单一自然语言记录条、2×2 紧凑指标、1 条洞察 + 3 个数字 + 可展开复盘、≤3 条朴素建议；**不要**加大卡片墙、渐变标题或第二个高权重按钮。
+- `TodayScreen` 是图谱优先的安静驾驶舱：小 hero（问候 + 一个问题）+ 单一自然语言记录条 + **最多 4 个快捷 chips**，然后 **GraphTeaser 是首屏第一视觉锚点**，再是紧凑昨日复盘，最后 **只有 3 条最近记录**。**不要**恢复独立指标区、7 日 sparkline 区块或长今日时间线（完整时间线在「经历」）。
+- `SplashScreen`：品牌首屏（Mochi Node + 麻薯 + 记录每一天 + 进度线），不联网、不读数据；冷启动 1.6s、减少动态效果 450ms，由 `App` 控制计时。
+- `Onboarding`：4 屏（生活图谱 → 一句话记录 → 目录 → 有依据的助手），支持跳过/上一步/下一步；第一屏次要 CTA「直接看图谱」，最后一屏主 CTA「开始记录」；完成时写 `mashu.onboarded.v1`，可从「更多 → 新手导览」重播；不得自动重复弹出。
+- `GraphTeaser`：今日第一视觉锚点；从 `directoryList(notes)` 取最多 3 个目录与成员计数，画 mini hub/branch；没有目录时显示「先建目录」（跳目录页），否则「打开图谱」；不要把它做成普通列表卡或塞回指标区。
 - `RecordsScreen` 用时间线行（`RecordRow`：类型点 + 标题 + 一行摘要 + 时间），置顶收在紧凑条里；筛选 chips 可横向滚动并有边缘淡出；不要回到卡片墙。
 - `SearchScreen` 的 header sticky；结果复用 `RecordRow`；`<mark>` 只做轻高亮；空查询显示最近编辑；无结果显示「未找到相关记录」+「清除筛选」。
 - `EditorScreen` 阅读优先：默认渲染 Markdown，只有编辑态才显示工具栏和原始 textarea；操作统一进 More（编辑正文/编辑记录信息/置顶/复制 Markdown/导出 .md/删除）；编辑时右上角只留「完成」；关系文案用「连接到 / 来自」。
@@ -142,11 +146,14 @@ npm run typecheck && npm test && npm run build
 | `src/lib/seed.ts` | 首次运行的演示记录（生活记录 + 笔记） | 保持小而精，不要伪装成真实数据 |
 | `src/lib/exportImport.ts` | JSON（vault v2，`app: 'mashu'`）/ Markdown 导出、JSON 导入（含旧 `rixin` / `mochi` / `inkstone` 备份兼容）、合并 / 替换、`shareOrDownload` | 改格式时同步升 `VAULT_VERSION`，并保证旧版本仍可导入 |
 | `src/lib/format.ts` | 相对时间、日期、字节数等展示格式化 | 纯函数 |
-| `src/lib/useRoute.ts` | 轻量 hash 路由（`#/today`、`#/records`、`#/plan`、`#/more`、`#/directories`、`#/graph`、`#/agent`、`#/search`、`#/settings`、`#/note/:id` 等） | 导航统一用 `navigate` / `replaceRoute`；底部 5 个标签文案在 `TabBar.tsx`（今日/经历/计划/助手/更多） |
+| `src/lib/useRoute.ts` | 轻量 hash 路由（`#/today`、`#/records`、`#/plan`、`#/more`、`#/directories`、`#/graph`、`#/agent`、`#/search`、`#/settings`、`#/note/:id` 等） | 导航统一用 `navigate` / `replaceRoute`；底部 5 个标签文案在 `TabBar.tsx`（今日/经历/图谱/助手/更多） |
 | `src/components/MochiNode.tsx` | 品牌符号：暖色主节点 + 卫星节点 + 细轨道；`breath` 慢呼吸动画 | 一屏最多一次；只读 token 颜色；不加入脸/表情/插画 |
+| `src/components/SplashScreen.tsx` | 冷启动品牌 splash：Mochi Node + 麻薯 + 记录每一天 + 进度线 | 不联网、不读记录；由 App 控制 1.6s/450ms 计时；`?nointro=1` 跳过 |
+| `src/components/Onboarding.tsx` | 4 屏图谱优先新手导览：跳过/上一步/下一步、直接看图谱、开始记录 | 只在 `mashu.onboarded.v1` 不存在时自动出现；完成时写该键；可从更多重播 |
+| `src/components/GraphTeaser.tsx` | 今日图谱 teaser：最多 3 个目录的 mini hub/branch、计数文案、打开图谱/先建目录 | 从 directories.ts 派生；是今日第一视觉锚点，不引入新数据源 |
 | `src/components/RecordRow.tsx` | 可复用记录行：类型点 + 标题 + 一行摘要 + 时间 + More；支持搜索 snippet、置顶样式 | Records 与 Search 共用，改字段要同时检查两处 |
 | `src/components/GraphView.tsx` | 真正的力导向画布：仿真、拖拽/邻居响应、pan/zoom/pinch、度数大小、稀疏标签、hover 邻居、Node Inspector、添加/连线/重置、图例、沉浸模式 | 交互多，改行为要测鼠标+触摸+减少动效；`FORCE` 参数在文件顶部 |
-| `src/components/TabBar.tsx` | 66px 底部导航：今日/经历/计划/助手/更多；等宽英文小字 | 第五个 tab 文案必须是「更多」；设置/图谱/知识库目录在「更多」里 |
+| `src/components/TabBar.tsx` | 66px 底部导航：今日/经历/图谱/助手/更多；等宽英文小字 | 图谱在中间（primary tab）；第五个 tab 是「更多」；设置/目录/计划在更多里 |
 | `src/components/CaptureSheet.tsx` | 渐进式快速记录：一句话解析、紧凑卡、展开详情、固定 52px 保存 | 置信度只在 <55% 提示；sheet 高度用 CSS token |
 | `src/components/AgentPanel.tsx` | 助手正文流：Mochi Node + 小麻薯 + 本地处理说明、紧凑确认卡、欢迎动作、最新消息追问 | 不要恢复控制台/AGENT-YOU 样式 |
 | `src/components/SearchScreen.tsx` | sticky 搜索头、标签 chips、复用 RecordRow、命中高亮、最近编辑、空态 | 空查询才显示最近；无结果给「清除筛选」 |
@@ -226,7 +233,7 @@ npm run typecheck && npm test && npm run build
 ```text
 feat(graph): inspector actions and link step hints
 style(tokens): switch to LifeOS semantic tokens
-docs(readme): explain the v1.0 LifeOS redesign
+docs(readme): explain the v1.1 graph-first launch
 fix(editor): keep reading mode before first edit
 ```
 
@@ -245,7 +252,9 @@ fix(editor): keep reading mode before first edit
 - [ ] iOS/PWA 改动验证过：Safari 标签页 + 添加到主屏幕、断网重载、安装卡片与首次提示、16px 输入框不被放大、导出到「文件」
 - [ ] UI 改动在 375px 宽度下检查过，并在浅色 / 深色 / 图谱画布三种外观下检查过
 - [ ] 视觉改动只使用语义 token：没有写死颜色/圆角/阴影；没有渐变光晕、neon、卡通吉祥物或 emoji 装饰；没有回到大卡片墙或大 hero
-- [ ] 导航第五个 tab 是「更多」；设置/图谱/知识库目录都从「更多」进入；chips 是唯一胶囊；底部导航保持 66px
+- [ ] 导航顺序是 今日 / 经历 / **图谱** / 助手 / 更多（图谱在中间）；设置/目录/计划在「更多」；chips 是唯一胶囊；底部导航保持 66px
+- [ ] 启动/导览改动验证过：冷启动 splash 约 1.6s（减少动态效果 450ms）、4 屏图谱优先导览只在 `mashu.onboarded.v1` 缺失时出现、跳过/上一步/下一步、直接看图谱、开始记录、更多→新手导览可重播、`?nointro=1` 同时跳过
+- [ ] 今日布局保持：hero + 一句话记录 + ≤4 quick chips + GraphTeaser 第一视觉锚点 + 紧凑复盘 + 3 条最近记录；不恢复 指标区/7 日 sparkline/长今日时间线
 - [ ] 目录改动验证过：创建/颜色/成员/移入移出/删除只解除归属；目录笔记随备份导入导出
 - [ ] 图谱目录改动验证过：记录/目录切换、目录枢纽/颜色/分支、跨目录关系、目录 inspector、归档/计划不出图
 - [ ] 每日汇总验证过：按目录分组、未分类最后、历史最多 14 条、默认开启 08:00、开关/改时间/立即生成、source chips

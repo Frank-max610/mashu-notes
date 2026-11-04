@@ -1,8 +1,8 @@
 # Architecture
 
-麻薯（Mashu）是一个**纯前端、本地优先**的单页应用：一个静态 `index.html` + 打包后的 JS/CSS，没有服务器、没有数据库服务、没有账号系统。这份文档说明 1.0 的 LifeOS 设计系统、知识库目录、页面与数据流、力导向图谱、每日汇总、有依据的助手、今日简报、Apple 健康导入、持久化迁移与扩展点。
+麻薯（Mashu）是一个**纯前端、本地优先**的单页应用：一个静态 `index.html` + 打包后的 JS/CSS，没有服务器、没有数据库服务、没有账号系统。这份文档说明 1.1 的 LifeOS 设计系统、图谱优先启动、知识库目录、页面与数据流、力导向图谱、每日汇总、有依据的助手、今日简报、Apple 健康导入、持久化迁移与扩展点。
 
-当前版本 **1.0.0**：在 0.9 的 LifeOS 视觉与交互之上，加入 **用户自建知识库目录**、**图谱目录层**、**每日汇总**与**有依据的助手**（grounded answers with source ids）。目录笔记/普通记录/计划/归档仍是同一套 `Note` 数据模型；存储（`mashu`）、迁移、导出、Apple 健康与零服务器 PWA 交付保持兼容。
+当前版本 **1.1.0**：在图谱 + 知识库的基础上加入**图谱优先的启动体验**——冷启动 splash（Mochi Node + 记录每一天，~1.6s/450ms）、首次 4 屏图谱优先导览、底部导航把图谱提升为主 tab、今日首屏用 GraphTeaser 作为第一视觉锚点并移除独立指标区/长列表。存储、迁移、导出、Apple 健康与零服务器 PWA 交付保持兼容。
 
 ## 1. 总览
 
@@ -20,7 +20,7 @@
 index.html
    │  <script type="module">
    ▼
-src/main.tsx ──挂载（StrictMode）──▶ src/App.tsx（应用外壳：路由 / 主题 / 快速记录 / 图谱 / 助手 / 每日汇总 / 健康导入）
+src/main.tsx ──挂载（StrictMode）──▶ src/App.tsx（应用外壳：splash / 新手导览 / 路由 / 主题 / 快速记录 / 图谱 / 助手 / 每日汇总 / 健康导入）
    │                                    │
    │                                    ├── src/screens/*        TodayScreen、RecordsScreen、DirectoryScreen、MoreScreen、EditorScreen、SettingsScreen、PlanScreen、ModulesScreens…
    │                                    ├── src/components/*     可复用 UI（MochiNode、RecordRow、GraphView、CaptureSheet、AgentPanel…）
@@ -40,17 +40,14 @@ src/main.tsx ──挂载（StrictMode）──▶ src/App.tsx（应用外壳：
 
 ## 2. 请求 / 数据流
 
-### 启动
+### 启动（splash + 首次导览）
 
-1. 浏览器加载 `index.html`，执行 `src/main.tsx`，React 挂载根组件。`index.html` 在首帧前按已存偏好 / `prefers-color-scheme` 设置 `data-theme`；应用的主题偏好**默认浅色**（`#f7f3ec`），可切换深色暖炭 `#171410` 或跟随系统。`<head>` 包含 `apple-mobile-web-app-*` meta、`theme-color` 与七种 iPhone 尺寸的 `apple-touch-startup-image` 启动图链接（由 `npm run splash` 生成）。
-2. `useNotes()` 初始化（模块级共享 Promise，只执行一次，避免 StrictMode 下重复播种）：
-   - `loadNotes()` 打开 IndexedDB `mashu` v2，读出 `notes` 仓库的全部记录；若从 v1 升级，会在 `onupgradeneeded` 中逐条 `normalizeNote()` 补齐字段。
-   - 若 `mashu` 库为空，会尝试迁移更早版本的数据库（`rixin` / `mochi` / `inkstone`）与旧 localStorage 记录；合并按 id 去重，写入成功后才删除旧副本（详见「持久化与迁移」）。
-   - 读取/迁移旧偏好：主题、引导标记、助手人设、安装提示都从旧键复制到 `mashu.*` 后删除旧键。
-   - 空库且从未引导（`mashu.onboarded.v1 !== '1'`）时，写入 `seed.ts` 的演示记录并标记已引导。
-   - 排序后写入内存状态并 `setReady(true)`，随后请求 `navigator.storage.persist()`。
-3. 各页面从 `useNotes()` 读取记录与操作函数；`App` 通过 `useRoute()` 订阅 hash 变化决定渲染页面。主题偏好写入 `<html data-theme>`，并更新 `theme-color` meta（浅色 `#f7f3ec` / 深色 `#171410`）。
-4. 生产构建在 `load` 后注册 `sw.js`；只在安全上下文（HTTPS / localhost）成功，失败静默忽略。
+1. 浏览器加载 `index.html`，执行 `src/main.tsx`，React 挂载根组件。启动时 `App` 先判断 `?nointro=1`：存在则跳过 splash/导览（截图/自动化）；否则先渲染 `SplashScreen`（Mochi Node + 轨道节点 + 麻薯 + 记录每一天 + 进度线），冷启动约 **1600ms** 后自动消失，`prefers-reduced-motion: reduce` 时为 **450ms**（计时在 `App` 的 effect 中，CSS 只负责动画）。
+2. splash 期间 `useNotes()` 已并行初始化（模块级共享 Promise）：`loadNotes()` 打开 IndexedDB `mashu` v2 并迁移旧库；空库且从未引导时写入 `seed.ts` 演示记录；排序后进入内存状态并请求 `navigator.storage.persist()`。
+3. splash 结束后，若 `?nointro` 不存在且 `mashu.onboarded.v1 !== '1'`，显示 `Onboarding`（4 屏，第一屏是图谱承诺）；完成（跳过/直接看图谱/开始记录）时 `finishOnboarding` 写 `mashu.onboarded.v1 = '1'`，`openGraph=true` 时 `navigate({ name: 'graph' })`。之后不再自动显示。
+4. 各页面从 `useNotes()` 读取记录与操作函数；`App` 通过 `useRoute()` 订阅 hash 变化。主题偏好写入 `<html data-theme>` 并更新 `theme-color` meta（浅色 `#f7f3ec` / 深色 `#171410`）。
+5. 生产构建在 `load` 后注册 `sw.js`；只在安全上下文（HTTPS / localhost）成功，失败静默忽略。
+6. `?nointro=1` 也会跳过 splash 和 onboarding；「更多 → 新手导览」把 `showOnboarding` 重新置 true，可随时重播。
 
 ### 路由与导航
 
@@ -58,24 +55,24 @@ src/main.tsx ──挂载（StrictMode）──▶ src/App.tsx（应用外壳：
 
 | 路由 | 页面 | 底部导航 |
 | --- | --- | --- |
-| `#/today`（默认） | 今日：小 hero + 单一记录条 + 2×2 指标 + 昨日复盘（1 洞察 + 3 数字 + 展开）+ 轻建议 + 7 日趋势 + 时间线 | 今日 / TODAY |
+| `#/today`（默认） | 今日：小 hero + 一句话记录 + ≤4 quick chips + **GraphTeaser 第一视觉锚点** + 紧凑昨日复盘 + 最近 3 条记录 | 今日 / TODAY |
 | `#/records` | 经历：按天时间线、紧凑置顶条、边缘淡出筛选 chips | 经历 / LIFE |
-| `#/plan` | 计划：目标/待办与进度（LifeOS 模块） | 计划 / PLAN |
+| `#/graph` | 生活图谱：力导向 + 目录枢纽 + 记录/目录切换 + Node Inspector + 沉浸模式 | 图谱 / GRAPH（中间 primary tab） |
 | `#/agent` | 本地助手：Mochi Node + 小麻薯 + 正文流 + 每日汇总 + grounded 来源 | 助手 / AGENT |
-| `#/more` | 更多：LifeOS 模块入口（知识库目录/图谱/画像/健康/理财/模板/归档/附件）、设置、帮助 | 更多 / MORE |
+| `#/more` | 更多：LifeOS 模块入口（知识库目录/计划/画像/健康/理财/模板/归档/附件）、生活图谱、设置、帮助、新手导览 | 更多 / MORE |
+| `#/plan` | 计划：目标/待办与进度（从「更多」进入） | （无） |
 | `#/directories` | 知识库目录：创建/颜色/成员/移入移出/删除（从「更多」进入） | （无） |
-| `#/graph` | 生活图谱：力导向 + 目录枢纽 + 记录/目录切换 + Node Inspector + 沉浸模式（从「更多」进入） | （无） |
 | `#/search` | 搜索：sticky 头 + 复用记录行（from 今日/经历 header） | （无） |
 | `#/settings` | 设置：助手 / 外观 / 数据与隐私 / Apple 健康 / 自动化 / 高级设置 / 关于（从「更多」进入） | （无） |
 | `#/profile` `#/health` `#/finance` `#/templates` `#/archive` `#/attachments` | 个人画像 / 健康数据 / 理财 / 模板 / 归档 / 附件（LifeOS 模块，从「更多」进入） | （无） |
 | `#/note/<id>` | 编辑器：默认阅读，编辑态才显示工具栏 | （无） |
 
 - `parseRoute()` / `routeToHash()` 解析与序列化；`navigate()` push 历史记录（手机返回手势可用），`replaceRoute()` 替换当前记录。空 hash 与未知路由都回落到 `today`；旧的 `#/notes` 兼容映射到 `records`。
-- 底部导航是 **66px 扁平 5 标签导航**（**今日 / 经历 / 计划 / 助手 / 更多**，带中文标签 + 等宽英文小字），激活项是浅色块；设置、知识库目录、图谱和各 LifeOS 模块从「更多」进入。
+- 底部导航是 **66px 扁平 5 标签导航**（**今日 / 经历 / 图谱 / 助手 / 更多**，带中文标签 + 等宽英文小字），激活项是浅色块；图谱在中间作为 primary tab，设置/知识库目录/计划及其他 LifeOS 模块从「更多」进入。模块页（plan/profile/health/finance/templates/archive/attachments/directories 等）保持「更多」为 active tab。
 - `App` 用 `returnToRef` 记录进入编辑器前的来源页，返回时回到原页面；图谱沉浸模式（`graphFullscreen`）时 `App` 不渲染 `TabBar`，退出后恢复。
 - hash 路由让静态托管（含子路径）与局域网地址都不需要服务端 rewrite；`scripts/serve.mjs` 对无扩展名路径做了 SPA fallback。
 
-### 设计系统（v1.0 LifeOS / 设计文档 §04）
+### 设计系统（v1.1 LifeOS / 设计文档 §04）
 
 - **语义 token**：`:root` 浅色、`:root[data-theme='dark']` 深色，映射同一批变量名：`--bg` / `--surface` / `--surface-2` / `--text` / `--text-muted` / `--border` / `--accent` / `--accent-soft` / `--danger` / `--kind-*`。页面不写死颜色。
 - **浅色**：`--bg #f7f3ec`，`--surface #fcfaf6`，`--surface-2 #f1eae1`，正文 `#2c2925`，次级 `#756d63`，边框 `#e5dbcf`，主色 `#c8783f`，主色浅底 `#f2dfc9`，危险色 `#b34b36`。
@@ -84,16 +81,17 @@ src/main.tsx ──挂载（StrictMode）──▶ src/App.tsx（应用外壳：
 - **字体与字号**：`--font-sans`（system / PingFang SC，不再用圆体/衬线）；`--font-mono` 等宽；`--text-3xl 36` / `--text-2xl 28` / `--text-xl 21` / `--text-lg 18` / `--text-base 16` / `--text-sm 13` / `--text-xs 12`。Display 34–38 / H1 28–32 / H2 20–22 / Body 16–17 / Meta 12–13 / Data 13–15。
 - **布局**：页面左右 20px；区块间距 28–36；圆角 `--radius-xs 8 / s 10 / m 14 / l 18 / xl 20`；按钮 14–16；阴影只有 `--shadow-1/2` 的极轻投影；`--grad-aurora: none`、`--shadow-glow: none`，没有装饰渐变/发光。
 - **品牌符号**：`MochiNode`（暖色主节点 + 2–3 个卫星节点 + 细轨道；`breath` 慢呼吸动画），用于页头、助手人设、App 图标、favicon 与启动图；一屏只出现一次，**没有卡通吉祥物/表情/水果帽**。
-- **底部导航**：`--tabbar-h: 66px`；激活项是浅色块，标签是中文 + mono 英文；五项为今日/经历/计划/助手/更多。
-- **动效**：`--dur-fast 140ms` / `--dur 260ms`；页面进入约 220–320ms、按压 120–180ms、sheet ease-out、图谱 settle 1–2s；`prefers-reduced-motion` 下 token 时长归零。
+- **底部导航**：`--tabbar-h: 66px`；激活项是浅色块，标签是中文 + mono 英文；五项为今日/经历/图谱/助手/更多（图谱居中）。
+- **动效**：`--dur-fast 140ms` / `--dur 260ms`；页面进入约 220–320ms、按压 120–180ms、sheet ease-out、图谱 settle 1–2s；splash 约 1600ms（减少动态效果 450ms）；`prefers-reduced-motion` 下 token 时长归零。
 - **空状态**：一个目标 + 一个 CTA，文案平静；例如图谱空态「记下第一件事 / 图谱会从这里长出来」，今日无数据显示 1 条洞察 + 1 条建议。
 
-### 今日（quiet cockpit）
+### 今日（graph-first cockpit）
 
-1. `App` 在 `notes` 变化时 `useMemo(() => buildDailyBrief(api.notes))`，同一次渲染里用 `summarizeRange(notes, 7)` 取 7 日序列。
-2. `TodayScreen` 结构：`MochiNode` + 日期 header → 小 hero（`hero-greeting` 问候、`hero-question`「今天发生了什么？」、一句状态）→ 唯一高权重动作 `home-capture`（只有这一条记录栏）→ 2×2 `today-metrics`（支出/摄入/睡眠/记录，4 个数字 + 细分隔线，无卡片）→ 昨日复盘 block（`review-insight` 1 条洞察、`review-numbers` 前 3 个数字、「查看完整复盘」展开 `review-full`）→ 最多 3 条朴素建议（无数据 1 条）→ 近 7 天 sparklines → 今日时间线（最多 8 条）。
-3. 简报完全由 `buildDailyBrief(notes, now)` 生成：昨日 vs 昨天之前有记录的最近 7 天；阈值与文案在 `brief.ts` 顶部；8 种指标（支出/热量/睡眠/步数/饮水/日记等）的 review 与 suggestions 有固定上限；无数据时给平静文案。
-4. **没有推送服务器**：简报在打开应用时即时生成；固定时间提醒由 iOS「快捷指令 → 自动化 → 每天」打开应用实现。
+1. `App` 在 `notes` 变化时 `useMemo(() => buildDailyBrief(api.notes))`，同一次渲染里用 `summarizeRange(notes, 7)` 取 7 日序列（brief 的 trends 仍可用，但今日首屏不再展示独立指标区/sparkline）。
+2. `TodayScreen` 结构：`MochiNode` + 日期 header（副标题「记录每一天」）→ 小 hero（`hero-greeting` 问候、`hero-question`「今天发生了什么？」、一句状态）→ 唯一高权重动作 `home-capture`（一句话记录栏）→ `home-quick` **最多 4 个快捷 chips**（饮食/健康/收支/日记）→ **`GraphTeaser` 第一视觉锚点**（见下）→ 紧凑昨日复盘 block（`review-insight` 1 条洞察、`review-numbers` 前 3 个数字、「查看完整复盘」展开 `review-full`）→ 只显示 **3 条最近记录**（`todayNotes.slice(0, 3)`，完整时间线在「经历」）。没有独立指标区、7 日 sparkline 区块或长今日时间线。
+3. `GraphTeaser` 从 `directoryList(notes)` 取最多 3 个目录，`notesInDirectory` 计数，画 mini hub/branch SVG；有目录时标题「N 个目录，M 条记录连在一起」+「打开图谱」；无目录时「你的生活，正在长成一张图」+「先建目录」（跳 `#/directories`）。数据只来自本地 notes，不新增派生统计。
+4. 简报完全由 `buildDailyBrief(notes, now)` 生成：昨日 vs 昨天之前有记录的最近 7 天；阈值与文案在 `brief.ts` 顶部；无数据时给平静文案。
+5. **没有推送服务器**：简报在打开应用时即时生成；固定时间提醒由 iOS「快捷指令 → 自动化 → 每天」打开应用实现。
 
 ### 记录、目录与搜索
 
@@ -156,7 +154,7 @@ src/main.tsx ──挂载（StrictMode）──▶ src/App.tsx（应用外壳：
 - 自动化：每日汇总开关（默认开启）、时间 `HH:mm`（默认 08:00）、立即生成今日汇总、以及「快捷指令 → 自动化」固定时间提醒说明。
 - 高级设置是 `<details>`：导出为 Markdown、复制快捷指令导入链接、本地存储引擎与用量、数据迁移说明、健康导入 JSON/URL 格式与 HealthKit 限制。
 - 关于：版本、项目主页/GitHub、安装卡片、footer「记录 · 连接 · 理解」。
-- LifeOS 模块入口在 `MoreScreen`：`modules.ts` 定义经历库/知识库目录/计划/个人画像/健康数据/理财/模板/归档/附件，模块隐藏状态存 `mashu.modules.v1`；固定模块不可隐藏。
+- `more` 的模块入口：`MoreScreen` 列出 `modules.ts` 的非固定模块（知识库目录/计划/画像/健康/理财/模板/归档/附件）与工具（生活图谱、设置、新手导览）；模块隐藏状态 `mashu.modules.v1`。
 
 ### iOS / PWA 交付与离线壳
 
@@ -229,12 +227,13 @@ src/main.tsx ──挂载（StrictMode）──▶ src/App.tsx（应用外壳：
 ### `src/components/` 与 `src/screens/`
 
 - `components/` 是道具驱动 UI：
-  - `MochiNode`（品牌符号：主节点 + 卫星节点 + 细轨道，`breath` 慢呼吸）、`RecordRow`（类型点 + 标题 + 一行摘要 + 时间 + More，支持搜索 snippet/置顶）、`Sparkline`（7 日趋势 SVG）、`TabBar`（66px 5 标签：今日/经历/计划/助手/更多）。
+  - `SplashScreen`（冷启动品牌 splash：Mochi Node + 麻薯 + 记录每一天 + 进度线）、`Onboarding`（4 屏图谱优先导览）、`GraphTeaser`（今日图谱 teaser）。
+  - `MochiNode`（品牌符号：主节点 + 卫星节点 + 细轨道，`breath` 慢呼吸）、`RecordRow`（类型点 + 标题 + 一行摘要 + 时间 + More，支持搜索 snippet/置顶）、`Sparkline`（7 日趋势 SVG）、`TabBar`（66px 5 标签：今日/经历/图谱/助手/更多）。
   - `GraphView`（力导向画布：仿真/拖拽/pan/zoom/pinch/稀疏标签/Node Inspector/目录枢纽与记录/目录切换/目录 inspector/添加/连线/重置/图例/沉浸）。
   - `CaptureSheet`（一句话快速记录 + 紧凑解析卡 + 展开详情 + 固定保存）。
   - `AgentPanel`（Mochi Node 人设 + 正文流消息 + 紧凑确认卡 + 欢迎动作 + 最新追问 + 每日汇总 + grounded source chips）、`AgentAvatar`（节点式头像 + 自定义字符）。
   - `NodeEditorSheet`、`IosInstallCard`、`Icon`、`EditorToolbar`、`MarkdownPreview`、`BacklinksPanel`、`SearchScreen`。
-- `screens/`：`TodayScreen`（安静驾驶舱）、`RecordsScreen`（经历时间线）、`DirectoryScreen`（知识库目录）、`MoreScreen`（LifeOS 模块/图谱/设置入口）、`EditorScreen`（阅读优先）、`SettingsScreen`（设置 IA）、`PlanScreen` 与 `ModulesScreens`（画像/健康/理财/模板/归档/附件）。
+- `screens/`：`TodayScreen`（graph-first cockpit）、`RecordsScreen`（经历时间线）、`DirectoryScreen`（知识库目录）、`MoreScreen`（LifeOS 模块/图谱/设置/新手导览入口）、`EditorScreen`（阅读优先）、`SettingsScreen`（设置 IA）、`PlanScreen` 与 `ModulesScreens`（画像/健康/理财/模板/归档/附件）。
 - 样式：`tokens.css`（语义 token）、`base.css`（reset、通用类、动效降级、iOS 16px）、`app.css`（外壳/页面/图谱）；组件私有样式与组件同名并带前缀。没有 UI 框架。
 
 ## 4. 数据模型
@@ -328,7 +327,7 @@ export interface NoteMeta {
 
 1. 用 `summarizeDay(notes, yesterday)` 得到昨天；用 `summarizeRange(notes, 9, now)` 取 D-8 … D-2 的「有记录日」求每个指标的均值（只对有该指标记录的天数求平均）。
 2. 生成 `summary`、`review`（支出/饮食/睡眠/步数/饮水/日记，最多 4 条事实句）与 `suggestions`（偏差优先，其次肯定做得好的地方，最后用中性记录提示兜底，取前 3 条，至少 2 条）。
-3. `trends` 固定四张（支出/摄入/睡眠/记录），带 `value`、`detail`、`tone`（good/warn/neutral）；`TodayScreen` 用 2×2 数字 + 近 7 天 sparkline。
+3. `trends` 固定四张（支出/摄入/睡眠/记录），带 `value`、`detail`、`tone`（good/warn/neutral）；`TodayScreen` 只展示复盘里的前 3 个数字（不再渲染独立趋势卡/指标区）。
 4. 阈值：支出 1.2× / 0.7×、热量 1.2×、睡眠 `< 7h` / `≥ 7.5h`、步数 `< 5000` / `≥ 8000`、饮水 `< 1500ml`；无历史时中性文案。
 5. **没有推送服务器**；固定时间提醒由 iOS 快捷指令个人自动化「打开麻薯」实现。
 
@@ -396,7 +395,7 @@ const LEGACY_DB_NAMES = ['rixin', 'mochi', 'inkstone'];
 | --- | --- |
 | `mashu.notes.v1` | 整库记录 JSON（仅 IndexedDB 不可用时） |
 | `mashu.theme.v1` | `light` / `dark` / `system`（默认 `light`） |
-| `mashu.onboarded.v1` | 是否已完成首次引导（`'1'`） |
+| `mashu.onboarded.v1` | splash 后是否已看过新手导览（`'1'`）；也沿用作首次演示记录播种标记 |
 | `mashu.agent.v1` | 助手人设 `{ name, avatar }` |
 | `mashu.installHint.v1` | iPhone 首次安装提示是否已关闭 |
 | `mashu.digest.v1` | 每日汇总历史（新→旧、按 dateKey 去重、最多 14 条） |
@@ -510,7 +509,7 @@ HTML 字符串 → MarkdownPreview 注入 DOM（点击 data-wiki-target 跳转/�
 - 图谱实时仿真与所有派生计算都在主线程；数万条记录时会有明显卡顿；O(n²) 斥力需要限制在数百节点。
 - 浏览器清站点数据即删除记录；`localStorage` 回退模式容量约 5MB。
 - 启动图覆盖当前七种 iPhone 尺寸；新机型需要更新 `npm run splash` 的尺寸表。
-- `npm run screenshots` / `qr` / `splash` / `icons` 依赖本机 Chrome / Python 环境，属于发布工具。
+- `npm run screenshots` / `qr` / `splash` / `icons` 依赖本机 Chrome / Python 环境，属于发布工具；截图脚本使用 `?nointro=1` 跳过 splash/导览。
 - 设计稿标注快速记录 sheet 约 46/52/77vh；当前 CSS 实际是 46vh 最小、55vh 基础、72vh 解析、88vh 展开（以代码为准）。
 - 图标组件 `Icon` 的默认 `strokeWidth` 是 1.7（视觉上按约 2px 线条处理）；设计文档写作“2px-stroke set”。
 
@@ -518,8 +517,8 @@ HTML 字符串 → MarkdownPreview 注入 DOM（点击 data-wiki-target 跳转/�
 
 - **单元测试**：Vitest（node 环境）共 **274 个用例 / 11 个文件**：`agent`、`brief`、`digest`、`exportImport`、`graph`、`health`、`insights`、`knowledge`、`links`、`markdown`、`search`。纯逻辑（目录/检索/汇总、简报规则、健康解析/换算/去重、图谱边/布局、导入合并）必须先测后改。
 - **手动矩阵**：iPhone SE 与 iPhone 15 尺寸；Safari 标签页与「添加到主屏幕」standalone 各一遍。至少覆盖：离线重载、安装卡片与首次提示、16px 输入不缩放、导出「文件」、断网/恢复 toast、联网重开后加载新版本。
-- **视觉回归**：浅色暖纸与深色暖炭各走一遍今日/经历/计划/更多/搜索/图谱/助手/编辑器/设置；确认语义 token、66px 导航（今日/经历/计划/助手/更多）、Mochi Node、目录色、稀疏标签与无 glow/neon；`prefers-reduced-motion` 下不播放动效。
-- **交互回归**：Today 单一记录条、2×2 指标、复盘展开；经历时间线/置顶/边缘淡出；Search sticky/高亮/空态；Editor 默认阅读/编辑工具栏/More；Capture 展开详情与 52px 保存；Graph 拖拽邻居/回弹/pan/zoom/inspector/连线提示/目录切换/目录 inspector/沉浸模式隐藏导航；Directory 创建/颜色/成员/删目录不删记录；Settings 自动化汇总与清空二次确认。
+- **视觉回归**：浅色暖纸与深色暖炭各走一遍今日/经历/图谱/更多/搜索/助手/编辑器/设置；确认语义 token、66px 导航（今日/经历/图谱/助手/更多）、Mochi Node、目录色、稀疏标签与无 glow/neon；`prefers-reduced-motion` 下不播放动效。
+- **交互回归**：splash 1.6s/450ms、首次 4 屏导览（图谱优先、跳过/上一步/下一步/直接看图谱/开始记录、只出现一次、更多可重播、`?nointro=1` 跳过）；Today 单一记录条 + ≤4 chips + GraphTeaser + 复盘 + 3 条最近记录（不再有独立指标区/长列表）；经历时间线/置顶/边缘淡出；Search sticky/高亮/空态；Editor 默认阅读/编辑工具栏/More；Capture 展开详情与 52px 保存；Graph 拖拽邻居/回弹/pan/zoom/inspector/连线提示/目录切换/目录 inspector/沉浸模式隐藏导航；Directory 创建/颜色/成员/删目录不删记录；Settings 自动化汇总与清空二次确认。
 - **知识回归**：`digest.test.ts`（按目录分组、未分类最后、2–3 highlights/suggestions、sourceIds、14 条历史去重、schedule 默认 08:00/时间解析）与 `knowledge.test.ts`（检索、lookup/stats/source ids、无依据拒绝、目录/归档/计划排除、help/capture 不变）。
 - **功能回归**：健康 JSON/CSV/URL 三种导入路径、同日重复导入不产生重复记录、简报空数据/稀疏数据文案、迁移链（`rixin` / `mochi` / `inkstone` → `mashu`）后记录与偏好不丢。
 - **发布校验**：`npm run typecheck && npm test && npm run build`；构建后确认 `dist/sw.js` 的 `PRECACHE` 已注入 hash 资源、`dist/splash/` 存在七张启动图。
