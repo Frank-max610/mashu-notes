@@ -958,17 +958,23 @@ export function GraphView({
         cy /= directories.length;
         // Slightly stronger + thicker spokes so the person-level network reads
         // as one connected map at a glance.
-        context.globalAlpha = 0.5;
-        context.strokeStyle = palette.textMuted;
-        context.lineWidth = 4.2 / view.scale;
-        context.setLineDash([6 / view.scale, 4 / view.scale]);
+        context.setLineDash([]);
         for (const node of directories) {
           context.beginPath();
           context.moveTo(cx, cy);
           context.lineTo(node.x, node.y);
+          // Solid connection with an accent outline: a wider warm accent stroke
+          // underneath, a narrower charcoal stroke on top.
+          context.globalAlpha = 0.72;
+          context.strokeStyle = palette.accent;
+          context.lineWidth = 6 / view.scale;
+          context.stroke();
+          context.globalAlpha = 0.92;
+          context.strokeStyle = palette.text;
+          context.lineWidth = 3.2 / view.scale;
           context.stroke();
         }
-        context.setLineDash([]);
+        context.globalAlpha = 1;
         context.globalAlpha = 0.9;
         context.beginPath();
         context.arc(cx, cy, 11, 0, Math.PI * 2);
