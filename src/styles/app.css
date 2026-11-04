@@ -2650,3 +2650,33 @@ button.settings-row:active {
 }
 .directory-add { width: 100%; min-height: 52px; }
 .graph-empty-cta { margin-top: 14px; min-height: 44px; }
+
+/* inline writer inside a directory */
+.directory-composer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  margin-bottom: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+}
+.directory-composer-input {
+  width: 100%;
+  min-height: 96px;
+  padding: 0;
+  resize: vertical;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: 1.6;
+}
+.directory-composer-input::placeholder { color: var(--text-faint); }
+.directory-composer-input:focus { outline: none; }
+.directory-composer-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-top: 1px solid var(--border); padding-top: 10px; }
+.directory-composer-hint { font-size: var(--text-xs); color: var(--text-faint); }
+.directory-composer-save { min-height: 44px; padding: 0 20px; }
+.directory-empty-hint { margin: 8px 0; color: var(--text-muted); font-size: var(--text-sm); }

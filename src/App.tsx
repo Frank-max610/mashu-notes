@@ -335,8 +335,9 @@ export default function App() {
 
   const createPlan = useCallback(
     async (title: string) => {
-      await api.createNote({ title, content: '#计划', meta: { plan: { status: 'todo' } } });
-      notify('已添加计划');
+      const note = await api.createNote({ title, content: '', meta: { plan: { status: 'todo' } } });
+      notify('计划已创建，直接写内容吧');
+      navigate({ name: 'note', id: note.id });
     },
     [api.createNote, notify],
   );
@@ -553,7 +554,15 @@ export default function App() {
             notes={api.notes}
             onBack={() => navigate({ name: 'directories' })}
             onOpenNote={openNote}
-            onAdd={() => openCapture(undefined, directory.id)}
+            onSaveContent={(text) => {
+              const title = text.split('\n').find((line) => line.trim())?.trim().slice(0, 40) || '新记录';
+              void api
+                .createNote({ title, content: text, kind: 'note' })
+                .then((note) => {
+                  api.assignDirectory(note.id, directory.id);
+                  notify(`已写进「${directory.title}」`);
+                });
+            }}
             onDeleteDirectory={() => {
               for (const note of api.notes) {
                 if (note.dirId === directory.id) api.assignDirectory(note.id, null);
@@ -577,7 +586,10 @@ export default function App() {
                   kind: 'note',
                   meta: { directory: { color } },
                 })
-                .then(() => notify('目录已创建'));
+                .then((note) => {
+                  notify('目录已创建，开始写吧');
+                  navigate({ name: 'directory', id: note.id });
+                });
             }}
             onAssign={(noteId, dirId) => api.assignDirectory(noteId, dirId)}
             onOpenDirectory={(id) => navigate({ name: 'directory', id })}
@@ -768,8 +780,8 @@ export default function App() {
       {!editing && route.name !== 'graph' ? (
         <FloatingAgent
           persona={persona}
-          onCapture={() => openCapture()}
-          onOpenAgent={() => navigate({ name: 'agent' })}
+          onTalk={() => navigate({ name: 'agent' })}
+          onQuickCapture={() => openCapture()}
         />
       ) : null}
 

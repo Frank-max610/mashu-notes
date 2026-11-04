@@ -5,10 +5,10 @@ import './FloatingAgent.css';
 
 export interface FloatingAgentProps {
   persona: AgentPersona;
-  /** Tap: record something right away. */
-  onCapture: () => void;
-  /** Long press: open the conversational assistant. */
-  onOpenAgent: () => void;
+  /** Tap: talk to the assistant (natural language recording). */
+  onTalk: () => void;
+  /** Long press: fall back to the structured quick capture sheet. */
+  onQuickCapture: () => void;
 }
 
 interface Position {
@@ -40,7 +40,7 @@ function clampPosition(x: number, y: number): Position {
 }
 
 /** The floating local agent: draggable, always one tap from recording. */
-export function FloatingAgent({ persona, onCapture, onOpenAgent }: FloatingAgentProps) {
+export function FloatingAgent({ persona, onTalk, onQuickCapture }: FloatingAgentProps) {
   const [position, setPosition] = useState<Position | null>(() => loadPosition());
   const startRef = useRef<{ x: number; y: number; pos: Position; moved: boolean } | null>(null);
   const longPressRef = useRef<number | null>(null);
@@ -77,8 +77,8 @@ export function FloatingAgent({ persona, onCapture, onOpenAgent }: FloatingAgent
       type="button"
       className="floating-agent"
       style={position ? { left: position.x, top: position.y, right: 'auto', bottom: 'auto' } : undefined}
-      aria-label={`${persona.name}：点一下记一笔，长按打开对话`}
-      title={`${persona.name}：点一下记一笔，长按聊天`}
+      aria-label={`${persona.name}：点一下和助手说话，长按快速记录`}
+      title={`${persona.name}：点一下和助手说话，长按快速记录`}
       onPointerDown={(event) => {
         if (event.button !== undefined && event.button !== 0) return;
         event.currentTarget.setPointerCapture(event.pointerId);
@@ -97,7 +97,7 @@ export function FloatingAgent({ persona, onCapture, onOpenAgent }: FloatingAgent
         longPressRef.current = window.setTimeout(() => {
           if (!movedRef.current) {
             longFiredRef.current = true;
-            onOpenAgent();
+            onQuickCapture();
           }
         }, 650);
       }}
@@ -124,7 +124,7 @@ export function FloatingAgent({ persona, onCapture, onOpenAgent }: FloatingAgent
           persist(next);
           return;
         }
-        if (!longFiredRef.current) onCapture();
+        if (!longFiredRef.current) onTalk();
       }}
       onPointerCancel={() => {
         startRef.current = null;
@@ -133,7 +133,7 @@ export function FloatingAgent({ persona, onCapture, onOpenAgent }: FloatingAgent
       onKeyDown={(event) => {
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
-          onCapture();
+          onTalk();
         }
       }}
     >

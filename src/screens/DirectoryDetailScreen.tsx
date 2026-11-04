@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { Note } from '../lib/types';
 import { directoryColor, notesInDirectory } from '../lib/directories';
 import { Icon } from '../components/Icon';
@@ -7,14 +8,23 @@ export interface DirectoryDetailScreenProps {
   notes: Note[];
   onBack: () => void;
   onOpenNote: (id: string) => void;
-  onAdd: () => void;
+  /** Write a new piece of content straight into this directory. */
+  onSaveContent: (text: string) => void;
   onDeleteDirectory: () => void;
 }
 
 /** A directory's content lives here — the graph ball is only its index. */
-export function DirectoryDetailScreen({ directory, notes, onBack, onOpenNote, onAdd, onDeleteDirectory }: DirectoryDetailScreenProps) {
+export function DirectoryDetailScreen({ directory, notes, onBack, onOpenNote, onSaveContent, onDeleteDirectory }: DirectoryDetailScreenProps) {
   const members = notesInDirectory(notes, directory.id);
   const color = directoryColor(directory);
+  const [draft, setDraft] = useState('');
+
+  const save = () => {
+    const text = draft.trim();
+    if (!text) return;
+    onSaveContent(text);
+    setDraft('');
+  };
 
   return (
     <div className="screen module-screen directory-detail">
@@ -44,12 +54,31 @@ export function DirectoryDetailScreen({ directory, notes, onBack, onOpenNote, on
       </header>
 
       <div className="screen-body directory-detail-body">
-        {members.length === 0 ? (
-          <div className="empty">
-            <Icon name="book" size={24} />
-            <p className="empty-title">目录里还没有内容</p>
-            <p className="empty-text">点下面的「记一笔」，记下的内容会直接放进这个目录，并出现在图谱里。</p>
+        <section className="directory-composer" aria-label={`在${directory.title}里写作`}>
+          <textarea
+            className="directory-composer-input"
+            value={draft}
+            autoFocus
+            rows={4}
+            placeholder={`在「${directory.title}」里写点什么…`}
+            onChange={(event) => setDraft(event.target.value)}
+            onKeyDown={(event) => {
+              if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+                event.preventDefault();
+                save();
+              }
+            }}
+          />
+          <div className="directory-composer-foot">
+            <span className="directory-composer-hint">直接写，保存后就会出现在这个目录和图谱里</span>
+            <button type="button" className="btn btn-primary directory-composer-save" onClick={save} disabled={!draft.trim()}>
+              保存
+            </button>
           </div>
+        </section>
+
+        {members.length === 0 ? (
+          <p className="directory-empty-hint">还没有内容。从上面写第一条，目录就会开始生长。</p>
         ) : (
           <div className="directory-detail-list">
             {members.map((note) => (
@@ -71,12 +100,6 @@ export function DirectoryDetailScreen({ directory, notes, onBack, onOpenNote, on
             ))}
           </div>
         )}
-      </div>
-
-      <div className="directory-detail-foot">
-        <button type="button" className="btn btn-primary directory-add" onClick={onAdd}>
-          <Icon name="plus" size={17} /> 记一笔放进「{directory.title}」
-        </button>
       </div>
     </div>
   );
