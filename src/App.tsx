@@ -15,6 +15,8 @@ import { SettingsScreen } from './screens/SettingsScreen';
 import { MoreScreen } from './screens/MoreScreen';
 import { DirectoryScreen } from './screens/DirectoryScreen';
 import { DirectoryDetailScreen } from './screens/DirectoryDetailScreen';
+import { CalendarScreen } from './screens/CalendarScreen';
+import { HealthSyncScreen } from './screens/HealthSyncScreen';
 import { PlanScreen } from './screens/PlanScreen';
 import { ProfileScreen, HealthScreen, FinanceScreen, TemplatesScreen, ArchiveScreen, AttachmentsScreen } from './screens/ModulesScreens';
 import { getHiddenModules, setModuleHidden, type ModuleId } from './lib/modules';
@@ -40,6 +42,8 @@ function tabForRoute(route: Route): TabName {
       return route.name;
     case 'records':
       return 'records';
+    case 'calendar':
+      return 'today';
     case 'graph':
       return 'graph';
     default:
@@ -418,6 +422,9 @@ export default function App() {
       }
       const drafts = healthSamplesToNotes(parsed.samples, api.notes);
       const count = await applyHealthDrafts(drafts);
+      if (count > 0) {
+        try { localStorage.setItem('mashu.health.lastSync.v1', String(Date.now())); } catch { /* ignore */ }
+      }
       notify(`已从 Apple 健康导入 ${count} 条记录`);
       return count;
     },
@@ -518,7 +525,28 @@ export default function App() {
       case 'profile':
         return <ProfileScreen notes={api.sortedNotes} />;
       case 'health':
-        return <HealthScreen notes={api.sortedNotes} onOpenNote={openNote} />;
+        return <HealthScreen notes={api.sortedNotes} onOpenNote={openNote} onOpenSync={() => navigate({ name: 'health-sync' })} />;
+      case 'calendar':
+        return (
+          <CalendarScreen
+            notes={api.sortedNotes}
+            onOpenNote={openNote}
+            onSaveDiary={(text, occurredAt, dirId) => {
+              const title = text.split('\n').find((line) => line.trim())?.trim().slice(0, 40) || '日记';
+              void api.createNote({ title, content: text, kind: 'diary', meta: { occurredAt } }).then((note) => {
+                if (dirId) api.assignDirectory(note.id, dirId);
+                notify(dirId ? '已写进这一天的目录' : '已记下这一天');
+              });
+            }}
+            onCreatePlan={(title, dueAt) => {
+              void api.createNote({ title, content: '', meta: { plan: { status: 'todo', dueAt } } });
+              notify('计划已加到这一天');
+            }}
+            onOpenDirectories={() => navigate({ name: 'directories' })}
+          />
+        );
+      case 'health-sync':
+        return <HealthSyncScreen onImport={importHealthText} onNotify={notify} />;
       case 'finance':
         return <FinanceScreen notes={api.sortedNotes} onOpenNote={openNote} />;
       case 'templates':
@@ -683,6 +711,7 @@ export default function App() {
             onPersonaChange={handlePersonaChange}
             onImportHealth={importHealthText}
             onGenerateDigest={generateDigest}
+            onOpenHealthSync={() => navigate({ name: 'health-sync' })}
           />
         );
       case 'today':
@@ -698,6 +727,7 @@ export default function App() {
             onOpenSettings={() => navigate({ name: 'more' })}
             onOpenGraph={() => navigate({ name: 'graph' })}
             onOpenDirectories={() => navigate({ name: 'directories' })}
+            onOpenCalendar={() => navigate({ name: 'calendar' })}
             storageWarning={api.storageWarning}
           />
         );

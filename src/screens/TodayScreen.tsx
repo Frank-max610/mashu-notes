@@ -8,6 +8,7 @@ import { Icon } from '../components/Icon';
 import { GraphTeaser } from '../components/GraphTeaser';
 import { dismissInstallHint, isInstallHintDismissed } from '../lib/prefs';
 import { isIosDevice, isStandaloneMode } from '../components/IosInstallCard';
+import { markReminderShown, reminderText, shouldShowReminder } from '../lib/reminders';
 
 export interface TodayScreenProps {
   notes: Note[];
@@ -19,6 +20,7 @@ export interface TodayScreenProps {
   onOpenSettings: () => void;
   onOpenGraph: () => void;
   onOpenDirectories: () => void;
+  onOpenCalendar: () => void;
   storageWarning: string | null;
 }
 
@@ -72,12 +74,14 @@ export function TodayScreen({
   onOpenSettings,
   onOpenGraph,
   onOpenDirectories,
+  onOpenCalendar,
   storageWarning,
 }: TodayScreenProps) {
   const [showInstallHint, setShowInstallHint] = useState(
     () => !isInstallHintDismissed() && isIosDevice() && !isStandaloneMode(),
   );
   const [showFullReview, setShowFullReview] = useState(false);
+  const [reminderDismissed, setReminderDismissed] = useState(false);
 
   const todayNotes = useMemo(() => {
     const key = dayKeyOf(new Date());
@@ -87,6 +91,10 @@ export function TodayScreen({
   }, [notes]);
 
   const streak = useMemo(() => streakDays(notes), [notes]);
+  const reminder = useMemo(
+    () => (shouldShowReminder() ? reminderText(notes) : null),
+    [notes],
+  );
 
   const trends = brief.trends;
   const noData = notes.length === 0;
@@ -101,9 +109,14 @@ export function TodayScreen({
             <p className="today-date-sub">记录每一天</p>
           </div>
         </div>
-        <button type="button" className="icon-btn" aria-label="搜索" onClick={onOpenSearch}>
-          <Icon name="search" size={20} />
-        </button>
+        <div className="today-header-actions">
+          <button type="button" className="icon-btn" aria-label="打开日历" onClick={onOpenCalendar}>
+            <Icon name="clock" size={20} />
+          </button>
+          <button type="button" className="icon-btn" aria-label="搜索" onClick={onOpenSearch}>
+            <Icon name="search" size={20} />
+          </button>
+        </div>
       </header>
 
       <div className="screen-body today-body">
@@ -139,6 +152,27 @@ export function TodayScreen({
             ))}
           </div>
         </section>
+
+        {reminder && !reminderDismissed ? (
+          <div className="today-reminder" role="status">
+            <Icon name="clock" size={16} />
+            <div className="today-reminder-text">
+              <strong>今天还差一点</strong>
+              <span>{reminder}</span>
+            </div>
+            <div className="today-reminder-actions">
+              <button type="button" className="chip" onClick={() => { markReminderShown(); onQuickCapture('diary'); }}>
+                写日记
+              </button>
+              <button type="button" className="chip" onClick={() => { markReminderShown(); onOpenCalendar(); }}>
+                日历
+              </button>
+            </div>
+            <button type="button" className="today-reminder-close" aria-label="今天不再提醒" onClick={() => { markReminderShown(); setReminderDismissed(true); }}>
+              <Icon name="close" size={14} />
+            </button>
+          </div>
+        ) : null}
 
         {showInstallHint ? (
           <div className="install-hint" role="note">

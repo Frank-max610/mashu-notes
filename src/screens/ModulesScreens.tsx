@@ -71,7 +71,7 @@ export function ProfileScreen({ notes }: { notes: Note[] }) {
   );
 }
 
-export function HealthScreen({ notes, onOpenNote }: { notes: Note[]; onOpenNote: (id: string) => void }) {
+export function HealthScreen({ notes, onOpenNote, onOpenSync }: { notes: Note[]; onOpenNote: (id: string) => void; onOpenSync: () => void }) {
   const health = notes.filter((note) => note.kind === 'health' && !note.archivedAt);
   const latest = (metric: string) => health.filter((n) => n.meta.metric === metric).sort((a, b) => (b.meta.occurredAt ?? b.createdAt) - (a.meta.occurredAt ?? a.createdAt))[0];
   const metrics = ['睡眠', '步数', '体重', '心率', '饮水', '活动能量'].filter((m) => (HEALTH_METRICS as readonly string[]).includes(m));
@@ -80,6 +80,14 @@ export function HealthScreen({ notes, onOpenNote }: { notes: Note[]; onOpenNote:
     <div className="screen module-screen">
       <Header title="健康数据" sub="睡眠、步数与身体趋势" />
       <div className="screen-body">
+        <button type="button" className="settings-row health-sync-entry" onClick={onOpenSync}>
+          <span className="settings-row-icon"><Icon name="heart" size={18} /></span>
+          <span className="settings-row-text">
+            <span className="settings-row-label">Apple 健康同步</span>
+            <span className="settings-row-hint">Apple Watch → 健康 → 麻薯，查看同步方法与状态</span>
+          </span>
+          <Icon name="arrowRight" size={15} />
+        </button>
         <div className="profile-grid">
           {metrics.map((metric) => {
             const note = latest(metric);

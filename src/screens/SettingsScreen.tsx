@@ -19,6 +19,7 @@ import { MochiNode } from '../components/MochiNode';
 import { IosInstallCard } from '../components/IosInstallCard';
 import { DEFAULT_DIGEST_SCHEDULE, getDigestSchedule, setDigestSchedule } from '../lib/digest';
 import { getAutoFileEnabled, setAutoFileEnabled } from '../lib/directories';
+import { getReminderSettings, setReminderSettings } from '../lib/reminders';
 
 const APP_VERSION = '1.2.0';
 
@@ -36,6 +37,7 @@ export interface SettingsScreenProps {
   onImportHealth: (text: string) => Promise<number>;
   /** Build + persist today's knowledge-base digest immediately. */
   onGenerateDigest: () => void;
+  onOpenHealthSync: () => void;
 }
 
 interface RowProps {
@@ -80,6 +82,7 @@ export function SettingsScreen({
   onPersonaChange,
   onImportHealth,
   onGenerateDigest,
+  onOpenHealthSync,
 }: SettingsScreenProps) {
   const [usage, setUsage] = useState<{ usage: number; quota: number } | null>(null);
   const [nameDraft, setNameDraft] = useState(persona.name);
@@ -89,6 +92,7 @@ export function SettingsScreen({
   const [personaOpen, setPersonaOpen] = useState(false);
   const [digestSchedule, setDigestScheduleState] = useState(() => getDigestSchedule());
   const [autoFile, setAutoFile] = useState(() => getAutoFileEnabled());
+  const [reminders, setRemindersState] = useState(() => getReminderSettings());
   const healthInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -343,6 +347,14 @@ export function SettingsScreen({
                 event.target.value = '';
               }}
             />
+            <button type="button" className="settings-row" onClick={onOpenHealthSync}>
+              <span className="settings-row-icon"><Icon name="link" size={18} /></span>
+              <span className="settings-row-text">
+                <span className="settings-row-label">同步说明与设置</span>
+                <span className="settings-row-hint">Apple Watch → 健康 → 快捷指令 → 麻薯</span>
+              </span>
+              <Icon name="arrowRight" size={15} />
+            </button>
           </div>
           <button
             type="button"
@@ -400,6 +412,64 @@ export function SettingsScreen({
                 aria-label="每日汇总时间"
               />
             </div>
+            <label className="settings-row module-toggle">
+              <span className="settings-row-icon"><Icon name="clock" size={18} /></span>
+              <span className="settings-row-text">
+                <span className="settings-row-label">每日提醒</span>
+                <span className="settings-row-hint">到点提示写日记、记支出、看今天的计划</span>
+              </span>
+              <input
+                type="checkbox"
+                checked={reminders.enabled}
+                onChange={(event) => {
+                  const next = setReminderSettings({ enabled: event.target.checked });
+                  setRemindersState(next);
+                }}
+                aria-label="启用每日提醒"
+              />
+            </label>
+            <div className="settings-row as-static">
+              <span className="settings-row-icon"><Icon name="clock" size={18} /></span>
+              <span className="settings-row-text">
+                <span className="settings-row-label">提醒时间</span>
+                <span className="settings-row-hint">PWA 只能在应用打开时提醒；真后台提醒需原生壳</span>
+              </span>
+              <input
+                className="digest-time"
+                type="time"
+                value={reminders.time}
+                onChange={(event) => {
+                  const next = setReminderSettings({ time: event.target.value });
+                  setRemindersState(next);
+                }}
+                aria-label="每日提醒时间"
+              />
+            </div>
+            <button
+              type="button"
+              className="settings-row"
+              onClick={() => {
+                if (!('Notification' in window)) {
+                  notify('这个浏览器不支持系统通知，仍会在打开应用时提醒');
+                  return;
+                }
+                void Notification.requestPermission().then((permission) => {
+                  if (permission === 'granted') {
+                    new Notification('麻薯', { body: '今天记得写一点。到时间打开麻薯，我会提醒你还差什么。' });
+                    notify('通知已开启');
+                  } else {
+                    notify('通知权限未开启，仍会在应用内提醒');
+                  }
+                });
+              }}
+            >
+              <span className="settings-row-icon"><Icon name="clock" size={18} /></span>
+              <span className="settings-row-text">
+                <span className="settings-row-label">测试通知权限</span>
+                <span className="settings-row-hint">允许后，打开应用时能收到系统提醒</span>
+              </span>
+              <Icon name="arrowRight" size={15} />
+            </button>
             <label className="settings-row module-toggle">
               <span className="settings-row-icon"><Icon name="graph" size={18} /></span>
               <span className="settings-row-text">

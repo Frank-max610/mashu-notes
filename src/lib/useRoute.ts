@@ -24,6 +24,8 @@ export type Route =
   | { name: 'more' }
   | { name: 'directories' }
   | { name: 'directory'; id: string }
+  | { name: 'calendar' }
+  | { name: 'health-sync' }
   | { name: 'note'; id: string };
 
 export function parseRoute(hash: string): Route {
@@ -49,6 +51,10 @@ export function parseRoute(hash: string): Route {
       return { name: 'attachments' };
     case 'more':
       return { name: 'more' };
+    case 'calendar':
+      return { name: 'calendar' };
+    case 'health-sync':
+      return { name: 'health-sync' };
     case 'directories':
       return segments[1]
         ? { name: 'directory', id: decodeURIComponent(segments[1]) }

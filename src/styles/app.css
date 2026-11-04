@@ -2680,3 +2680,62 @@ button.settings-row:active {
 .directory-composer-hint { font-size: var(--text-xs); color: var(--text-faint); }
 .directory-composer-save { min-height: 44px; padding: 0 20px; }
 .directory-empty-hint { margin: 8px 0; color: var(--text-muted); font-size: var(--text-sm); }
+
+/* calendar */
+.calendar-body { display: flex; flex-direction: column; gap: 14px; }
+.calendar-nav { display: flex; align-items: center; gap: 4px; }
+.calendar-today { width: 34px; height: 34px; font-size: var(--text-xs); }
+.calendar-week { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; color: var(--text-faint); font-size: var(--text-xs); }
+.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.calendar-cell { position: relative; display: grid; place-items: center; height: 42px; border-radius: var(--radius-s); color: var(--text); }
+.calendar-cell.is-empty { visibility: hidden; }
+.calendar-cell.is-today { color: var(--accent-ink); font-weight: 600; }
+.calendar-cell.is-selected { background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; }
+.calendar-dot { position: absolute; bottom: 5px; width: 4px; height: 4px; border-radius: 50%; background: var(--accent); }
+.calendar-day-panel { display: flex; flex-direction: column; gap: 12px; padding-top: 6px; border-top: 1px solid var(--border); }
+.calendar-day-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.calendar-compose { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-l); background: var(--surface); }
+.calendar-modes { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.calendar-modes .chip { min-height: 34px; padding: 4px 10px; }
+.calendar-dir { max-width: 120px; margin-left: auto; min-height: 34px; }
+.calendar-compose-input { width: 100%; min-height: 76px; border: 0; background: transparent; resize: vertical; color: var(--text); font-family: var(--font-sans); font-size: var(--text-base); line-height: 1.6; }
+.calendar-compose-input:focus { outline: none; }
+.calendar-compose-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-top: 1px solid var(--border); padding-top: 8px; }
+.calendar-save { min-height: 40px; padding: 0 18px; }
+.calendar-entries { display: flex; flex-direction: column; }
+.calendar-entry { display: flex; align-items: center; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--border); text-align: left; }
+.calendar-entry-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-faint); flex: none; }
+.calendar-entry-dot.kind-diary { background: var(--kind-diary); }
+.calendar-entry-dot.kind-finance { background: var(--kind-finance); }
+.calendar-entry-dot.kind-health { background: var(--kind-health); }
+.calendar-entry-dot.kind-food { background: var(--kind-food); }
+.calendar-entry-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.calendar-entry-title { font-size: var(--text-sm); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.calendar-entry-meta { color: var(--text-faint); font-size: var(--text-xs); }
+.calendar-empty { margin: 4px 0; }
+
+/* health sync */
+.health-sync-status { display: flex; align-items: center; gap: 12px; padding: 14px; border: 1px solid var(--border); border-radius: var(--radius-l); background: var(--surface); }
+.health-sync-icon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-ink); }
+.health-sync-status strong { display: block; font-size: var(--text-base); }
+.health-sync-status p { margin: 2px 0 0; color: var(--text-muted); font-size: var(--text-xs); }
+.health-sync-steps { margin: 0; padding-left: 20px; color: var(--text-muted); font-size: var(--text-sm); line-height: 1.8; }
+.health-sync-steps code { display: inline-block; padding: 1px 5px; border-radius: var(--radius-s); background: var(--surface-2); color: var(--text); font-size: var(--text-xs); }
+.health-sync-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.health-sync-actions .btn { min-height: 44px; }
+
+.today-header-actions { display: flex; align-items: center; gap: 2px; }
+.today-reminder {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 12px 14px; margin-bottom: 12px;
+  border: 1px solid var(--border); border-radius: var(--radius-l);
+  background: var(--surface);
+}
+.today-reminder > svg { color: var(--accent-ink); margin-top: 2px; flex: none; }
+.today-reminder-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.today-reminder-text strong { font-size: var(--text-sm); font-weight: 600; }
+.today-reminder-text span { color: var(--text-muted); font-size: var(--text-xs); }
+.today-reminder-actions { display: flex; gap: 6px; flex: none; }
+.today-reminder-actions .chip { min-height: 32px; padding: 4px 9px; font-size: var(--text-xs); }
+.today-reminder-close { flex: none; width: 28px; height: 28px; display: grid; place-items: center; color: var(--text-faint); }
+.health-sync-entry { margin-bottom: 4px; border-bottom: 1px solid var(--border); }
