@@ -5,7 +5,7 @@
 一个本地优先的 **iPhone 生活操作系统**：饮食、健康、收支、日记和 Markdown 笔记放在一起，以安静的「今日」驾驶舱开始，用生活图谱把一切连起来。**没有服务器，也没有账号**——装到主屏幕后，断网也能用。
 
 **在线试用（请用 Safari 打开）**：<https://frank-max610.github.io/mashu-notes/>
-**仓库**：[github.com/Frank-max610/mashu-notes](https://github.com/Frank-max610/mashu-notes) · 版本 **v1.2.0**
+**仓库**：[github.com/Frank-max610/mashu-notes](https://github.com/Frank-max610/mashu-notes) · 版本 **v1.3.0**
 
 [![Live demo](https://img.shields.io/badge/demo-live-c8783f.svg)](https://frank-max610.github.io/mashu-notes/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-b36a35.svg)](LICENSE)
@@ -52,7 +52,7 @@
 - **知识库目录**：从「更多 → 知识库目录」创建/命名/选颜色的目录笔记（`meta.directory`）；普通记录通过 `dirId` 归入目录。目录页显示成员数、展开成员、把记录移入/移出；删除目录时成员只会变成未分类，**永远不会删除记录**。目录笔记本身也是普通笔记，导出/导入备份会自动包含它们。
 - **图谱进入知识库**：1.0 第一次把用户目录放进图谱；1.2 进一步修正为**纯目录网络**（见下方 v1.2 章节），记录不再出现在图上。目录仍由「更多 → 知识库目录」创建/颜色/移入移出；删除目录只解除归属，记录永不删除。
 - **每日汇总**：助手每天可以基于**昨天**生成一次汇总，按知识库目录分组（未分类排最后），每节 2–3 条具体 highlights，附一句总结与 2–3 条从事实推导出的建议；`sourceIds` 指向真实记录。历史存在本地 `mashu.digest.v1`（新→旧、按 dateKey 去重、最多 14 条）；计划 `mashu.digest.schedule.v1` 默认**开启、每天 08:00**。应用在选定时间之后打开时自动生成（每天一次），也可以在「更多 → 设置 → 自动化 → 立即生成今日汇总」手动触发，汇总会以一条助手消息出现并带来源 chips。
-- **有依据的助手**：助手先查你的知识库（`src/lib/knowledge.ts`：确定性的 CJK bigram 检索；目录笔记、归档、计划条目不进入语料）。lookup 会引用真实记录并给出 source ids；统计类回答会写「依据是「你的 N 条记录」」并列出底层记录；没有相关记录时返回明确拒绝「你的知识库里没有找到与「X」相关的记录。可以先在经历库记一条，或换个关键词。」，**绝不编造**。来源 chips 《记录标题》可点击打开本地记录；记一笔和 help 流程保持原样。
+- **有依据的助手**：助手先查你的知识库（`src/lib/knowledge.ts`：确定性的 CJK bigram 检索；目录笔记、归档、计划条目不进入语料）。lookup 会引用真实记录并给出 source ids；统计类回答会写「依据是「你的 N 条记录」」并列出底层记录；没有相关记录时返回明确拒绝「你的知识库里没有找到与「X」相关的记录。可以先在经历库记一条，或换个关键词。」，**绝不编造**。来源 chips 《记录标题》可点击打开本地记录；快速记录和 help 流程保持原样。
 - **零服务器诚实说明**：没有后台任务或真正的远程推送。汇总只在应用打开后按本机时间生成；想要准点提醒，用 iOS「快捷指令 → 自动化 → 每天」打开麻薯——这是系统能力，不是服务器。
 - **导航变化**：底部导航是 **今日 / 经历 / 图谱 / 助手 / 更多**；图谱是主 tab；知识库目录、设置、计划及个人画像 / 健康数据 / 理财 / 模板 / 归档 / 附件等 LifeOS 模块都在「更多」里。
 
@@ -74,9 +74,20 @@
 - **图上的中心是装饰性的「你」**：当至少有 2 个目录时，画布中心会出现一个小的「你」节点，用细线把所有小球连成一张个人网络；它不是记录，也不能编辑。
 - **图上没有记录节点**：不显示单独记录，也没有「记录 / 目录」切换、没有添加/连线工具。点小球会进入该目录的内容页（`#/directories/:id`），查看成员、打开记录或删除目录；详细内容都在那里编辑，而不在图上。
 - **首次 5 个模板目录**：全新 vault 会种下 身体健康 / 工作 / 学习 / 理财 / 生活 五个可删除的模板目录，并把演示记录自动归档进去，所以第一次打开图谱就是活的。你可以改名或删除；删除目录只会把成员移出目录，不会删除记录。
-- **悬浮小助手**：一个可拖动、记住位置的小球（使用你在「助手」里设置的头像/名字）；**点一下 = 快速记录，长按 = 打开助手**。它只在非图谱/非编辑器页面出现，位置存本地 `mashu.floatagent.v1`；可从「更多 → 设置 → 助手」换名字/头像。
-- **自动整理**：新记录会按类型、内容和目录名匹配到最合适的目录，并 toast 显示去向；「更多 → 设置 → 自动化 → 记录自动收进图谱」可开关（`mashu.autofile.v1`，默认开）。显式从某个目录「记一笔」时以该目录为准；计划/模板类记录不会被自动归档。
+- **悬浮小助手**：一个可拖动、记住位置的小球（使用你在「助手」里设置的头像/名字）；1.2 时是**点一下 = 快速记录，长按 = 打开助手**（1.3 已把两者对调，见下方 v1.3 章节）。它只在非图谱/非编辑器页面出现，位置存本地 `mashu.floatagent.v1`；可从「更多 → 设置 → 助手」换名字/头像。
+- **自动整理**：新记录会按类型、内容和目录名匹配到最合适的目录，并 toast 显示去向；「更多 → 设置 → 自动化 → 记录自动收进图谱」可开关（`mashu.autofile.v1`，默认开）。直接在某个目录里写的内容以该目录为准；计划/模板类记录不会被自动归档。
 - **今日 teaser**：文案改为「N 个目录，组成你的生活网络 / 每个小球是一个目录，点开编辑内容」，计数所有目录；图谱仍是底部主 tab（今日 / 经历 / 图谱 / 助手 / 更多）。
+
+## v1.3 更主动的 LifeOS：在生活里直接写
+
+1.3 把「记录」从快速记录 sheet 前移到你本来就在看的地方：目录内容页、日历的任意一天，以及点一下就能说话的悬浮助手。
+
+- **在目录里直接写**：打开目录内容页（`#/directories/:id`）就是一个写作面——textarea 自动聚焦，写完点「保存」（或 ⌘/Ctrl+Enter）就作为一条记录直接收进这个目录，并立刻出现在目录列表和图谱里；新建目录后会直接进入该目录开始写。不再有「记一笔」按钮把内容带回快速记录 sheet。
+- **计划创建即编辑**：从计划页新建计划后直接打开记录编辑器，创建与写正文一步完成，不用再点一次。
+- **聊天优先的悬浮助手**：小球的手势在 1.3 对调——**点一下 = 打开助手对话**（`#/agent`），用自然语言说「记下午饭牛肉面 32 元」，由助手解析后确认保存；**长按 = 结构化的快速记录 sheet**（保留为回退路径，适合想直接填类型/金额/指标时）。小球可拖动、位置持久化在 `mashu.floatagent.v1`，只在非图谱/非编辑器页面出现；头像/名字仍来自「更多 → 设置 → 助手」。
+- **日历（`#/calendar`）**：月视图以周一为一周第一天，每天有记录就显示圆点；可切上/下月，「今」回到今天，任意一天都能选中并补写。选中日下方是内联写作区：**日记**模式保存到这一天的 `occurredAt`（可选放进某个目录），**计划**模式把 `dueAt` 设为这一天；当天已有记录会列出来并可打开编辑器，选中日标题旁显示当天记录数与支出。今日 header 的日历图标、「更多 → 日历」都能进入。
+- **每日提醒**：「更多 → 设置 → 自动化 → 每日提醒」默认开启、默认 **21:00**（`mashu.reminders.v1`），可改时间；到点后打开麻薯，今日页会出现一张提醒卡（今天到点的计划 / 还没写日记 / 还没记支出），提供「写日记」「日历」「关闭」，并用 `mashu.reminders.lastNotified.v1` 保证一天只出现一次；设置里还有「测试通知权限」。**诚实说明**：PWA 只能在应用打开时提醒；真正的后台/准点提醒需要原生壳或 iOS 快捷指令自动化。每日汇总仍是每天的报告（按目录分组昨天 + 建议 + 来源），与提醒互补。
+- **Apple 健康同步中心（`#/health-sync`）**：从健康模块或「更多 → 设置 → Apple 健康 → 同步说明与设置」进入；显示上次导入时间（`mashu.health.lastSync.v1`），给出 **Apple Watch → iPhone 健康 → 快捷指令 → 麻薯** 四步操作、可复制的 `?health=` 同步 URL，以及 JSON/CSV 文件导入。**PWA 不能直接读取 HealthKit**：要么用快捷指令把健康样本导出成文件或 URL 再导入，要么做 Capacitor 原生壳 + HealthKit 权限 + Apple 开发者账号/TestFlight。当前版本只有零服务器、全本地的导入路径，也没有新增任何网络请求。
 
 ## 没有服务器，也没有账号
 
@@ -102,11 +113,13 @@
 
 | 功能 | 说明 |
 | --- | --- |
-| **小 hero** | 「晚上好。」+「今天发生了什么？」+ 一句状态（已记录 N 件事 / 从一句话开始），header 副标题「记录每一天」。 |
+| **小 hero** | 「晚上好。」+「今天发生了什么？」+ 一句状态（已记录 N 件事 / 从一句话开始），header 副标题「记录每一天」；header 右侧还有日历与搜索两个图标。 |
+| **日历入口** | header 的日历图标（以及「更多 → 日历」）进入 `#/calendar`：按月回看、补写任意一天。 |
 | **单一高权重动作** | 首页只有一条自然语言记录条「记下现在发生的事…」，点开进入渐进式快速记录；下方最多 4 个快捷 chips（饮食/健康/收支/日记）。 |
 | **图谱 teaser 卡** | 首屏第一视觉锚点：迷你 hub/branch SVG、目录网络文案（「N 个目录，组成你的生活网络」与「每个小球是一个目录，点开编辑内容」）、打开图谱 CTA；没有目录时显示「先建目录」。 |
 | **紧凑昨日复盘** | 1 条洞察 + 3 个数字 + 「查看完整复盘」展开；不再有独立指标区和 7 日 sparkline 区块。 |
 | **最近记录** | 只保留最近 3 条，完整时间线在「经历」tab。 |
+| **每日提醒卡** | 到设定时间后打开应用，今日页出现「今天还差一点」卡：今天到点的计划 / 没写日记 / 没记支出；「写日记」「日历」「关闭」三个动作，`mashu.reminders.lastNotified.v1` 保证一天只出现一次。 |
 | **完全本地** | 简报由 `src/lib/brief.ts` 的纯函数生成，同样的记录 + 同样的时间必得同样的结果；没有推送服务器，也不上传任何内容。 |
 
 ### 经历与搜索
@@ -135,10 +148,22 @@
 | --- | --- |
 | **一个小球 = 一个目录** | 图谱只显示用户创建的知识库目录/生活领域；整张网络代表「你」，目录名就是标签，小球大小反映内容量/连接度。**图上没有单独记录节点**。 |
 | **中心「你」** | 有至少 2 个目录时，画布中心出现装饰性的「你」节点，用细线把小球连成一张个人网络；它不是记录，不能编辑。 |
-| **点小球看内容** | 点小球打开该目录的内容页（`#/directories/:id`）：成员列表、点记录打开编辑器、「记一笔放进目录」、删除目录（成员保留）。详细内容在内容页编辑，不在图上。 |
+| **点小球看内容** | 点小球打开该目录的内容页（`#/directories/:id`）：顶部就是自动聚焦的直接写作面，写下保存即收进该目录；下方是成员列表，点记录打开编辑器；删除目录时成员保留。详细内容在内容页写和编辑，不在图上。 |
 | **没有图编辑工具** | 没有「记录 / 目录」切换、添加节点或连线工具；画布只用于看目录网络和进入目录。空态显示「还没有目录」+「创建目录」。 |
 | **模板目录** | 全新 vault 自带 身体健康 / 工作 / 学习 / 理财 / 生活 五个可删除模板目录，演示记录自动归档进去；删除目录只移出成员。 |
 | **沉浸模式** | 图谱右上角进入沉浸：隐藏底部导航，画布占满；再点退出。 |
+
+### 日历：按月回看与补写
+
+| 功能 | 说明 |
+| --- | --- |
+| **月视图** | `#/calendar` 是月历：**周一是一周第一天**，每天一个格子；当天有记录就显示圆点，有记录的日期一眼可见。 |
+| **切月与今天** | 上/下月箭头切换月份，「今」回到本月并选中今天；任意一天都能点选，包括未来日期。 |
+| **选中日写作区** | 选中日下方是内联写作区：**日记** / **计划** 两种模式；textarea 直接写，点「保存」或「加计划」立即写入，不用离开日历。 |
+| **日记补写** | 日记模式把 `occurredAt` 设为选中的那一天（今天则用当前时间），可以选放进哪个目录（未分类也可）；补写的日记会归到那一天的时间线。 |
+| **计划加日期** | 计划模式把 `dueAt` 设为选中的那一天，作为一条待办计划；之后可在计划页/编辑器里改状态和正文。 |
+| **当天列表** | 选中日标题旁显示当天记录数（有支出时显示金额），下方列出已有记录（类型点 + 标题 + 标签），点一条直接打开编辑器。 |
+| **入口** | 今日 header 的日历图标、「更多 → 日历」；日历里也有「管理目录」快捷入口。 |
 
 ### 助手：小麻薯
 
@@ -155,6 +180,7 @@
 | 功能 | 说明 |
 | --- | --- |
 | **一句话是主角** | 打开只有一句 hero 和一个输入框，不先要求选类型或填表。 |
+| **不只是回退路径** | 1.3 起，目录内容页与日历都直接内联写作，计划创建后直接进编辑器；悬浮助手**长按**才打开这个结构化 sheet，适合想直接填类型/金额/指标的快速记录。 |
 | **紧凑解析卡** | 单行显示「类型 · 餐次 · ¥金额 · 热量」等已识别字段；置信度低于 55% 时才给一句轻提示，不显示百分比。 |
 | **展开详情** | 结构化字段藏在「展开详情」后，使用 52px 的紧凑行；再点收起。 |
 | **固定保存** | 底部固定 52px 的「保存记录」+ 取消；初始 sheet 约 46–55vh，解析后最高 72vh，展开详情后最高 88vh。 |
@@ -165,9 +191,9 @@
 | --- | --- |
 | **入口** | 设置不在底部 tab；从「更多 → 设置」进入。 |
 | **七个区块** | 助手 / 外观 / 数据与隐私 / Apple 健康 / 自动化 / 高级设置 / 关于。 |
-| **自动化** | 每日汇总开关、汇总时间（默认 08:00）、立即生成今日汇总；「记录自动收进图谱」开关（默认开）；「快捷指令 → 自动化」提醒说明。 |
-| **折叠的技术细节** | JSON 导出格式、`?health=` URL scheme、IndexedDB/localStorage 与容量、旧版本迁移、HealthKit 限制都收在「高级设置」的可折叠 details 里；GitHub 链接在「关于」。 |
-| **Apple 健康一行** | 「连接 Apple 健康」+「如何导入？」展开说明；不堆技术段落。 |
+| **自动化** | 每日汇总开关、汇总时间（默认 08:00）、立即生成今日汇总；**每日提醒**开关与时间（默认 21:00，`mashu.reminders.v1`）与「测试通知权限」；「记录自动收进图谱」开关（默认开）；「快捷指令 → 自动化」提醒说明。 |
+| **折叠的技术细节** | JSON 导出格式、`?health=` URL scheme、IndexedDB/localStorage 与容量、旧版本迁移、提醒/通知的 PWA 限制、HealthKit 限制都收在「高级设置」的可折叠 details 里；GitHub 链接在「关于」。 |
+| **Apple 健康一行** | 「连接 Apple 健康」文件导入 +「如何导入？」展开说明 +「同步说明与设置」进入 `#/health-sync` 同步中心；不堆技术段落。 |
 | **人设可折叠** | 助手区块点开才显示名字、头像与自定义字符编辑。 |
 | **危险操作最后** | 「清空全部记录」在数据与隐私底部，带两次确认；导出备份在前。 |
 
@@ -175,16 +201,24 @@
 
 | 功能 | 说明 |
 | --- | --- |
-| **文件导入** | 「更多 → 设置 → Apple 健康 → 连接 Apple 健康」，支持 Apple-Health 风格的 JSON 与 CSV（步数、睡眠、心率、静息心率、体重、饮水、活动能量、运动）。 |
-| **快捷指令导入链接** | 「复制快捷指令导入链接」得到 `?health=` 前缀，在「快捷指令」里拼上 URL 编码后的 JSON 即可打开应用自动导入。 |
+| **同步中心** | 健康模块里「Apple 健康同步」或「更多 → 设置 → Apple 健康 → 同步说明与设置」进入 `#/health-sync`：上次导入时间（`mashu.health.lastSync.v1`）、Apple Watch → 健康 → 快捷指令 → 麻薯的四步说明、复制 `?health=` 同步 URL、选择 JSON/CSV 导入文件。 |
+| **文件导入** | 「更多 → 设置 → Apple 健康 → 连接 Apple 健康」，支持 Apple-Health 风格的 JSON 与 CSV（步数、睡眠、心率、静息心率、体重、饮水、活动能量、运动）；同步中心里也能直接选文件。 |
+| **快捷指令导入链接** | 「复制快捷指令导入链接」得到 `?health=` 前缀，在「快捷指令」里拼上 URL 编码后的 JSON 即可打开应用自动导入；同步中心提供同一份可复制 URL。 |
 | **单位与别名** | 自动识别 lb/磅、g、L、分钟/小时等并转成统一单位；支持中英文别名与 HealthKit 标识符。 |
 | **同日去重** | 同一本地日期 + 同一健康指标只保留一条记录：步数/饮水/活动能量按天求和，睡眠/体重/心率/运动取最新值；已有记录通过 `replaceId` 更新而不是重复创建。 |
-| **诚实的能力边界** | 网页应用**不能直接读取 HealthKit**。当前只提供「导出文件」与「快捷指令」两条零服务器路径；原生 iOS 壳（Xcode + HealthKit）是路线图里的可选形态，仓库目前不包含。 |
+| **Apple Watch 现实路径** | Apple Watch 先把数据写进 iPhone「健康」；麻薯没有 HealthKit 权限，所以中间必须经过「快捷指令」把健康样本读出来、存成 JSON/CSV 或拼进 `?health=` URL。第一次手动跑通后，可在快捷指令里设「每天运行」实现近似自动同步。 |
+| **诚实的能力边界** | 网页应用（PWA）**不能直接读取 HealthKit**，这是 iOS 的安全限制。要做到「打开麻薯就自动拉取 Watch 数据」，需要 Capacitor 原生壳 + HealthKit 权限 + Xcode/TestFlight 签名，以及 Mac 与 Apple 开发者账号；当前仓库不包含原生壳，只提供「导出文件」与「快捷指令」两条零服务器路径。 |
 
 ### 每日简报与提醒
 
-- 「今日」页打开即生成简报，不需要后台任务或推送服务器。
-- 想要固定时间提醒，用 iOS 的「快捷指令 → 自动化 → 每天」添加「打开麻薯」；到点由系统打开应用，简报在本地生成，数据不出设备。这是系统能力，不是应用服务器。
+| 功能 | 说明 |
+| --- | --- |
+| **今日简报** | 「今日」页打开即生成简报，不需要后台任务或推送服务器。 |
+| **每日提醒** | 设置 → 自动化 → 每日提醒：开关 + 时间（默认 21:00，存 `mashu.reminders.v1`）；到点后**打开麻薯**时，今日页出现提醒卡：今天到点的计划、没写日记、没记今天的支出（有内容才出现），可「写日记」「去日历」或「今天不再提醒」。 |
+| **一天一次** | 提醒卡出现/关闭时写 `mashu.reminders.lastNotified.v1`，同一天不会再次弹出；刷新页面也不会反复打扰。 |
+| **通知权限测试** | 设置里可请求系统通知权限并立即发一条测试通知；拒绝也不影响应用内提醒卡。 |
+| **PWA 限制（诚实）** | 提醒只在应用打开时判断和展示，没有后台任务或远程推送。真正的准点/后台提醒需要原生壳，或 iOS「快捷指令 → 自动化 → 每天」打开麻薯；这是系统能力，不是应用服务器。 |
+| **每日汇总** | 仍独立运行：到达设定时间（默认 08:00）后第一次打开应用，按目录分组生成昨天的汇总。 |
 
 ### 隐私与零服务器
 
@@ -193,11 +227,12 @@
 | **本地优先存储** | IndexedDB（数据库 `mashu`，schema v2），不可用时回退 localStorage；断网可读写，没有后端参与。 |
 | **自动迁移** | 更早版本的本地数据库与偏好（旧键 `rixin` / `mochi` / `inkstone`）会在首次打开时迁移到 `mashu`，成功写入后才清理旧副本；旧版 JSON 备份也可以直接导入。 |
 | **iPhone / PWA 交付** | Web App Manifest、`apple-mobile-web-app-*` meta、七种 iPhone 尺寸启动图（`npm run splash`）、standalone 显示、安全区、手机表单 16px、Web Share 文件导出、离线/联网提示。 |
+| **提醒与健康同步的本地偏好** | 提醒设置存 `mashu.reminders.v1`、一天一次的标记存 `mashu.reminders.lastNotified.v1`、上次健康导入时间存 `mashu.health.lastSync.v1`；系统通知权限由浏览器在本地授权，健康文件/URL 数据仍在本机解析。 |
 | **零遥测** | 没有账号、没有统计、没有第三方分析脚本；运行时不发网络请求（静态文件加载与更新除外）。 |
 
 ## 截图
 
-> 默认是浅色暖纸界面，`dark-today.png` 是暖炭色深色主题；截图由 `npm run screenshots` 驱动本机 Chrome 生成，共 20 张应用截图（`?nointro=1` 用于跳过启动动画/导览），视觉以实际运行效果为准。
+> 默认是浅色暖纸界面，`dark-today.png` 是暖炭色深色主题；截图由 `npm run screenshots` 驱动本机 Chrome 生成，共 22 张应用截图（`?nointro=1` 用于跳过启动动画/导览），视觉以实际运行效果为准。
 
 | 启动 splash | 首次新手导览 | 今日·图谱 teaser |
 | :---: | :---: | :---: |
@@ -231,6 +266,10 @@
 | :---: |
 | ![有依据的助手](docs/screenshots/agent-grounded.png) |
 
+| 日历 | Apple 健康同步 |
+| :---: | :---: |
+| ![日历｜按月回看并补写任意一天](docs/screenshots/calendar.png) | ![Apple 健康同步中心](docs/screenshots/health-sync.png) |
+
 ## 数据与隐私
 
 - **没有后端、没有账号、没有遥测。** 应用不依赖服务端接口；静态文件由 GitHub Pages 托管。运行时的网络访问只来自加载应用自身的静态文件，以及你在笔记里主动写入的外链/图片。
@@ -238,6 +277,8 @@
 - **Apple 健康数据只在设备上解析。** 导入的 JSON/CSV 或快捷指令 URL 数据不会上传；解析、单位换算和同日去重都在浏览器内存中完成，随后写入本地记录。
 - **知识库目录与每日汇总也在本地。** 目录是普通笔记（`meta.directory` + `dirId`），会随 JSON 备份一起导出/恢复；每日汇总历史存在 `mashu.digest.v1`（最多 14 条），计划存在 `mashu.digest.schedule.v1`；有依据的助手在本地检索并给出 source ids，来源 chips 只打开本地记录。没有新增网络请求或云端存储。
 - **悬浮助手与自动整理只存本地偏好。** 浮动小球的位置存 `mashu.floatagent.v1`，自动归档开关存 `mashu.autofile.v1`（默认开）；模板目录只是普通目录笔记，演示记录也在本机，不会上传。
+- **提醒与健康同步也只存本地。** 提醒开关与时间存 `mashu.reminders.v1`，一天一次的提醒标记存 `mashu.reminders.lastNotified.v1`，上次健康导入时间存 `mashu.health.lastSync.v1`；iOS 通知权限由浏览器在设备上申请，没有推送服务器；健康文件/URL 的解析、单位换算与去重仍全部在浏览器内存中完成，导入完不留副本。
+- **日历是本地记录上的写作面，不是新数据源。** 日历直接读写同一批本地记录：补写日记写 `meta.occurredAt`，给某天加计划写 `meta.plan.dueAt`；没有新增网络请求、云端日历或账号授权，也不会把日历数据同步到任何地方。
 - **启动/导览只是本地偏好。** splash 和 4 屏新手导览不联网、不统计；`mashu.onboarded.v1` 只记录是否看过导览，`mashu.modules.v1` 只记录模块可见性，两者都在本机 localStorage。
 - **旧数据会自动迁移。** 更早版本使用过不同的内部代号与数据库名（`rixin` / `mochi` / `inkstone`），1.0 会在首次打开时把记录与偏好迁移到 `mashu`，成功写入后才删除旧副本；旧版 JSON 备份也兼容导入。迁移前仍建议先导出一份备份。
 - **每台设备、每个地址都是独立的库。** 浏览器按 origin 隔离数据；固定用同一个地址访问，不要假定 Safari 页面和主屏幕应用会自动同步。
@@ -272,7 +313,7 @@ mashu-notes/
 ├── docs/
 │   ├── ARCHITECTURE.md           # 架构、数据流、迁移与扩展点
 │   ├── PRIVACY.md                # 隐私说明
-│   └── screenshots/              # 20 张应用截图 + npm run qr 生成物
+│   └── screenshots/              # 22 张应用截图 + npm run qr 生成物
 ├── public/
 │   ├── icons/                    # Mochi Node PWA 图标（npm run icons 生成）
 │   ├── splash/                   # iPhone 启动图（npm run splash 生成）
@@ -288,7 +329,7 @@ mashu-notes/
 │   └── serve.mjs                 # 局域网静态服务（仅开发者调试）
 ├── src/
 │   ├── components/               # FloatingAgent、SplashScreen、Onboarding、GraphTeaser、MochiNode、RecordRow、GraphView…
-│   ├── screens/                  # TodayScreen、RecordsScreen、DirectoryScreen、DirectoryDetailScreen、MoreScreen、EditorScreen、SettingsScreen…
+│   ├── screens/                  # TodayScreen、RecordsScreen、CalendarScreen、DirectoryScreen、DirectoryDetailScreen、HealthSyncScreen、MoreScreen、EditorScreen、SettingsScreen…
 │   ├── lib/                      # 核心逻辑（纯函数 + 浏览器适配层）
 │   │   ├── types.ts              # 数据模型（Note / NoteMeta / dirId / meta.directory / meta.plan / archivedAt…）
 │   │   ├── kinds.ts              # 记录类型词表、颜色、默认标题与摘要
@@ -307,12 +348,13 @@ mashu-notes/
 │   │   ├── db.ts                 # IndexedDB `mashu` v2 + 旧库迁移 + localStorage 回退
 │   │   ├── store.ts              # useNotes() 单一状态源
 │   │   ├── prefs.ts              # 主题、引导、助手人设/节点头像、安装提示
+│   │   ├── reminders.ts          # 每日提醒设置、到点判断与一天一次的本地标记
 │   │   ├── seed.ts               # 首次运行的演示记录
 │   │   ├── exportImport.ts       # JSON（vault v2，`app: mashu`）/ Markdown 导入导出
 │   │   ├── format.ts             # 时间 / 字节 / 数字格式化
 │   │   └── useRoute.ts           # 轻量 hash 路由
 │   ├── styles/                   # tokens.css（语义 token）、base.css、app.css
-│   ├── App.tsx                   # 应用外壳：启动 splash/新手导览、路由、主题、快速记录、悬浮助手、图谱、助手、Apple 健康导入
+│   ├── App.tsx                   # 应用外壳：启动 splash/新手导览、路由、主题、快速记录、悬浮助手、图谱、日历、每日提醒、助手、Apple 健康导入与同步
 │   └── main.tsx                  # React 挂载入口 + Service Worker 注册
 ├── tests/                        # Vitest 单元测试（11 个文件 / 274 个用例）
 ├── index.html                    # HTML 入口、iOS meta、apple-touch-startup-image
@@ -338,6 +380,9 @@ mashu-notes/
 | 知识库 | **目录笔记 + `dirId` + 确定性检索/汇总** | 目录参与图谱与每日汇总；grounded 回答必须给 source ids，无依据时拒绝 |
 | 健康导入 | **纯函数解析 + 草稿去重** | JSON/CSV/URL 三种输入，单位换算与同日 `replaceId` 更新 |
 | 图谱 | **Canvas 2D + 目录网络力导向布局 + 暖色画布** | 小球=目录、中心「你」；点小球进目录，不在图上编辑记录 |
+| 日历 | **月视图 + 内联写作（本地 dateKey）** | 补写日记写 `occurredAt`、加计划写 `dueAt`，直接落到本地记录；不接日历服务、不增加同步 |
+| 提醒 | **localStorage 设置 + 打开应用时判定** | 默认 21:00、`lastNotified` 一天一次；诚实标注 PWA 只在打开时提醒 |
+| 健康同步中心 | **快捷指令/文件导入 + 本地解析** | 显示上次导入、复制 `?health=`、导入 JSON/CSV；PWA 不读 HealthKit，原生壳才是直连路径 |
 | 视觉 | **手写 CSS + 语义设计 token** | 暖纸/暖炭、细边框、无阴影、chips 胶囊；不引入 UI 框架 |
 | 测试 | **Vitest（node 环境）** | brief / health / agent / graph 等纯逻辑可直接测 |
 | 托管 | **GitHub Actions → GitHub Pages** | 免费静态托管，推 `main` 自动发布；维护者零服务器运维 |
@@ -391,7 +436,15 @@ mashu-notes/
 
 ### 数据仍然本地吗？
 
-仍然。splash、导览、图谱 teaser 都在本机渲染；`mashu.onboarded.v1` 只是本地偏好。记录仍在 IndexedDB（DB `mashu`），SW 缓存 `mashu-v1` 不变，没有新增网络请求或账号。
+仍然。splash、导览、图谱 teaser、日历和提醒都在本机渲染；`mashu.onboarded.v1` 只是本地偏好。记录仍在 IndexedDB（DB `mashu`），SW 缓存 `mashu-v1` 不变，没有新增网络请求或账号。1.3 的日历直接读写同一批本地记录，提醒/健康同步的设置也只是 localStorage 偏好。
+
+### 数据到底存在哪里？
+
+- **记录本体**：IndexedDB 数据库 `mashu`（schema v2，对象仓库 `notes`）；不可用时回退 `localStorage` 的 `mashu.notes.v1`。
+- **日历补写**：不是另一份日历数据——补写日记写进记录的 `meta.occurredAt`，给某天加计划写进 `meta.plan.dueAt`，都随普通记录一起导出/备份。
+- **本地偏好**：提醒设置 `mashu.reminders.v1`、当天已提醒标记 `mashu.reminders.lastNotified.v1`、上次健康导入 `mashu.health.lastSync.v1`、悬浮助手位置 `mashu.floatagent.v1` 等。
+- **应用壳**：Service Worker 缓存 `mashu-v1` 只存静态资源，不含任何记录。
+- 位置都在**当前浏览器 + 当前 origin** 下，没有云端副本；换设备/换地址请先导出 JSON 备份。
 
 ### 目录和图谱的关系？
 
@@ -411,15 +464,23 @@ mashu-notes/
 
 ### 点小球能看到什么？
 
-点小球打开该目录的内容页（`#/directories/:id`）：成员列表、点成员打开记录编辑器、「记一笔放进『目录』」、删除目录（成员保留、不会被删除）。详细内容都在内容页编辑，不在图上编辑。
+点小球打开该目录的内容页（`#/directories/:id`）：最上面就是自动聚焦的写作面，直接写、点「保存」即收进这个目录；下面是成员列表，点成员打开记录编辑器；也可以删除目录（成员保留、不会被删除）。详细内容都在这个内容页写和编辑，不在图上编辑。
+
+### 目录 / 计划点开能直接写吗？
+
+能。1.3 起目录内容页本身就是写作面：打开即聚焦，写完「保存」就作为一条记录归入该目录，并立刻出现在目录列表和图谱里；新建目录后会直接进入该目录开始写。计划也一样：在计划页新建计划后直接打开编辑器，创建与写正文一步完成。
 
 ### 默认目录能删吗？
 
 能。全新 vault 会带 身体健康 / 工作 / 学习 / 理财 / 生活 五个模板目录，你可以改名或删除；删除只会把成员移出目录，不会删除成员记录。演示记录会自动归入匹配模板目录。
 
-### 悬浮小球怎么用？
+### 悬浮小球点了是什么？
 
-它是浮动的本地助手：可拖动，位置会记住（`mashu.floatagent.v1`）；**点一下 = 快速记录，长按 = 打开助手**。它只在非图谱/非编辑器页面显示，避免遮挡画布和写作。
+**点一下 = 和助手说话**：打开 `#/agent` 的 AI 助手对话，用自然语言说「记下午饭牛肉面 32 元」，助手解析成记录卡、确认后保存。**长按 = 结构化快速记录**：打开一句话 + 解析卡 + 展开详情的 sheet，想直接填类型/金额/指标时用。小球可拖动，位置会记住（`mashu.floatagent.v1`）；只在非图谱/非编辑器页面显示，避免遮挡画布和写作。
+
+### 怎么快速结构化记录？
+
+**长按悬浮小球**会打开结构化的快速记录 sheet（一句话 + 解析卡 + 展开详情），适合想直接填类型/餐次/金额/指标的场合；日常「说一句」则点一下小球进入助手对话。目录内容页和日历的内联写作是第三种入口——不需要打开 sheet，直接写正文。
 
 ### 怎么自定义悬浮小球？
 
@@ -427,7 +488,7 @@ mashu-notes/
 
 ### 自动整理怎么判断？
 
-保存记录时按记录类型关键词、正文/标题内容和目录名做匹配打分，把新记录归入最合适的目录并 toast 显示去向；显式从某目录「记一笔」时以该目录为准；计划/模板不参与自动归档。开关在「更多 → 设置 → 自动化 → 记录自动收进图谱」。
+保存记录时按记录类型关键词、正文/标题内容和目录名做匹配打分，把新记录归入最合适的目录并 toast 显示去向；直接在某个目录里写的内容以该目录为准；计划/模板不参与自动归档。开关在「更多 → 设置 → 自动化 → 记录自动收进图谱」。
 
 ### 能关掉自动整理吗？
 
@@ -436,11 +497,29 @@ mashu-notes/
 ### 图谱怎么用？
 
 - **看网络**：拖动/缩放画布；一个小球就是一个目录，整张网络代表你。
-- **进目录**：点小球打开目录内容页，成员列表里点记录查看/编辑；「记一笔放进目录」可直接归档到该目录。
+- **进目录**：点小球打开目录内容页，顶部可直接写内容；成员列表里点记录查看/编辑。
 - **空状态**：没有目录时显示「还没有目录」+「创建目录」。
 - **沉浸模式**：右上角进入沉浸，隐藏底部导航；再点退出。
 
+### 日历怎么补写？
+
+打开 `#/calendar`（今日 header 的日历图标，或「更多 → 日历」）：月历以周一开头，有记录的日期带圆点；点任意一天，下方出现内联写作区。选「日记」模式写下内容，「保存」会把 `occurredAt` 设为那一天（今天则用当前时间），还可以选择放进某个目录。没有写过的日期和历史日期都能补写。
+
+### 怎么给某一天加计划？
+
+在日历选中那一天，把写作区切到「计划」模式，输入计划标题点「加计划」即可：`dueAt` 会被设为这一天，计划随即出现在计划页和当日列表里。从「更多 → 计划」新建的计划没有日期；想让计划带到期日，直接在日历对应日期里加最直接。
+
+### 提醒怎么开？
+
+「更多 → 设置 → 自动化」：打开「每日提醒」开关（默认已开），把「提醒时间」设成你想要的 `HH:mm`（默认 **21:00**，存 `mashu.reminders.v1`）。到点后打开麻薯，今日页会出现提醒卡；点「测试通知权限」可以检查系统通知是否允许。提醒内容优先列今天到点的计划，其次提示还没写日记 / 还没记支出。
+
+### 为什么提醒只在打开时出现？
+
+因为麻薯是 PWA，没有后台任务或远程推送服务器：到达提醒时间只有在**你打开应用**时才会判定并显示提醒卡，`mashu.reminders.lastNotified.v1` 保证一天只出现一次。想要真正的准点/后台提醒，需要原生壳，或者在 iOS「快捷指令 → 自动化 → 每天」里定时打开麻薯——这是系统能力，不是应用服务器。
+
 ### 助手会不会编造？
+
+不会。有依据的助手在回答前会先检索本地记录：lookup 引用真实记录并给出可点击的来源 chips，统计类回答会写明「依据你的 N 条记录」，没有相关内容时直接返回固定拒绝文案，不会编造记录或数字。它仍是本地规则引擎，不是大语言模型，覆盖面受你的记录措辞影响。
 
 ### 每日汇总怎么触发？
 
@@ -456,11 +535,19 @@ mashu-notes/
 
 ### 健康能自动同步吗？
 
-不能直接自动同步。网页应用没有 HealthKit 权限，麻薯提供两条零服务器路径：①「更多 → 设置 → Apple 健康 → 连接 Apple 健康」导入 Apple 健康导出（或快捷指令生成）的 JSON/CSV；②复制 `?health=` 快捷指令导入链接，在快捷指令里拼接数据后打开应用自动导入。想真正直连 HealthKit，需要原生 iOS 壳（Xcode + HealthKit），这是路线图里的可选项，当前仓库不包含。
+不能「直接」自动同步。网页应用（PWA）没有 HealthKit 权限，麻薯提供两条零服务器路径：①「更多 → 设置 → Apple 健康 → 连接 Apple 健康」导入 Apple 健康导出（或快捷指令生成）的 JSON/CSV；②复制 `?health=` 快捷指令导入链接，在快捷指令里拼接数据后打开应用自动导入。`#/health-sync` 同步中心把这两条路径、上次导入时间和四步说明放在一起。想真正直连 HealthKit，需要原生 iOS 壳（Capacitor + HealthKit + Apple 开发者账号/TestFlight 签名），这是路线图里的可选项，当前仓库不包含。
+
+### Apple Watch 能直连吗？
+
+不能。Apple Watch 先把数据写进 iPhone「健康」，而麻薯作为 PWA 读不到 HealthKit；所以中间必须经过「快捷指令」：在快捷指令里读取健康样本，整理成 JSON/CSV 文件或拼进 `?health=` URL，再导入麻薯。第一次手动跑通后，可在快捷指令里设「每天运行」实现近似自动同步——数据全程本机，不经过服务器。
+
+### 直接连 HealthKit 需要什么？
+
+需要把麻薯包进原生壳：Capacitor（或原生 iOS 工程）+ HealthKit 能力与权限文案 + Xcode 构建 + Apple 开发者账号签名，分发给测试者还要 TestFlight。届时打开应用即可申请 HealthKit 权限并直接读取 Apple Watch 数据；这不会改变「数据留在设备本地」的设计，但当前版本尚未包含原生壳，仍以文件/快捷指令导入为准。
 
 ### 真正的推送怎么办？
 
-麻薯没有推送服务器（也不打算有）。固定时间提醒用 iOS 自带的「快捷指令 → 自动化 → 每天」添加「打开麻薯」：到点由系统打开应用，简报在本地生成。这是操作系统的能力，应用不需要后台服务。
+麻薯没有推送服务器（也不打算有）。每日提醒只在应用打开时出现；固定时间的后台提醒用 iOS 自带的「快捷指令 → 自动化 → 每天」添加「打开麻薯」：到点由系统打开应用，简报和提醒在本地生成。这是操作系统的能力，应用不需要后台服务。
 
 ### 为什么不是 App Store 应用？
 
@@ -510,12 +597,21 @@ Obsidian 是通用 Markdown 知识库，插件生态成熟，文件存在本地�
 
 ## 路线图
 
+已完成（1.3.0）：
+
+- [x] 直接写作：目录内容页是自动聚焦的写作面（保存即带 `dirId` 收进目录）；新建目录直接进入；新建计划直接打开编辑器
+- [x] 悬浮助手改为聊天优先：点按打开助手对话，长按打开结构化快速记录；可拖动、位置持久化（`mashu.floatagent.v1`），图谱/编辑器隐藏
+- [x] 日历 `#/calendar`：周一起始的月视图、记录圆点、切月/「今」、任意一天内联补写日记（`occurredAt`）或计划（`dueAt`）、目录选择、当天列表与汇总；今日 header 日历图标、「更多 → 日历」
+- [x] 每日提醒：设置 → 自动化开关 + 时间（默认 21:00，`mashu.reminders.v1`）、通知权限测试、今日提醒卡（到期计划/缺日记/缺支出）、一天一次闸门（`mashu.reminders.lastNotified.v1`）；诚实标注提醒只在应用打开时出现
+- [x] Apple 健康同步中心 `#/health-sync`：上次导入时间（`mashu.health.lastSync.v1`）、Apple Watch → 健康 → 快捷指令 → 麻薯四步、复制 `?health=` URL、JSON/CSV 导入；明确 PWA 不能读 HealthKit，直连需 Capacitor + HealthKit + Apple 开发者账号
+- [x] 测试 274 / 11 个文件；typecheck 与 build 通过；存储、迁移、导出与零服务器 PWA 保持不变
+
 已完成（1.2.0）：
 
 - [x] 图谱模型修正：图谱是**目录网络**（每个小球 = 一个目录/生活领域，整张网络代表你），没有记录节点、没有记录/目录切换、没有添加/连线工具
-- [x] 中心装饰性「你」节点；点小球进入目录内容页（成员列表、打开记录、记一笔放进目录、删除目录保留成员）
+- [x] 中心装饰性「你」节点；点小球进入目录内容页（成员列表、打开记录、删除目录保留成员；1.3 起目录内可直接写）
 - [x] 全新 vault 种下 身体健康 / 工作 / 学习 / 理财 / 生活 五个可删除模板目录，演示记录自动归档
-- [x] 浮动小助手：可拖动/记住位置、点按记录、长按助手、图谱/编辑器隐藏、persona 头像名
+- [x] 浮动小助手：可拖动/记住位置、图谱/编辑器隐藏、persona 头像名（1.2 时点按记录/长按助手，1.3 起对调为点按对话/长按结构化记录）
 - [x] 自动整理：按类型/内容/目录名匹配目录并可开关（`mashu.autofile.v1`），显式目录优先、计划/模板不归档
 - [x] 今日图谱 teaser 文案改为目录网络（N 个目录 / 每个小球是一个目录）
 - [x] 测试 274 / 11 个文件；存储、迁移、导出、Apple 健康与零服务器 PWA 保持不变
@@ -579,25 +675,30 @@ npm run typecheck && npm test && npm run build
 
 ## English
 
-**Mashu (麻薯)** is a local-first **life operating system** for iPhone: meals, health, spending, diaries and notes live together behind a quiet daily cockpit, connected by a living directory network. Version 1.2.0 corrects the graph model: each ball is a directory/life area, the whole network represents you, and records are opened from the directory content page — never drawn as individual graph nodes.
+**Mashu (麻薯)** is a local-first **life operating system** for iPhone: meals, health, spending, diaries and notes live together behind a quiet daily cockpit, connected by a living directory network. Version 1.3.0 makes it proactive: you write directly inside a directory or on any calendar day, the floating agent is chat-first, daily reminders nudge you, and an Apple Watch → Health → Shortcuts → Mashu sync centre explains the honest HealthKit boundary. The v1.2 graph model is unchanged: each ball is a directory/life area, the whole network represents you, and records are opened from the directory content page — never drawn as individual graph nodes.
 
 - **No server, no account.** The whole app is a static site auto-deployed by GitHub Actions to GitHub Pages (free static hosting; the maintainer runs zero server operations). Open it in Safari, Share → Add to Home Screen, and it works offline after the first load.
+- **Proactive LifeOS (v1.3).** Directory detail pages are writing surfaces: an autofocused textarea saves straight into the directory (with its `dirId`), creating a directory drops you into it, and creating a plan opens the editor immediately — there is no 记一笔 step. The floating bubble is now chat-first: **tap = assistant conversation** (`#/agent`) for natural-language recording, **long press = structured quick-capture sheet**. A Monday-first month calendar (`#/calendar`) lets you select any day and write inline — diary entries store that day’s `occurredAt` (optional directory), plans store that day’s `dueAt`; record dots, day lists, prev/next/今 and a Today-header calendar shortcut included. Daily reminders (设置 → 自动化, default 21:00, `mashu.reminders.v1`) show a Today card after the chosen time for due plans / missing diary / missing spending, once per day via `mashu.reminders.lastNotified.v1`; permission test included. **Honest limit:** a PWA only reminds you while the app is open — true background reminders need a native shell or Shortcuts automation. The health sync centre (`#/health-sync`) shows the last import (`mashu.health.lastSync.v1`), the four Apple Watch → Health → Shortcuts → 麻薯 steps, a copyable `?health=` URL and JSON/CSV import; **a PWA cannot read HealthKit** — direct Watch sync needs a Capacitor native shell + HealthKit + an Apple Developer account/TestFlight, and currently there are no new network calls at all.
 - **Graph-first launch (v1.1).** A cold-start splash shows the Mochi Node mark,「麻薯」and「记录每一天」for ~1.6s (450ms with reduced motion); a four-slide, graph-first onboarding runs once (`mashu.onboarded.v1`), with skip/back/next, 直接看图谱 and 开始记录. Bottom navigation is 今日 / 经历 / 图谱 / 助手 / 更多 with the graph in the centre; 计划 moved into 更多. Today is decluttered: hero + capture + four quick chips, a large graph teaser card as the first visual anchor, the compact yesterday review, then only 3 recent records (no standalone metric grid, no 7-day sparkline block, no long today timeline). `?nointro=1` skips splash/onboarding for screenshots and automation.
 - **Warm Minimalism, semantic tokens.** Light: warm paper `#F7F3EC` / `#FCFAF6` surface / `#2C2925` text / `#C8783F` accent. Dark: warm charcoal `#171410` / `#211D18` surface / `#F3ECE4` text / `#E6A062` accent. Display 34–38, H1 28–32, body 16–17, meta 12–13, mono data 13–15; 20px page padding, 28–36px section gaps, 16–20px cards, near-invisible shadows, no glow/neon; chips are the only pills; 66px bottom nav with a light active block (今日 / 经历 / 图谱 / 助手 / 更多).
 - **User-created knowledge directories.** Directory notes carry `meta.directory` (name + colour); regular notes point to them via `dirId`. Create, colour, assign/unassign and delete directories — deleting a directory only unassigns its members, it never deletes notes. Directory notes are ordinary notes, so the JSON vault export/import includes them automatically.
-- **Directory network graph (v1.2).** Each ball is one user-created directory/life area (身体健康 / 工作 / 学习 / 理财 / 生活 starters, removable). The whole warm network represents the person; a decorative centre node「你」ties the balls together when there are at least two directories. Labels are directory names, ball size reflects content/connection, and there are **no note nodes, no 记录/目录 toggle and no add/link tools**. Tapping a ball opens its directory content page (`#/directories/:id`) with members, record editing, 记一笔放进目录 and delete-directory-keeps-members. Empty state shows「还没有目录」+ 创建目录.
+- **Directory network graph (v1.2).** Each ball is one user-created directory/life area (身体健康 / 工作 / 学习 / 理财 / 生活 starters, removable). The whole warm network represents the person; a decorative centre node「你」ties the balls together when there are at least two directories. Labels are directory names, ball size reflects content/connection, and there are **no note nodes, no 记录/目录 toggle and no add/link tools**. Tapping a ball opens its directory content page (`#/directories/:id`) with a direct-writing composer at the top, the member list and delete-directory-keeps-members. Empty state shows「还没有目录」+ 创建目录.
 - **Starter directories & auto-file.** A fresh vault seeds 身体健康 / 工作 / 学习 / 理财 / 生活 as removable template directories and files demo records into them. New captures are auto-filed into the best-matching directory by kind keywords, content and directory name with a destination toast; explicit directory-target captures win, plan/template records are excluded, and the 更多 → 设置 → 自动化 → 记录自动收进图谱 toggle (`mashu.autofile.v1`, default on) can disable it.
-- **Floating local agent.** A draggable persona bubble (avatar/name from 设置 → 助手) sits above the app; tap = quick capture, long press = assistant. It is hidden on the graph and editor, remembers its position in `mashu.floatagent.v1`, and makes records reachable without finding the capture button.
-- **Daily digest.** Once a day the assistant reviews yesterday grouped by directory (未分类 last), with 2–3 concrete highlights per section, a one-sentence summary, 2–3 fact-derived suggestions and source ids. History lives locally in `mashu.digest.v1` (newest first, deduped by dateKey, max 14); the schedule lives in `mashu.digest.schedule.v1` (default enabled at 08:00). It is generated when the app opens after the chosen time, or via 更多 → 设置 → 自动化 → 立即生成今日汇总. No background push: real reminders use an iOS Shortcut automation.
-- **Grounded assistant.** `src/lib/knowledge.ts` runs deterministic CJK-bigram retrieval over your notes (directory notes, archived and plan items excluded). Lookups quote real notes and return source ids; stats say “依据你的 N 条记录” and cite the underlying notes; with nothing relevant it returns the exact refusal “你的知识库里没有找到与「X」相关的记录…”. Source chips are tappable and open local notes; capture (“奶茶 18 元”) and help flows are unchanged. Everything is on-device — no model API, no telemetry.
+- **Floating local agent.** A draggable persona bubble (avatar/name from 设置 → 助手) sits above the app; since v1.3 **tap = assistant chat, long press = structured quick capture** (v1.2 had it the other way around). It is hidden on the graph and editor, remembers its position in `mashu.floatagent.v1`, and makes recording reachable without finding a button.
+- **Daily reminders.** 设置 → 自动化 has a daily reminder toggle and time (default 21:00, `mashu.reminders.v1`) plus a system-permission test. After the chosen time, opening Mashu shows a 「今天还差一点」 Today card listing due plans / missing diary / missing spending, with 写日记, 日历 and dismiss actions; `mashu.reminders.lastNotified.v1` keeps it to once a day. Honest PWA limit: reminders only appear while the app is open — real background timing needs a native shell or an iOS Shortcut automation. The daily digest remains the separate once-a-day report (yesterday grouped by directory, with suggestions and sources).
+- **Calendar.** `#/calendar` shows a Monday-first month grid with a dot per day that has records, prev/next/今 navigation, and any day selectable. The selected day has an inline writer: diary mode stores `occurredAt` for that date (with an optional directory), plan mode stores `dueAt` for that date; the day list, record counts and spending summary sit below, and entries open the editor. Reachable from the Today header calendar icon and 更多 → 日历.
+- **Health sync centre.** `#/health-sync` (linked from the Health module and 设置 → Apple 健康) shows the last import time (`mashu.health.lastSync.v1`), the Apple Watch → iPhone Health → Shortcuts → 麻薯 steps, a copyable `?health=` URL and JSON/CSV file import. It states plainly that a PWA cannot read HealthKit; direct Watch sync would require a Capacitor native shell + HealthKit permissions + an Apple Developer account/TestFlight. Everything still runs on-device with no new network calls.
+- **Daily digest.** Once a day the assistant reviews yesterday grouped by directory (未分类 last), with 2–3 concrete highlights per section, a one-sentence summary, 2–3 fact-derived suggestions and source ids. History lives locally in `mashu.digest.v1` (newest first, deduped by dateKey, max 14); the schedule lives in `mashu.digest.schedule.v1` (default enabled at 08:00). It is generated when the app opens after the chosen time, or via 更多 → 设置 → 自动化 → 立即生成今日汇总. No background push: the in-app daily reminder appears only while the app is open, and true background timing needs an iOS Shortcut automation or a native shell.
+- **Grounded assistant.** `src/lib/knowledge.ts` runs deterministic CJK-bigram retrieval over your notes (directory notes, archived and plan items excluded). Lookups quote real notes and return source ids; stats say “依据你的 N 条记录” and cite the underlying notes; with nothing relevant it returns the exact refusal “你的知识库里没有找到与「X」相关的记录…”. Source chips are tappable and open local notes; structured capture (“奶茶 18 元”, now behind a long press on the bubble) and help flows remain. Everything is on-device — no model API, no telemetry.
 - **Mochi Node brand.** A warm centre dot with a few satellite nodes on thin orbits, used in headers, the assistant persona, app icons, favicon and splash screens. No cartoon mascot.
 - **Quiet cockpit Today**: small hero greeting, one natural-language capture bar, four quick chips, the large graph teaser card as the first visual anchor, the compact yesterday review, and only 3 recent records. No standalone metric grid, no 7-day sparkline block and no long today timeline; the full timeline lives in 经历 and the graph is one tap away (and a primary tab).
 - **Records & search**: day-grouped timeline rows, compact pinned strip, edge-faded filter chips; sticky search with reusable record rows, light highlights, recent items when idle and a calm no-results state.
 - **Reading-first editor**: rendered Markdown by default, raw text and toolbar only in edit mode, all actions in More, quiet Done, Connections worded as 连接到 / 来自.
 - **Assistant without the console**: Mochi Node + 小麻薯 + 本地处理 · 仅你可见; body-flow messages, plain time meta, compact confirm cards, at most 3 welcome actions, follow-up chips only on the latest message. Fully local rule-based — not an LLM, no model API, no telemetry.
 - **Directory-network graph interaction**: pan/zoom/pinch the warm canvas, hover to focus a ball, tap to open its directory content page; no note nodes, no add/link/toggle tools; immersive fullscreen hides the bottom nav. The whole network (with the decorative 你 centre) is the person’s life map.
-- **Progressive quick capture**: one-sentence hero, compact one-line parse card, structured fields behind 展开详情 in lean 52px rows, fixed 52px save; confidence percentage only shown below 55%.
-- **Consumer settings IA**: 助手 / 外观 / 数据与隐私 / Apple 健康 / 自动化 / 高级设置 / 关于 (open via 更多 → 设置); technical details (JSON format, URL scheme, storage engine, migration, HealthKit limits, digest schedule) collapsed under 高级设置; GitHub in 关于.
-- **Apple Health import** (JSON/CSV/`?health=` Shortcuts), **daily brief** with no push server, **storage migration** to `mashu`, service worker cache `mashu-v1`, and a **zero-server iPhone PWA** delivery.
+- **Progressive quick capture**: one-sentence hero, compact one-line parse card, structured fields behind 展开详情 in lean 52px rows, fixed 52px save; confidence percentage only shown below 55%. It is now the fallback structured path (long press on the floating bubble), while directories and calendar days are written inline.
+- **Consumer settings IA**: 助手 / 外观 / 数据与隐私 / Apple 健康 / 自动化 / 高级设置 / 关于 (open via 更多 → 设置); the 自动化 section holds the digest schedule, the daily reminder toggle/time (default 21:00) and permission test, the auto-file toggle and Shortcuts guidance; technical details (JSON format, URL scheme, storage engine, migration, reminder/notification and HealthKit limits, digest schedule) collapsed under 高级设置; GitHub in 关于.
+- **Calendar and reminders are still local.** Calendar writes mutate the same local records (`occurredAt` / `dueAt`); reminder preferences live in `mashu.reminders.v1`, the once-a-day gate in `mashu.reminders.lastNotified.v1`, and the last health import time in `mashu.health.lastSync.v1`. No calendar service, account OAuth, network call or HealthKit access is added.
+- **Apple Health import** (JSON/CSV/`?health=` Shortcuts) plus the v1.3 **health sync centre** (`#/health-sync`: last import, four-step Watch flow, copyable URL, file import, honest HealthKit boundary), **daily brief** with no push server, **storage migration** to `mashu`, service worker cache `mashu-v1`, and a **zero-server iPhone PWA** delivery.
 
 Try the [live demo](https://frank-max610.github.io/mashu-notes/) in Safari and add it to your Home Screen. MIT licensed — read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the design and [CONTRIBUTING.md](CONTRIBUTING.md) to get involved.
