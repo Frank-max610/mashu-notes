@@ -5,7 +5,7 @@
 一个本地优先的 **iPhone 生活操作系统**：饮食、健康、收支、日记和 Markdown 笔记放在一起，以安静的「今日」驾驶舱开始，用生活图谱把一切连起来。**没有服务器，也没有账号**——装到主屏幕后，断网也能用。
 
 **在线试用（请用 Safari 打开）**：<https://frank-max610.github.io/mashu-notes/>
-**仓库**：[github.com/Frank-max610/mashu-notes](https://github.com/Frank-max610/mashu-notes) · 版本 **v1.1.0**
+**仓库**：[github.com/Frank-max610/mashu-notes](https://github.com/Frank-max610/mashu-notes) · 版本 **v1.2.0**
 
 [![Live demo](https://img.shields.io/badge/demo-live-c8783f.svg)](https://frank-max610.github.io/mashu-notes/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-b36a35.svg)](LICENSE)
@@ -21,7 +21,7 @@
 - **去掉了卡通吉祥物**，改用 **Mochi Node** 品牌符号：一颗暖色主节点 + 几颗卫星节点 + 细轨道，出现在页头、助手人设、App 图标、favicon 和启动图里；不再有脸、表情或水果帽。
 - **变小、变安静**：首屏 hero 收敛到 34–38px，只留一个高权重动作（一句话记录条）；不再用大卡片墙、渐变标题、发光或霓虹。
 - **今日是驾驶舱**：问候 + 一句话输入 + 昨日复盘 + 轻量建议；图谱和时间线后来成为第一视觉锚点。不抢注意力。
-- **图谱变成真正的力导向画布**：拖拽会带动邻居、松手后回弹，按连接数决定节点大小，默认只显示重要标签，悬停/选中才展开一度邻居。
+- **图谱后来成为主角**：0.9 时还是 note graph；1.2 已改为纯目录网络（每个小球=目录，见 v1.2 章节）。
 - **阅读优先的编辑器**：打开是渲染后的 Markdown，只有进入编辑才出现工具栏和原文；所有操作收进「更多」。
 - **渐进式快速记录**：一句话是主角，一行紧凑解析卡确认，结构化字段藏在「展开详情」里，固定 52px 的保存按钮。
 - **消费级设置**：助手 / 外观 / 数据与隐私 / Apple 健康 / 自动化 / 高级设置 / 关于；技术细节默认折叠在「高级设置」里。
@@ -50,7 +50,7 @@
 1.0 在安静界面之上把「知识库」变成产品核心：**目录 → 图谱 → 汇总 → 有依据的助手**。这一版仍然没有服务器、没有账号、没有模型 API。
 
 - **知识库目录**：从「更多 → 知识库目录」创建/命名/选颜色的目录笔记（`meta.directory`）；普通记录通过 `dirId` 归入目录。目录页显示成员数、展开成员、把记录移入/移出；删除目录时成员只会变成未分类，**永远不会删除记录**。目录笔记本身也是普通笔记，导出/导入备份会自动包含它们。
-- **图谱目录模式**：有目录时图谱会出现更大的目录枢纽节点（目录颜色、常显标签），成员继承目录色并弱聚集在枢纽周围——**N 个目录就是 N 条可见分支**。图谱顶部有 **记录 / 目录** 切换：目录视图只显示用户目录 + 由成员链接推导出的跨目录关系；点目录打开目录 inspector（成员列表、打开目录、编辑/连线/删除）。归档/计划记录不进入图谱。
+- **图谱进入知识库**：1.0 第一次把用户目录放进图谱；1.2 进一步修正为**纯目录网络**（见下方 v1.2 章节），记录不再出现在图上。目录仍由「更多 → 知识库目录」创建/颜色/移入移出；删除目录只解除归属，记录永不删除。
 - **每日汇总**：助手每天可以基于**昨天**生成一次汇总，按知识库目录分组（未分类排最后），每节 2–3 条具体 highlights，附一句总结与 2–3 条从事实推导出的建议；`sourceIds` 指向真实记录。历史存在本地 `mashu.digest.v1`（新→旧、按 dateKey 去重、最多 14 条）；计划 `mashu.digest.schedule.v1` 默认**开启、每天 08:00**。应用在选定时间之后打开时自动生成（每天一次），也可以在「更多 → 设置 → 自动化 → 立即生成今日汇总」手动触发，汇总会以一条助手消息出现并带来源 chips。
 - **有依据的助手**：助手先查你的知识库（`src/lib/knowledge.ts`：确定性的 CJK bigram 检索；目录笔记、归档、计划条目不进入语料）。lookup 会引用真实记录并给出 source ids；统计类回答会写「依据是「你的 N 条记录」」并列出底层记录；没有相关记录时返回明确拒绝「你的知识库里没有找到与「X」相关的记录。可以先在经历库记一条，或换个关键词。」，**绝不编造**。来源 chips 《记录标题》可点击打开本地记录；记一笔和 help 流程保持原样。
 - **零服务器诚实说明**：没有后台任务或真正的远程推送。汇总只在应用打开后按本机时间生成；想要准点提醒，用 iOS「快捷指令 → 自动化 → 每天」打开麻薯——这是系统能力，不是服务器。
@@ -66,11 +66,23 @@
 - **今日首屏更聚焦**：hero + 一句话记录 + 4 个快捷 chips，然后第一视觉锚点是大型 **图谱 teaser 卡**（迷你 hub/branch SVG、生活图谱标签、目录/记录数量文案、「打开图谱」CTA；没有目录时显示「先建目录」），接着是紧凑的昨日复盘卡，最后只保留最近 **3 条记录**。移除了独立的指标区、7 日 sparkline 区块和长今日时间线；header 副标题是「记录每一天」。
 - **可重复查看**：更多 → 新手导览可重播；`?nointro=1` 会跳过 splash 和导览（截图/自动化用）。
 
+## v1.2 图谱是目录网络
+
+1.2 修正了图谱的模型：**图谱不是「每条记录一个节点」的 note graph，而是一张目录网络**。
+
+- **每个小球 = 一个目录/生活领域**：身体健康、工作、学习、理财、生活……你创建多少目录，图上就有多少小球；整张网络代表「你」。小球的大小反映该目录下的内容量/连接度，标签是目录名。
+- **图上的中心是装饰性的「你」**：当至少有 2 个目录时，画布中心会出现一个小的「你」节点，用细线把所有小球连成一张个人网络；它不是记录，也不能编辑。
+- **图上没有记录节点**：不显示单独记录，也没有「记录 / 目录」切换、没有添加/连线工具。点小球会进入该目录的内容页（`#/directories/:id`），查看成员、打开记录或删除目录；详细内容都在那里编辑，而不在图上。
+- **首次 5 个模板目录**：全新 vault 会种下 身体健康 / 工作 / 学习 / 理财 / 生活 五个可删除的模板目录，并把演示记录自动归档进去，所以第一次打开图谱就是活的。你可以改名或删除；删除目录只会把成员移出目录，不会删除记录。
+- **悬浮小助手**：一个可拖动、记住位置的小球（使用你在「助手」里设置的头像/名字）；**点一下 = 快速记录，长按 = 打开助手**。它只在非图谱/非编辑器页面出现，位置存本地 `mashu.floatagent.v1`；可从「更多 → 设置 → 助手」换名字/头像。
+- **自动整理**：新记录会按类型、内容和目录名匹配到最合适的目录，并 toast 显示去向；「更多 → 设置 → 自动化 → 记录自动收进图谱」可开关（`mashu.autofile.v1`，默认开）。显式从某个目录「记一笔」时以该目录为准；计划/模板类记录不会被自动归档。
+- **今日 teaser**：文案改为「N 个目录，组成你的生活网络 / 每个小球是一个目录，点开编辑内容」，计数所有目录；图谱仍是底部主 tab（今日 / 经历 / 图谱 / 助手 / 更多）。
+
 ## 没有服务器，也没有账号
 
 - **整个应用就是一组静态文件。** 推送到 `main` 后，GitHub Actions 自动构建并发布到 GitHub Pages；GitHub 只是**免费的静态托管**，维护者不做任何服务器运维（没有 VPS、没有数据库、没有后台进程）。
 - **装到主屏幕，就装到了手机上。** 用 Safari 打开演示链接 → 分享 → 「添加到主屏幕」。首次加载完成后，应用壳由 Service Worker 缓存，之后**断网也能打开、记录和复盘**。
-- **记录、简报、助手、图谱都在设备本地。** 记录存在 IndexedDB；「昨日复盘 / 今日建议」由本地规则即时生成；助手是纯本地启发式，不调用模型 API；图谱的力导向计算也在手机上完成——不上传、不经过任何服务器。
+- **记录、简报、助手、图谱都在设备本地。** 记录存在 IndexedDB；「昨日复盘 / 今日建议」由本地规则即时生成；助手是纯本地启发式，不调用模型 API；图谱的目录网络计算也在手机上完成——不上传、不经过任何服务器。
 - **首次加载之后，运行时不需要网络**（更新时除外）。唯一的网络访问是加载应用自身的静态文件，以及你主动写入笔记的外链或网络图片。
 - **普通用户永远不需要 npm、终端或服务器。** 开发者才需要本地环境，命令统一放在「给开发者」小节。
 
@@ -92,7 +104,7 @@
 | --- | --- |
 | **小 hero** | 「晚上好。」+「今天发生了什么？」+ 一句状态（已记录 N 件事 / 从一句话开始），header 副标题「记录每一天」。 |
 | **单一高权重动作** | 首页只有一条自然语言记录条「记下现在发生的事…」，点开进入渐进式快速记录；下方最多 4 个快捷 chips（饮食/健康/收支/日记）。 |
-| **图谱 teaser 卡** | 首屏第一视觉锚点：迷你 hub/branch SVG、生活图谱标签、目录/记录数量、「打开图谱」CTA；没有目录时显示「先建目录」。 |
+| **图谱 teaser 卡** | 首屏第一视觉锚点：迷你 hub/branch SVG、目录网络文案（「N 个目录，组成你的生活网络」与「每个小球是一个目录，点开编辑内容」）、打开图谱 CTA；没有目录时显示「先建目录」。 |
 | **紧凑昨日复盘** | 1 条洞察 + 3 个数字 + 「查看完整复盘」展开；不再有独立指标区和 7 日 sparkline 区块。 |
 | **最近记录** | 只保留最近 3 条，完整时间线在「经历」tab。 |
 | **完全本地** | 简报由 `src/lib/brief.ts` 的纯函数生成，同样的记录 + 同样的时间必得同样的结果；没有推送服务器，也不上传任何内容。 |
@@ -117,15 +129,15 @@
 | **操作收进「更多」** | 编辑正文、编辑记录信息、置顶、复制 Markdown、导出 .md、删除统一在 More 里；编辑时右上角只留安静的「完成」。 |
 | **连接到 / 来自** | 关系面板用「连接到」和「来自」描述出链/反链，空关系显示平静占位。 |
 
-### 图谱：真正的力导向画布
+### 图谱：目录网络
 
 | 功能 | 说明 |
 | --- | --- |
-| **活的力导向** | 拖动节点会实时带动邻居，松手后仿真回弹重排；松开后位置保存。支持拖动画布、双指/滚轮缩放、pinch。 |
-| **按连接数决定大小** | 节点半径随 degree 增大；重要节点默认保留稀疏标签，悬停/选中才展开一度邻居，其他节点变暗。 |
-| **Node Inspector** | 点击节点打开底部 inspector：类型、标题、正文摘要、连接数与前几个连接，底部「编辑 / 连线 / 删除」。 |
-| **清楚的编辑模式** | 添加、连线、重置布局都有明确模式提示；连线时逐步提示「选择第一个节点 / 再选第二个节点」。 |
-| **图例可折叠** | 类型图例默认收起，需要时展开；画布在浅色/深色都是暖色，无霓虹。 |
+| **一个小球 = 一个目录** | 图谱只显示用户创建的知识库目录/生活领域；整张网络代表「你」，目录名就是标签，小球大小反映内容量/连接度。**图上没有单独记录节点**。 |
+| **中心「你」** | 有至少 2 个目录时，画布中心出现装饰性的「你」节点，用细线把小球连成一张个人网络；它不是记录，不能编辑。 |
+| **点小球看内容** | 点小球打开该目录的内容页（`#/directories/:id`）：成员列表、点记录打开编辑器、「记一笔放进目录」、删除目录（成员保留）。详细内容在内容页编辑，不在图上。 |
+| **没有图编辑工具** | 没有「记录 / 目录」切换、添加节点或连线工具；画布只用于看目录网络和进入目录。空态显示「还没有目录」+「创建目录」。 |
+| **模板目录** | 全新 vault 自带 身体健康 / 工作 / 学习 / 理财 / 生活 五个可删除模板目录，演示记录自动归档进去；删除目录只移出成员。 |
 | **沉浸模式** | 图谱右上角进入沉浸：隐藏底部导航，画布占满；再点退出。 |
 
 ### 助手：小麻薯
@@ -153,7 +165,7 @@
 | --- | --- |
 | **入口** | 设置不在底部 tab；从「更多 → 设置」进入。 |
 | **七个区块** | 助手 / 外观 / 数据与隐私 / Apple 健康 / 自动化 / 高级设置 / 关于。 |
-| **自动化** | 每日汇总开关、汇总时间（默认 08:00）、立即生成今日汇总，以及「快捷指令 → 自动化」提醒说明。 |
+| **自动化** | 每日汇总开关、汇总时间（默认 08:00）、立即生成今日汇总；「记录自动收进图谱」开关（默认开）；「快捷指令 → 自动化」提醒说明。 |
 | **折叠的技术细节** | JSON 导出格式、`?health=` URL scheme、IndexedDB/localStorage 与容量、旧版本迁移、HealthKit 限制都收在「高级设置」的可折叠 details 里；GitHub 链接在「关于」。 |
 | **Apple 健康一行** | 「连接 Apple 健康」+「如何导入？」展开说明；不堆技术段落。 |
 | **人设可折叠** | 助手区块点开才显示名字、头像与自定义字符编辑。 |
@@ -185,7 +197,7 @@
 
 ## 截图
 
-> 默认是浅色暖纸界面，`dark-today.png` 是暖炭色深色主题；截图由 `npm run screenshots` 驱动本机 Chrome 生成，共 19 张应用截图（`?nointro=1` 用于跳过启动动画/导览），视觉以实际运行效果为准。
+> 默认是浅色暖纸界面，`dark-today.png` 是暖炭色深色主题；截图由 `npm run screenshots` 驱动本机 Chrome 生成，共 20 张应用截图（`?nointro=1` 用于跳过启动动画/导览），视觉以实际运行效果为准。
 
 | 启动 splash | 首次新手导览 | 今日·图谱 teaser |
 | :---: | :---: | :---: |
@@ -195,9 +207,9 @@
 | :---: | :---: | :---: |
 | ![今日｜安静驾驶舱与 Mochi Node](docs/screenshots/today.png) | ![记录时间线](docs/screenshots/records.png) | ![渐进式快速记录](docs/screenshots/capture.png) |
 
-| 图谱（力导向） | 助手 | 编辑器（阅读） |
+| 图谱（目录网络） | 助手 | 编辑器（阅读） |
 | :---: | :---: | :---: |
-| ![生活图谱](docs/screenshots/graph.png) | ![助手](docs/screenshots/agent.png) | ![编辑器阅读态](docs/screenshots/editor.png) |
+| ![生活图谱：目录网络](docs/screenshots/graph.png) | ![助手](docs/screenshots/agent.png) | ![编辑器阅读态](docs/screenshots/editor.png) |
 
 | 编辑器（编辑） | 搜索 | 设置 |
 | :---: | :---: | :---: |
@@ -211,9 +223,13 @@
 | :---: | :---: |
 | ![知识库目录](docs/screenshots/directories.png) | ![图谱目录模式](docs/screenshots/graph-directories.png) |
 
-| 每日汇总 | 有依据的助手 |
+| 目录内容页 | 每日汇总 |
 | :---: | :---: |
-| ![每日汇总](docs/screenshots/agent-digest.png) | ![有依据的助手](docs/screenshots/agent-grounded.png) |
+| ![目录内容页](docs/screenshots/directory-detail.png) | ![每日汇总](docs/screenshots/agent-digest.png) |
+
+| 有依据的助手 |
+| :---: |
+| ![有依据的助手](docs/screenshots/agent-grounded.png) |
 
 ## 数据与隐私
 
@@ -221,6 +237,7 @@
 - **记录保存在设备本地。** 默认 IndexedDB（数据库 `mashu`，schema v2），不可用时回退 localStorage；首次加载会请求持久化存储权限，降低被自动清理的概率。
 - **Apple 健康数据只在设备上解析。** 导入的 JSON/CSV 或快捷指令 URL 数据不会上传；解析、单位换算和同日去重都在浏览器内存中完成，随后写入本地记录。
 - **知识库目录与每日汇总也在本地。** 目录是普通笔记（`meta.directory` + `dirId`），会随 JSON 备份一起导出/恢复；每日汇总历史存在 `mashu.digest.v1`（最多 14 条），计划存在 `mashu.digest.schedule.v1`；有依据的助手在本地检索并给出 source ids，来源 chips 只打开本地记录。没有新增网络请求或云端存储。
+- **悬浮助手与自动整理只存本地偏好。** 浮动小球的位置存 `mashu.floatagent.v1`，自动归档开关存 `mashu.autofile.v1`（默认开）；模板目录只是普通目录笔记，演示记录也在本机，不会上传。
 - **启动/导览只是本地偏好。** splash 和 4 屏新手导览不联网、不统计；`mashu.onboarded.v1` 只记录是否看过导览，`mashu.modules.v1` 只记录模块可见性，两者都在本机 localStorage。
 - **旧数据会自动迁移。** 更早版本使用过不同的内部代号与数据库名（`rixin` / `mochi` / `inkstone`），1.0 会在首次打开时把记录与偏好迁移到 `mashu`，成功写入后才删除旧副本；旧版 JSON 备份也兼容导入。迁移前仍建议先导出一份备份。
 - **每台设备、每个地址都是独立的库。** 浏览器按 origin 隔离数据；固定用同一个地址访问，不要假定 Safari 页面和主屏幕应用会自动同步。
@@ -255,7 +272,7 @@ mashu-notes/
 ├── docs/
 │   ├── ARCHITECTURE.md           # 架构、数据流、迁移与扩展点
 │   ├── PRIVACY.md                # 隐私说明
-│   └── screenshots/              # 19 张应用截图 + npm run qr 生成物
+│   └── screenshots/              # 20 张应用截图 + npm run qr 生成物
 ├── public/
 │   ├── icons/                    # Mochi Node PWA 图标（npm run icons 生成）
 │   ├── splash/                   # iPhone 启动图（npm run splash 生成）
@@ -270,8 +287,8 @@ mashu-notes/
 │   ├── screenshots.mjs           # 用本机 Chrome 截取 README 截图
 │   └── serve.mjs                 # 局域网静态服务（仅开发者调试）
 ├── src/
-│   ├── components/               # SplashScreen、Onboarding、GraphTeaser、MochiNode、RecordRow、GraphView、CaptureSheet、AgentPanel…
-│   ├── screens/                  # TodayScreen（今日）、RecordsScreen（经历）、DirectoryScreen（目录）、MoreScreen（更多）、EditorScreen、SettingsScreen…
+│   ├── components/               # FloatingAgent、SplashScreen、Onboarding、GraphTeaser、MochiNode、RecordRow、GraphView…
+│   ├── screens/                  # TodayScreen、RecordsScreen、DirectoryScreen、DirectoryDetailScreen、MoreScreen、EditorScreen、SettingsScreen…
 │   ├── lib/                      # 核心逻辑（纯函数 + 浏览器适配层）
 │   │   ├── types.ts              # 数据模型（Note / NoteMeta / dirId / meta.directory / meta.plan / archivedAt…）
 │   │   ├── kinds.ts              # 记录类型词表、颜色、默认标题与摘要
@@ -286,7 +303,7 @@ mashu-notes/
 │   │   ├── health.ts             # Apple 健康 JSON/CSV/URL 解析、单位换算与去重草稿
 │   │   ├── agent.ts              # 本地助手：解析、问答与建议（纯规则）
 │   │   ├── search.ts             # 全文搜索（纯函数）
-│   │   ├── graph.ts              # 图谱模型、目录枢纽/边与力导向分布（纯函数）
+│   │   ├── graph.ts              # 目录网络布局（小球=目录、中心「你」、spokes）
 │   │   ├── db.ts                 # IndexedDB `mashu` v2 + 旧库迁移 + localStorage 回退
 │   │   ├── store.ts              # useNotes() 单一状态源
 │   │   ├── prefs.ts              # 主题、引导、助手人设/节点头像、安装提示
@@ -295,7 +312,7 @@ mashu-notes/
 │   │   ├── format.ts             # 时间 / 字节 / 数字格式化
 │   │   └── useRoute.ts           # 轻量 hash 路由
 │   ├── styles/                   # tokens.css（语义 token）、base.css、app.css
-│   ├── App.tsx                   # 应用外壳：启动 splash/新手导览、路由、主题、快速记录、图谱、助手、Apple 健康导入
+│   ├── App.tsx                   # 应用外壳：启动 splash/新手导览、路由、主题、快速记录、悬浮助手、图谱、助手、Apple 健康导入
 │   └── main.tsx                  # React 挂载入口 + Service Worker 注册
 ├── tests/                        # Vitest 单元测试（11 个文件 / 274 个用例）
 ├── index.html                    # HTML 入口、iOS meta、apple-touch-startup-image
@@ -320,7 +337,7 @@ mashu-notes/
 | 简报 | **纯函数 `buildDailyBrief`** | 规则确定、可测试；昨日 vs 最近 7 个有记录日，本地生成 |
 | 知识库 | **目录笔记 + `dirId` + 确定性检索/汇总** | 目录参与图谱与每日汇总；grounded 回答必须给 source ids，无依据时拒绝 |
 | 健康导入 | **纯函数解析 + 草稿去重** | JSON/CSV/URL 三种输入，单位换算与同日 `replaceId` 更新 |
-| 图谱 | **Canvas 2D + 真正的力导向仿真 + 暖色画布** | 纯函数模型/布局；拖拽带动邻居，绘制与交互分离 |
+| 图谱 | **Canvas 2D + 目录网络力导向布局 + 暖色画布** | 小球=目录、中心「你」；点小球进目录，不在图上编辑记录 |
 | 视觉 | **手写 CSS + 语义设计 token** | 暖纸/暖炭、细边框、无阴影、chips 胶囊；不引入 UI 框架 |
 | 测试 | **Vitest（node 环境）** | brief / health / agent / graph 等纯逻辑可直接测 |
 | 托管 | **GitHub Actions → GitHub Pages** | 免费静态托管，推 `main` 自动发布；维护者零服务器运维 |
@@ -346,7 +363,7 @@ mashu-notes/
 
 ### 和 0.8 有什么区别？
 
-0.8 的生活图谱是 Obsidian 风格：主题自适应、每个节点都有标签、实心节点按连接数变大。0.9 是一次完整的 LifeOS 重构：去掉吉祥物、换成 Mochi Node；今日变成安静驾驶舱；记录变时间线；编辑器变成阅读优先；图谱变成真正的力导向画布（拖拽带动邻居、稀疏标签、悬停邻居、Node Inspector）；快速记录改成渐进披露；设置改成消费级 IA；深色变成暖炭色。功能（记录、复盘、Apple 健康、零服务器 PWA）没有减少。
+0.8 的生活图谱是 Obsidian 风格：主题自适应、每个节点都有标签、实心节点按连接数变大。0.9 是一次完整的 LifeOS 重构：去掉吉祥物、换成 Mochi Node；今日变成安静驾驶舱；记录变时间线；编辑器变成阅读优先；图谱后来演进为目录网络（1.2 起小球=目录，不再显示记录节点）；快速记录改成渐进披露；设置改成消费级 IA；深色变成暖炭色。功能（记录、复盘、Apple 健康、零服务器 PWA）没有减少。
 
 ### 为什么打开先有动画？
 
@@ -378,11 +395,52 @@ mashu-notes/
 
 ### 目录和图谱的关系？
 
-知识库目录是你自己创建的目录笔记（`meta.directory`），普通记录可以通过 `dirId` 放入目录。图谱会把每个目录画成一个更大的彩色枢纽节点，成员继承目录色并围绕它聚集——**N 个目录 = N 条可见分支**；顶部「记录 / 目录」切换可以在完整图谱和「只看目录 + 跨目录关系」之间切换。删除目录只会把成员移出目录，不会删除任何记录。
+图谱就是目录网络：一张图上的每个小球都是一个目录（生活领域），整张网络代表你。记录属于目录，但不单独出现在图上；想找某条记录，点开它的目录内容页即可。1.2 明确取消了旧版的「记录 / 目录」切换和记录节点。
+
+### 图谱为什么没有记录？
+
+因为图谱的定位是**生活领域索引**，不是笔记关系图。把所有记录都画上去会让图变成一团线，也违背了「看见生活的形状」的初衷；每条记录属于它的目录，目录页里能看到完整内容。
+
+### 记录去哪了？
+
+记录仍在「经历」时间线和各目录内容页里。今日只显示最近 3 条；完整列表在「经历」；目录内容页显示该目录成员，点记录打开编辑器。
+
+### 小球是什么？
+
+一个小球 = 一个你创建的知识库目录 / 生活领域（例如身体健康、工作、学习、理财、生活）。小球大小反映该目录的内容量/连接度，标签是目录名。
+
+### 点小球能看到什么？
+
+点小球打开该目录的内容页（`#/directories/:id`）：成员列表、点成员打开记录编辑器、「记一笔放进『目录』」、删除目录（成员保留、不会被删除）。详细内容都在内容页编辑，不在图上编辑。
+
+### 默认目录能删吗？
+
+能。全新 vault 会带 身体健康 / 工作 / 学习 / 理财 / 生活 五个模板目录，你可以改名或删除；删除只会把成员移出目录，不会删除成员记录。演示记录会自动归入匹配模板目录。
+
+### 悬浮小球怎么用？
+
+它是浮动的本地助手：可拖动，位置会记住（`mashu.floatagent.v1`）；**点一下 = 快速记录，长按 = 打开助手**。它只在非图谱/非编辑器页面显示，避免遮挡画布和写作。
+
+### 怎么自定义悬浮小球？
+
+「更多 → 设置 → 助手」里修改助手的名字与头像（8 种节点式头像或自定义字符）；悬浮小球会使用同一套 persona。
+
+### 自动整理怎么判断？
+
+保存记录时按记录类型关键词、正文/标题内容和目录名做匹配打分，把新记录归入最合适的目录并 toast 显示去向；显式从某目录「记一笔」时以该目录为准；计划/模板不参与自动归档。开关在「更多 → 设置 → 自动化 → 记录自动收进图谱」。
+
+### 能关掉自动整理吗？
+
+能。关闭「记录自动收进图谱」后新记录不会自动分配目录（仍可手动移入）；开关偏好存 `mashu.autofile.v1`，只在本机。
+
+### 图谱怎么用？
+
+- **看网络**：拖动/缩放画布；一个小球就是一个目录，整张网络代表你。
+- **进目录**：点小球打开目录内容页，成员列表里点记录查看/编辑；「记一笔放进目录」可直接归档到该目录。
+- **空状态**：没有目录时显示「还没有目录」+「创建目录」。
+- **沉浸模式**：右上角进入沉浸，隐藏底部导航；再点退出。
 
 ### 助手会不会编造？
-
-不会。助手的 grounded 回答在本地知识库（排除目录笔记、归档、计划条目）上做确定性检索：lookup 只引用真实记录并附来源；统计会写「依据是「你的 N 条记录」」并列出底层记录；找不到相关记录时会返回明确拒绝「你的知识库里没有找到与「X」相关的记录。可以先在经历库记一条，或换个关键词。」，不会猜。来源 chips 可以点开对应本地记录。
 
 ### 每日汇总怎么触发？
 
@@ -438,16 +496,9 @@ PWA 不需要 Apple 开发者账号、签名和审核，更新也简单：推代
 | 日记 | 「今天有点累，但完成了报告」 | 心情 |
 | 笔记 | 普通 Markdown 长文、清单、计划 | 标题、正文、标签、链接 |
 
-### 图谱怎么用？
-
-- **看看**：拖动/缩放画布；悬停或点击节点展开一度邻居，其他节点变暗；点击节点打开 Node Inspector。
-- **编辑**：inspector 里「编辑」打开编辑器；「连线」进入连线模式，再点第二个节点；「删除」删除该记录。
-- **新建 / 重排**：工具栏「添加」点空白处新建；「连线」依次选两个节点；「重置布局」恢复推荐视图；沉浸模式隐藏底部导航。
-- **图例**：默认收起，点「图例」展开类型说明。
-
 ### 和 Obsidian 有什么区别？
 
-Obsidian 是通用 Markdown 知识库，插件生态成熟，文件存在本地文件夹；麻薯更小、更安静，iPhone-first，面向「生活记录 + 每日复盘」：有结构化字段、每日简报、Apple 健康导入和力导向生活图谱，助手与简报完全离线。它没有插件生态、没有本地文件夹 vault、没有内置同步。需要文件级 Markdown、插件和多端同步时，Obsidian 仍然更合适。
+Obsidian 是通用 Markdown 知识库，插件生态成熟，文件存在本地文件夹；麻薯更小、更安静，iPhone-first，面向「生活记录 + 每日复盘」：有结构化字段、每日简报、Apple 健康导入和目录网络生活图谱，助手与简报完全离线。它没有插件生态、没有本地文件夹 vault、没有内置同步。需要文件级 Markdown、插件和多端同步时，Obsidian 仍然更合适。
 
 ### 支持哪些 Markdown 语法？
 
@@ -458,6 +509,16 @@ Obsidian 是通用 Markdown 知识库，插件生态成熟，文件存在本地�
 「更多 → 设置 → 数据与隐私」底部提供「清空全部记录」，需要两次确认；也可以在 iOS 设置 / Safari 里清除该网站的数据。删除前请先导出 JSON 备份，操作不可恢复。
 
 ## 路线图
+
+已完成（1.2.0）：
+
+- [x] 图谱模型修正：图谱是**目录网络**（每个小球 = 一个目录/生活领域，整张网络代表你），没有记录节点、没有记录/目录切换、没有添加/连线工具
+- [x] 中心装饰性「你」节点；点小球进入目录内容页（成员列表、打开记录、记一笔放进目录、删除目录保留成员）
+- [x] 全新 vault 种下 身体健康 / 工作 / 学习 / 理财 / 生活 五个可删除模板目录，演示记录自动归档
+- [x] 浮动小助手：可拖动/记住位置、点按记录、长按助手、图谱/编辑器隐藏、persona 头像名
+- [x] 自动整理：按类型/内容/目录名匹配目录并可开关（`mashu.autofile.v1`），显式目录优先、计划/模板不归档
+- [x] 今日图谱 teaser 文案改为目录网络（N 个目录 / 每个小球是一个目录）
+- [x] 测试 274 / 11 个文件；存储、迁移、导出、Apple 健康与零服务器 PWA 保持不变
 
 已完成（1.1.0）：
 
@@ -471,7 +532,7 @@ Obsidian 是通用 Markdown 知识库，插件生态成熟，文件存在本地�
 已完成（1.0.0）：
 
 - [x] 知识库目录：创建/颜色/成员计数/展开/移入移出；删除目录只解除归属，不删除记录；目录随备份导入导出
-- [x] 图谱目录：目录枢纽/目录色/成员分支、记录/目录切换、跨目录关系、目录 inspector 与打开目录
+- [x] 图谱目录化：v1.0 首次把知识库目录放进图谱；v1.2 进一步修正为**纯目录网络**（小球=目录，不再显示记录节点）
 - [x] 每日汇总：按目录汇总昨天、2–3 条 highlights/建议/sourceIds；本地历史最多 14 条；默认 08:00、打开应用后生成，可开关/改时间/立即生成
 - [x] 有依据的助手：确定性知识库检索、lookup 引用、统计「依据 N 条记录」、无依据时明确拒绝、可点击来源 chips
 - [x] LifeOS 模块与更多：知识库目录、设置、计划及画像/健康/理财/模板/归档都从「更多」进入
@@ -485,7 +546,7 @@ Obsidian 是通用 Markdown 知识库，插件生态成熟，文件存在本地�
 - [x] 记录时间线、置顶条、边缘淡出 chips；sticky 搜索 + 复用记录行 + 空状态
 - [x] 阅读优先编辑器：渲染 Markdown、编辑态工具栏、More 操作、连接到/来自
 - [x] 助手去控制台化：Mochi Node、正文流、紧凑确认卡、克制的欢迎与追问
-- [x] 真正的力导向图谱：拖拽带动邻居、度数大小、稀疏标签、hover 邻居、Node Inspector、连线模式提示、可折叠图例、沉浸全屏
+- [x] 0.9 的 note-graph 力导向画布（记录节点/Node Inspector）——1.2 已修正为纯目录网络
 - [x] 渐进式快速记录：单行解析卡、展开详情 52px 行、固定 52px 保存
 - [x] 设置 IA：助手/外观/数据与隐私/Apple 健康/自动化/高级设置/关于；技术细节折叠
 - [x] 平静空状态与暖炭色深色主题；减少动效尊重 `prefers-reduced-motion`
@@ -518,13 +579,15 @@ npm run typecheck && npm test && npm run build
 
 ## English
 
-**Mashu (麻薯)** is a local-first **life operating system** for iPhone: meals, health, spending, diaries and notes live together behind a quiet daily cockpit, connected by a living life graph. Version 1.1.0 makes the graph the front door: an animated splash, a graph-first onboarding, a 图谱 primary tab and a graph teaser on Today.
+**Mashu (麻薯)** is a local-first **life operating system** for iPhone: meals, health, spending, diaries and notes live together behind a quiet daily cockpit, connected by a living directory network. Version 1.2.0 corrects the graph model: each ball is a directory/life area, the whole network represents you, and records are opened from the directory content page — never drawn as individual graph nodes.
 
 - **No server, no account.** The whole app is a static site auto-deployed by GitHub Actions to GitHub Pages (free static hosting; the maintainer runs zero server operations). Open it in Safari, Share → Add to Home Screen, and it works offline after the first load.
 - **Graph-first launch (v1.1).** A cold-start splash shows the Mochi Node mark,「麻薯」and「记录每一天」for ~1.6s (450ms with reduced motion); a four-slide, graph-first onboarding runs once (`mashu.onboarded.v1`), with skip/back/next, 直接看图谱 and 开始记录. Bottom navigation is 今日 / 经历 / 图谱 / 助手 / 更多 with the graph in the centre; 计划 moved into 更多. Today is decluttered: hero + capture + four quick chips, a large graph teaser card as the first visual anchor, the compact yesterday review, then only 3 recent records (no standalone metric grid, no 7-day sparkline block, no long today timeline). `?nointro=1` skips splash/onboarding for screenshots and automation.
 - **Warm Minimalism, semantic tokens.** Light: warm paper `#F7F3EC` / `#FCFAF6` surface / `#2C2925` text / `#C8783F` accent. Dark: warm charcoal `#171410` / `#211D18` surface / `#F3ECE4` text / `#E6A062` accent. Display 34–38, H1 28–32, body 16–17, meta 12–13, mono data 13–15; 20px page padding, 28–36px section gaps, 16–20px cards, near-invisible shadows, no glow/neon; chips are the only pills; 66px bottom nav with a light active block (今日 / 经历 / 图谱 / 助手 / 更多).
 - **User-created knowledge directories.** Directory notes carry `meta.directory` (name + colour); regular notes point to them via `dirId`. Create, colour, assign/unassign and delete directories — deleting a directory only unassigns its members, it never deletes notes. Directory notes are ordinary notes, so the JSON vault export/import includes them automatically.
-- **Directory-aware life graph.** Directory hubs are larger coloured nodes with always-on labels; members inherit the directory colour and cluster weakly around their hub (N directories = N branches). A 记录 / 目录 toggle switches to a directory-only view showing exactly the user directories plus cross-directory relations; the directory inspector lists members and offers 打开目录. Force/drag/pan/zoom/pinch/add/link/reset/fit/fullscreen still work; archived and plan notes stay out of the graph.
+- **Directory network graph (v1.2).** Each ball is one user-created directory/life area (身体健康 / 工作 / 学习 / 理财 / 生活 starters, removable). The whole warm network represents the person; a decorative centre node「你」ties the balls together when there are at least two directories. Labels are directory names, ball size reflects content/connection, and there are **no note nodes, no 记录/目录 toggle and no add/link tools**. Tapping a ball opens its directory content page (`#/directories/:id`) with members, record editing, 记一笔放进目录 and delete-directory-keeps-members. Empty state shows「还没有目录」+ 创建目录.
+- **Starter directories & auto-file.** A fresh vault seeds 身体健康 / 工作 / 学习 / 理财 / 生活 as removable template directories and files demo records into them. New captures are auto-filed into the best-matching directory by kind keywords, content and directory name with a destination toast; explicit directory-target captures win, plan/template records are excluded, and the 更多 → 设置 → 自动化 → 记录自动收进图谱 toggle (`mashu.autofile.v1`, default on) can disable it.
+- **Floating local agent.** A draggable persona bubble (avatar/name from 设置 → 助手) sits above the app; tap = quick capture, long press = assistant. It is hidden on the graph and editor, remembers its position in `mashu.floatagent.v1`, and makes records reachable without finding the capture button.
 - **Daily digest.** Once a day the assistant reviews yesterday grouped by directory (未分类 last), with 2–3 concrete highlights per section, a one-sentence summary, 2–3 fact-derived suggestions and source ids. History lives locally in `mashu.digest.v1` (newest first, deduped by dateKey, max 14); the schedule lives in `mashu.digest.schedule.v1` (default enabled at 08:00). It is generated when the app opens after the chosen time, or via 更多 → 设置 → 自动化 → 立即生成今日汇总. No background push: real reminders use an iOS Shortcut automation.
 - **Grounded assistant.** `src/lib/knowledge.ts` runs deterministic CJK-bigram retrieval over your notes (directory notes, archived and plan items excluded). Lookups quote real notes and return source ids; stats say “依据你的 N 条记录” and cite the underlying notes; with nothing relevant it returns the exact refusal “你的知识库里没有找到与「X」相关的记录…”. Source chips are tappable and open local notes; capture (“奶茶 18 元”) and help flows are unchanged. Everything is on-device — no model API, no telemetry.
 - **Mochi Node brand.** A warm centre dot with a few satellite nodes on thin orbits, used in headers, the assistant persona, app icons, favicon and splash screens. No cartoon mascot.
@@ -532,7 +595,7 @@ npm run typecheck && npm test && npm run build
 - **Records & search**: day-grouped timeline rows, compact pinned strip, edge-faded filter chips; sticky search with reusable record rows, light highlights, recent items when idle and a calm no-results state.
 - **Reading-first editor**: rendered Markdown by default, raw text and toolbar only in edit mode, all actions in More, quiet Done, Connections worded as 连接到 / 来自.
 - **Assistant without the console**: Mochi Node + 小麻薯 + 本地处理 · 仅你可见; body-flow messages, plain time meta, compact confirm cards, at most 3 welcome actions, follow-up chips only on the latest message. Fully local rule-based — not an LLM, no model API, no telemetry.
-- **True force-directed graph**: drag affects neighbours live and re-balances on release; pan/zoom/pinch; node size by degree; sparse default labels with first-degree reveal on hover/select; hover dims others; Node Inspector with 编辑 / 连线 / 删除; Add/Link/Reset modes with step hints; collapsible legend; immersive fullscreen hides the bottom nav.
+- **Directory-network graph interaction**: pan/zoom/pinch the warm canvas, hover to focus a ball, tap to open its directory content page; no note nodes, no add/link/toggle tools; immersive fullscreen hides the bottom nav. The whole network (with the decorative 你 centre) is the person’s life map.
 - **Progressive quick capture**: one-sentence hero, compact one-line parse card, structured fields behind 展开详情 in lean 52px rows, fixed 52px save; confidence percentage only shown below 55%.
 - **Consumer settings IA**: 助手 / 外观 / 数据与隐私 / Apple 健康 / 自动化 / 高级设置 / 关于 (open via 更多 → 设置); technical details (JSON format, URL scheme, storage engine, migration, HealthKit limits, digest schedule) collapsed under 高级设置; GitHub in 关于.
 - **Apple Health import** (JSON/CSV/`?health=` Shortcuts), **daily brief** with no push server, **storage migration** to `mashu`, service worker cache `mashu-v1`, and a **zero-server iPhone PWA** delivery.

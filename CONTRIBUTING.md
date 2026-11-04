@@ -90,7 +90,7 @@ npm run typecheck && npm test && npm run build
 - 纯函数放在 `src/lib`，UI 组件放在 `src/components`，页面级组合放在 `src/screens`。
 - 样式统一手写 CSS + `src/styles/tokens.css` 里的**语义 token**，页面/组件不写死颜色、间距、圆角或阴影。组件样式文件与组件同名（`GraphView.css`），类名加组件前缀。
 
-### LifeOS 视觉规则（v1.1，源：设计文档 §04）
+### LifeOS 视觉规则（v1.2，源：设计文档 §04）
 
 - **只用语义 token**：`--bg` / `--surface` / `--surface-2` / `--text` / `--text-muted` / `--border` / `--accent` / `--accent-soft` / `--danger` / `--kind-*`；浅色与深色映射同一批名字，禁止按页面手写颜色。
 - **两套主题**：浅色暖纸 `#F7F3EC`（surface `#FCFAF6`、surface-2 `#F1EAE1`、正文 `#2C2925`、次级 `#756D63`、边框 `#E5DBCF`、主色 `#C8783F`、主色浅底 `#F2DFC9`、danger `#B34B36`）；深色暖炭 `#171410`（surface `#211D18`、surface-2 `#28221D`、正文 `#F3ECE4`、次级 `#B8ABA0`、边框 `#3B332C`、主色 `#E6A062`、主色浅底 `#463024`、danger `#D56A56`）。默认浅色。
@@ -109,15 +109,18 @@ npm run typecheck && npm test && npm run build
 - `TodayScreen` 是图谱优先的安静驾驶舱：小 hero（问候 + 一个问题）+ 单一自然语言记录条 + **最多 4 个快捷 chips**，然后 **GraphTeaser 是首屏第一视觉锚点**，再是紧凑昨日复盘，最后 **只有 3 条最近记录**。**不要**恢复独立指标区、7 日 sparkline 区块或长今日时间线（完整时间线在「经历」）。
 - `SplashScreen`：品牌首屏（Mochi Node + 麻薯 + 记录每一天 + 进度线），不联网、不读数据；冷启动 1.6s、减少动态效果 450ms，由 `App` 控制计时。
 - `Onboarding`：4 屏（生活图谱 → 一句话记录 → 目录 → 有依据的助手），支持跳过/上一步/下一步；第一屏次要 CTA「直接看图谱」，最后一屏主 CTA「开始记录」；完成时写 `mashu.onboarded.v1`，可从「更多 → 新手导览」重播；不得自动重复弹出。
-- `GraphTeaser`：今日第一视觉锚点；从 `directoryList(notes)` 取最多 3 个目录与成员计数，画 mini hub/branch；没有目录时显示「先建目录」（跳目录页），否则「打开图谱」；不要把它做成普通列表卡或塞回指标区。
+- `GraphTeaser`：今日第一视觉锚点；从 `directoryList(notes)` 取最多 3 个目录与成员计数，画 mini hub/branch；有目录时文案「N 个目录，组成你的生活网络 / 每个小球是一个目录，点开编辑内容」，否则「先建目录」（跳目录页）；可点进图谱。不要把它做成普通列表卡或塞回指标区。
+- `DirectoryDetailScreen`：目录内容页（`#/directories/:id`）——成员列表、点记录打开编辑器、「记一笔放进目录」、删除目录提示成员保留；图谱小球只是目录索引，详细内容在这里编辑。
+- `FloatingAgent`：可拖动的 persona 小球（头像/名字来自设置）；点按 = 快速记录，长按 = 助手；位置持久化 `mashu.floatagent.v1`，只在非图谱/非编辑器路由显示；不要让它遮挡图谱画布或编辑器正文。
 - `RecordsScreen` 用时间线行（`RecordRow`：类型点 + 标题 + 一行摘要 + 时间），置顶收在紧凑条里；筛选 chips 可横向滚动并有边缘淡出；不要回到卡片墙。
 - `SearchScreen` 的 header sticky；结果复用 `RecordRow`；`<mark>` 只做轻高亮；空查询显示最近编辑；无结果显示「未找到相关记录」+「清除筛选」。
 - `EditorScreen` 阅读优先：默认渲染 Markdown，只有编辑态才显示工具栏和原始 textarea；操作统一进 More（编辑正文/编辑记录信息/置顶/复制 Markdown/导出 .md/删除）；编辑时右上角只留「完成」；关系文案用「连接到 / 来自」。
 - `AgentPanel` 去控制台化：`MochiNode` + 小麻薯 + 「本地处理 · 仅你可见」；正文流消息、纯时间 meta、紧凑确认卡；最多 3 个欢迎动作，追问 chips 只在最新消息下。grounded 回答必须渲染可点击的来源 chips（《记录标题》→ 打开本地记录）；每日汇总作为一条 assistant 消息进入对话，带 source chips。
 - `DirectoryScreen` 知识库目录：创建/颜色/成员计数/展开成员/移入移出/删除目录（只解除归属，不删除记录）；未分类只显示可移动的记录。
-- `GraphView` 新增目录层：目录枢纽更大、目录色、常显标签、成员弱聚集；有目录时顶部出现 **记录/目录** 切换，目录视图只画目录 + 跨目录关系；目录 inspector 显示成员并可「打开目录」；归档/计划不出现在图谱。
-- `SettingsScreen` 的「自动化」包含每日汇总开关、时间（默认 08:00）、立即生成与快捷指令提醒说明；设置从「更多」进入。
-- `GraphView` 是真正的力导向画布：拖动节点实时影响邻居、松手回弹；pan/zoom/pinch；按 degree 决定节点大小；默认稀疏标签，悬停/选中展开一度邻居并变暗其他节点；Node Inspector 提供编辑/连线/删除；添加/连线/重置有明确模式与步骤提示；图例可折叠；沉浸模式隐藏底部导航。
+- `GraphView` 是**目录网络**（`directoriesOnly`，v1.2 修正）：每个小球 = 一个用户目录/生活领域，整张网络代表「你」；至少 2 个目录时画中心装饰性「你」节点和 spokes；标签是目录名，小球大小反映内容/连接度。**没有记录节点、没有「记录 / 目录」切换、没有添加/连线工具**；点小球通过 `onOpenDirectory` 进入目录内容页。保留 pan/zoom/pinch、hover 聚焦、沉浸模式；空态「还没有目录」+ 创建目录 CTA。
+- `GraphView` 的目录排序/颜色来自 `directories.ts`；网络布局需保持稳定、可解释，不要恢复 note-graph 的节点/边/Node Inspector 语义。
+- `SettingsScreen` 的「自动化」包含每日汇总开关、时间（默认 08:00）、立即生成、记录自动收进图谱开关（`mashu.autofile.v1`）与快捷指令提醒说明；设置从「更多」进入。
+- `GraphView` 的目录网络交互：拖动/缩放画布、hover 聚焦、点小球进入目录内容页；**没有** 添加/连线/Node Inspector/记录视图切换；沉浸模式隐藏底部导航。
 - `CaptureSheet` 渐进披露：一句话 hero、单行解析卡、置信度 <55% 才提示、展开详情用 52px 行、底部固定 52px 保存/取消。
 - `SettingsScreen` 用消费级 IA：助手 / 外观 / 数据与隐私 / Apple 健康 / 自动化 / 高级设置 / 关于；技术细节折叠在「高级设置」里；危险操作放最后并二次确认。
 - `MochiNode` 是品牌符号，不是装饰插画：保持 1px 细轨道、暖色主节点与 3–4 个卫星点；不要给它加表情或鼠标动画。
@@ -134,16 +137,16 @@ npm run typecheck && npm test && npm run build
 | `src/lib/brief.ts` | 今日简报：`buildDailyBrief(notes, now)` 生成 summary / 昨日复盘 / 今日建议 / 4 个趋势 | 纯函数、确定性；对比基准是「昨天之前有记录的最近 7 天」；改规则要补 `tests/brief.test.ts` |
 | `src/lib/digest.ts` | 每日汇总：按目录汇总昨天、highlights/suggestions/sourceIds；历史与计划（`mashu.digest.v1` / `mashu.digest.schedule.v1`，最多 14 条，默认 08:00） | 纯函数、确定性；目录顺序按创建时间，未分类最后；改规则要补 `tests/digest.test.ts` |
 | `src/lib/knowledge.ts` | 有依据的助手：确定性 CJK-bigram 检索、lookup/stats/reflection/refusal 路由、source ids；语料排除目录/归档/计划 | 纯函数、确定性；无相关记录必须返回固定拒绝文案，不能编造；补 `tests/knowledge.test.ts` |
-| `src/lib/directories.ts` | 知识库目录：`isDirectory` / `directoryList` / 颜色 / 成员 / 未分类（`meta.directory` + `dirId`） | 删除目录只解除成员归属，绝不删除记录 |
+| `src/lib/directories.ts` | 知识库目录：`isDirectory` / `directoryList` / 颜色 / 成员 / 未分类（`meta.directory` + `dirId`）；自动归档 `suggestDirectoryForNote` 与开关（`mashu.autofile.v1`） | 删除目录只解除成员归属，绝不删除记录；计划/模板不自动归档 |
 | `src/lib/modules.ts` | LifeOS 模块清单、`记经历/计划/更多` 等入口与隐藏状态（`mashu.modules.v1`） | 模块隐藏状态是偏好，不是 vault 数据 |
 | `src/lib/health.ts` | Apple 健康导入：JSON / CSV / `?health=` URL 载荷解析、单位换算、别名、同日聚合与 `replaceId` 去重 | 纯函数；支持 HealthKit 标识符；改解析/单位要补 `tests/health.test.ts` 样例 |
 | `src/lib/agent.ts` | 本地助手：一句话解析、问候、问答与建议、快捷问题 | 纯规则、确定性、不联网；改动要补 `tests/agent.test.ts` 用例 |
 | `src/lib/search.ts` | 全文搜索与标题补全 | 纯函数，便于测试 |
-| `src/lib/graph.ts` | 图谱模型（wiki / 手动 / 同日 / 目录边、目录枢纽、幽灵节点）与确定性力导向分布 | 纯函数；`GraphView` 负责真正的实时仿真与目录视图；保存位置归一化 0..1；归档/计划不进图 |
+| `src/lib/graph.ts` | 目录网络模型与中心「你」/spokes、确定性布局；旧 note-graph 数据仅保留兼容 | 纯函数；`GraphView` 负责目录网络渲染；旧 note-graph 语义不再用于当前图谱 |
 | `src/lib/db.ts` | IndexedDB（数据库 `mashu`，schema v2）/ localStorage 适配、旧库（`rixin` / `mochi` / `inkstone`）一次性迁移 | 改数据结构时升级 `DB_VERSION` 并在 upgrade 中就地补字段；旧备份必须仍能导入 |
 | `src/lib/store.ts` | `useNotes()` 单一状态源：记录 CRUD、图谱位置、手动连线、flush | 写入路径、防抖、`settleWrites` 与删除级联要谨慎 |
 | `src/lib/prefs.ts` | 主题（默认浅色）、引导、助手人设与节点式头像（`mashu.agent.v1`）、安装提示（`mashu.installHint.v1`）、`normalizeNote` / `makeNote` | 只碰 localStorage，失败要静默降级；旧助手名/旧头像 id 要映射到新默认 |
-| `src/lib/seed.ts` | 首次运行的演示记录（生活记录 + 笔记） | 保持小而精，不要伪装成真实数据 |
+| `src/lib/seed.ts` | 首次运行的演示记录（生活记录 + 笔记）与 5 个模板目录（身体健康/工作/学习/理财/生活），演示记录按类型归入目录 | 模板目录可删可改名，保持小而精，不要伪装成真实数据 |
 | `src/lib/exportImport.ts` | JSON（vault v2，`app: 'mashu'`）/ Markdown 导出、JSON 导入（含旧 `rixin` / `mochi` / `inkstone` 备份兼容）、合并 / 替换、`shareOrDownload` | 改格式时同步升 `VAULT_VERSION`，并保证旧版本仍可导入 |
 | `src/lib/format.ts` | 相对时间、日期、字节数等展示格式化 | 纯函数 |
 | `src/lib/useRoute.ts` | 轻量 hash 路由（`#/today`、`#/records`、`#/plan`、`#/more`、`#/directories`、`#/graph`、`#/agent`、`#/search`、`#/settings`、`#/note/:id` 等） | 导航统一用 `navigate` / `replaceRoute`；底部 5 个标签文案在 `TabBar.tsx`（今日/经历/图谱/助手/更多） |
@@ -152,12 +155,14 @@ npm run typecheck && npm test && npm run build
 | `src/components/Onboarding.tsx` | 4 屏图谱优先新手导览：跳过/上一步/下一步、直接看图谱、开始记录 | 只在 `mashu.onboarded.v1` 不存在时自动出现；完成时写该键；可从更多重播 |
 | `src/components/GraphTeaser.tsx` | 今日图谱 teaser：最多 3 个目录的 mini hub/branch、计数文案、打开图谱/先建目录 | 从 directories.ts 派生；是今日第一视觉锚点，不引入新数据源 |
 | `src/components/RecordRow.tsx` | 可复用记录行：类型点 + 标题 + 一行摘要 + 时间 + More；支持搜索 snippet、置顶样式 | Records 与 Search 共用，改字段要同时检查两处 |
-| `src/components/GraphView.tsx` | 真正的力导向画布：仿真、拖拽/邻居响应、pan/zoom/pinch、度数大小、稀疏标签、hover 邻居、Node Inspector、添加/连线/重置、图例、沉浸模式 | 交互多，改行为要测鼠标+触摸+减少动效；`FORCE` 参数在文件顶部 |
+| `src/components/GraphView.tsx` | **目录网络**画布（`directoriesOnly`）：小球=目录、中心「你」+ spokes、pan/zoom/pinch、hover、点球进目录、沉浸模式 | 没有记录节点/记录-目录切换/添加-连线工具；`FORCE` 参数在文件顶部 |
+| `src/components/FloatingAgent.tsx` | 可拖动悬浮助手：tap 记录、长按助手、位置 `mashu.floatagent.v1` | 只在非图谱/非编辑器路由显示；位置要 clamp 在视口内 |
+| `src/components/DirectoryDetailScreen.tsx` | 目录内容页：成员列表、打开记录、记一笔放进目录、删除目录（成员保留） | 图谱小球只是索引；详细编辑都在这里 |
 | `src/components/TabBar.tsx` | 66px 底部导航：今日/经历/图谱/助手/更多；等宽英文小字 | 图谱在中间（primary tab）；第五个 tab 是「更多」；设置/目录/计划在更多里 |
 | `src/components/CaptureSheet.tsx` | 渐进式快速记录：一句话解析、紧凑卡、展开详情、固定 52px 保存 | 置信度只在 <55% 提示；sheet 高度用 CSS token |
 | `src/components/AgentPanel.tsx` | 助手正文流：Mochi Node + 小麻薯 + 本地处理说明、紧凑确认卡、欢迎动作、最新消息追问 | 不要恢复控制台/AGENT-YOU 样式 |
 | `src/components/SearchScreen.tsx` | sticky 搜索头、标签 chips、复用 RecordRow、命中高亮、最近编辑、空态 | 空查询才显示最近；无结果给「清除筛选」 |
-| `src/screens/` | 页面级组件：`TodayScreen`（安静驾驶舱）、`RecordsScreen`（经历时间线）、`DirectoryScreen`（知识库目录）、`MoreScreen`（LifeOS 模块/图谱/设置入口）、`EditorScreen`（阅读优先）、`SettingsScreen`（设置 IA）；另有 Plan/Profile/Health/Finance/Templates/Archive 等模块页 | 负责布局与交互，数据由上层注入，不直接访问 `db.ts` |
+| `src/screens/` | 页面级组件：`TodayScreen`（安静驾驶舱）、`RecordsScreen`（经历时间线）、`DirectoryScreen`（知识库目录）、`DirectoryDetailScreen`（目录内容）、`MoreScreen`（LifeOS 模块/图谱/设置入口）、`EditorScreen`（阅读优先）、`SettingsScreen`（设置 IA）；另有 Plan/Profile/Health/Finance/Templates/Archive 等模块页 | 负责布局与交互，数据由上层注入，不直接访问 `db.ts` |
 | `src/styles/` | `tokens.css` 语义 token（浅色暖纸/深色暖炭/分类色/图谱）、`base.css` 基础样式与 iOS 16px 规则、`app.css` 外壳样式 | 新颜色/间距/圆角/动效先加 token；不要写死品牌色；不要写组件私有样式 |
 | `tests/` | Vitest 单元测试（274 个用例 / 11 个文件：agent、brief、digest、exportImport、graph、health、insights、knowledge、links、markdown、search） | 文件命名为 `*.test.ts`，不要提交调试用的临时测试文件 |
 | `scripts/` | Node/Python 工具脚本（Mochi Node 图标、启动图、SW 预缓存注入、局域网托管、截图、二维码） | 不参与前端构建；`sw-precache.mjs` 必须在 `vite build` 之后运行 |
@@ -174,7 +179,7 @@ npm run typecheck && npm test && npm run build
 - 健康导入（`health.test.ts`）请覆盖：JSON / CSV / base64url 三种输入；HealthKit 标识符与中英文别名；lb / g / L / 分钟 / 小时换算；同日求和 vs 取最新；已有记录时 `replaceId` 去重；无效输入跳过计数。
 - 助手相关改动请用固定 `now`，覆盖：一句话解析、金额/热量/单位抽取、问句不误判为记录、今天/本周小结与空数据。
 - 统计相关改动请覆盖：本地时区跨天、`occurredAt` 缺省回退、多种记录混合、收入不计入支出。
-- 图谱相关改动请覆盖：wiki / 手动 / 同日 / 目录四种边、目录枢纽/颜色、去重优先级、幽灵节点、确定性分布与保存位置；实时力导向交互（拖拽邻居、pan/zoom、inspector、目录切换）目前主要靠手动/截图验证。
+- 图谱相关改动请覆盖：目录网络的目录排序/颜色、中心「你」的绘制条件（≥2 目录）、点小球路由到目录内容页、pan/zoom/pinch、空态；不再有记录节点/边/Node Inspector，不要恢复旧 note-graph 测试语义。目录/自动归档的纯函数仍由 `tests/graph.test.ts`、`tests/directories` 相关用例覆盖。
 - 知识库相关改动请覆盖：`digest.test.ts`（按目录分组、未分类最后、2–3 highlights/suggestions、sourceIds、14 条历史去重与 schedule 默认/时间）和 `knowledge.test.ts`（检索、lookup/stats/source ids、无依据拒绝、目录/归档/计划排除）。
 - 测试里请覆盖：空输入、中文文本、代码块内的「假链接」、大小写与空白差异、旧版备份兼容。
 - 不要为了测试引入新的运行时依赖；如果确实需要新测试工具（例如 DOM 测试环境），先在 issue 里讨论。
@@ -256,10 +261,11 @@ fix(editor): keep reading mode before first edit
 - [ ] 启动/导览改动验证过：冷启动 splash 约 1.6s（减少动态效果 450ms）、4 屏图谱优先导览只在 `mashu.onboarded.v1` 缺失时出现、跳过/上一步/下一步、直接看图谱、开始记录、更多→新手导览可重播、`?nointro=1` 同时跳过
 - [ ] 今日布局保持：hero + 一句话记录 + ≤4 quick chips + GraphTeaser 第一视觉锚点 + 紧凑复盘 + 3 条最近记录；不恢复 指标区/7 日 sparkline/长今日时间线
 - [ ] 目录改动验证过：创建/颜色/成员/移入移出/删除只解除归属；目录笔记随备份导入导出
-- [ ] 图谱目录改动验证过：记录/目录切换、目录枢纽/颜色/分支、跨目录关系、目录 inspector、归档/计划不出图
+- [ ] 图谱改动验证过：目录网络（小球=目录、中心「你」、点小球进目录内容页）、无记录节点/记录-目录切换/添加-连线工具、空态创建目录
+- [ ] 浮动助手验证过：拖动/位置持久化、tap 记录、长按助手、图谱/编辑器隐藏、persona 头像名
+- [ ] 自动整理验证过：按类型/内容/目录名匹配、显式目录优先、计划/模板排除、toast 去向、设置开关 `mashu.autofile.v1`
 - [ ] 每日汇总验证过：按目录分组、未分类最后、历史最多 14 条、默认开启 08:00、开关/改时间/立即生成、source chips
 - [ ] 有依据的助手验证过：lookup 引用真实记录、统计「依据 N 条记录」、无依据固定拒绝文案、来源 chips 打开本地记录、capture/help 不变
-- [ ] 图谱改动验证过：拖拽带动邻居、松手回弹、pan/zoom/pinch、稀疏标签、hover 邻居、Node Inspector、连线步骤提示、沉浸模式
 - [ ] 编辑器改动验证过：默认阅读态、编辑态工具栏、More 操作、连接到/来自
 - [ ] 快速记录改动验证过：紧凑解析卡、置信度 <55% 才提示、展开详情 52px 行、固定 52px 保存
 - [ ] 空状态保持「一个目标 + 一个 CTA」，文案平静
