@@ -3,6 +3,7 @@ import type { AgentPersona, Note, NoteKind, NoteMeta, RecordDraft } from '../lib
 import { KIND_INFO, formatAmount } from '../lib/kinds';
 import { AGENT_SUGGESTIONS, agentGreeting, agentReply } from '../lib/agent';
 import { groundedAnswer } from '../lib/knowledge';
+import { smallTalkReply } from '../lib/smalltalk';
 import type { DailyDigest } from '../lib/digest';
 import { MochiNode } from './MochiNode';
 import { Icon } from './Icon';
@@ -178,11 +179,15 @@ export function AgentPanel({
       const text = raw.trim();
       if (!text) return;
       const reply = agentReply(text, notes);
+      // Social turns should win over the generic "capture as note" fallback, but
+      // never over a real record command or help request.
+      const chat =
+        reply.intent === 'help' ? null : smallTalkReply(text, notes, persona.name);
       const grounded =
-        reply.action || reply.intent === 'help' || reply.intent === 'capture'
+        chat || reply.action || reply.intent === 'help' || reply.intent === 'capture'
           ? null
           : groundedAnswer(notes, text);
-      const answerText = grounded ? grounded.text : reply.text;
+      const answerText = chat ? chat.text : grounded ? grounded.text : reply.text;
       const sources = grounded?.sources;
       const now = Date.now();
       const userMessage: ChatMessage = { id: idRef.current++, role: 'user', text, at: now };
@@ -191,10 +196,9 @@ export function AgentPanel({
         role: 'bot',
         text: answerText,
         at: now,
-        suggestions:
-          reply.suggestions && reply.suggestions.length > 0 ? [...reply.suggestions] : undefined,
-        draft: reply.action?.type === 'createNote' ? reply.action.draft : undefined,
-        draftState: reply.action?.type === 'createNote' ? 'pending' : undefined,
+        suggestions: chat?.suggestions ?? (reply.suggestions && reply.suggestions.length > 0 ? [...reply.suggestions] : undefined),
+        draft: !chat && reply.action?.type === 'createNote' ? reply.action.draft : undefined,
+        draftState: !chat && reply.action?.type === 'createNote' ? 'pending' : undefined,
         sources: sources && sources.length > 0 ? sources : undefined,
       };
       setMessages((current) => [...current, userMessage, botMessage]);
