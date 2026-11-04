@@ -1,24 +1,24 @@
 import { useMemo, useState } from 'react';
 import type { Note, NoteKind } from '../lib/types';
 import { KIND_INFO, describeMeta } from '../lib/kinds';
-import { dayKeyOf, noteDayKey, formatMoney, type DaySummary } from '../lib/insights';
+import { dayKeyOf, noteDayKey, formatMoney } from '../lib/insights';
 import type { DailyBrief } from '../lib/brief';
 import { MochiNode } from '../components/MochiNode';
-import { Sparkline } from '../components/Sparkline';
 import { Icon } from '../components/Icon';
+import { GraphTeaser } from '../components/GraphTeaser';
 import { dismissInstallHint, isInstallHintDismissed } from '../lib/prefs';
 import { isIosDevice, isStandaloneMode } from '../components/IosInstallCard';
 
 export interface TodayScreenProps {
   notes: Note[];
   brief: DailyBrief;
-  range: DaySummary[];
   onOpenNote: (id: string) => void;
   onQuickCapture: (kind?: NoteKind) => void;
   onOpenRecords: () => void;
-  onOpenAgent: () => void;
   onOpenSearch: () => void;
   onOpenSettings: () => void;
+  onOpenGraph: () => void;
+  onOpenDirectories: () => void;
   storageWarning: string | null;
 }
 
@@ -65,13 +65,13 @@ function streakDays(notes: Note[]): number {
 export function TodayScreen({
   notes,
   brief,
-  range,
   onOpenNote,
   onQuickCapture,
   onOpenRecords,
-  onOpenAgent,
   onOpenSearch,
   onOpenSettings,
+  onOpenGraph,
+  onOpenDirectories,
   storageWarning,
 }: TodayScreenProps) {
   const [showInstallHint, setShowInstallHint] = useState(
@@ -88,15 +88,6 @@ export function TodayScreen({
 
   const streak = useMemo(() => streakDays(notes), [notes]);
 
-  const series = useMemo(() => {
-    const last = range.slice(-7);
-    return {
-      spend: last.map((day) => day.spend),
-      sleep: last.map((day) => (day.sleep ?? 0)),
-      records: last.map((day) => day.recordCount),
-    };
-  }, [range]);
-
   const trends = brief.trends;
   const noData = notes.length === 0;
 
@@ -107,7 +98,7 @@ export function TodayScreen({
           <MochiNode size={26} />
           <div>
             <p className="today-date-main">{dateLabel()}</p>
-            <p className="today-date-sub">麻薯 · 今天</p>
+            <p className="today-date-sub">记录每一天</p>
           </div>
         </div>
         <button type="button" className="icon-btn" aria-label="搜索" onClick={onOpenSearch}>
@@ -146,9 +137,6 @@ export function TodayScreen({
                 {item.label}
               </button>
             ))}
-            <button type="button" className="chip quick-chip quick-chip-agent" onClick={onOpenAgent}>
-              问助手
-            </button>
           </div>
         </section>
 
@@ -180,15 +168,7 @@ export function TodayScreen({
           </div>
         ) : null}
 
-        <section className="today-metrics" aria-label="今日概览">
-          {trends.slice(0, 4).map((trend) => (
-            <div className="today-metric" key={trend.label}>
-              <span className="today-metric-label">{trend.label}</span>
-              <span className="today-metric-value mono">{trend.value}</span>
-              {trend.detail ? <span className="today-metric-note">{trend.detail}</span> : null}
-            </div>
-          ))}
-        </section>
+        <GraphTeaser notes={notes} onOpenGraph={onOpenGraph} onOpenDirectories={onOpenDirectories} />
 
         <section className="review-block" aria-label="昨日复盘">
           <div className="review-head">
@@ -243,30 +223,9 @@ export function TodayScreen({
           ) : null}
         </section>
 
-        <section className="trend-block" aria-label="近 7 天">
-          <div className="block-head">
-            <h2 className="review-title">近 7 天</h2>
-          </div>
-          <div className="trend-row">
-            <span className="trend-label">支出</span>
-            <Sparkline values={series.spend} color="var(--kind-finance)" width={92} height={20} />
-            <span className="trend-value mono">{trends[0]?.value ?? '—'}</span>
-          </div>
-          <div className="trend-row">
-            <span className="trend-label">睡眠</span>
-            <Sparkline values={series.sleep} color="var(--kind-health)" width={92} height={20} />
-            <span className="trend-value mono">{trends[2]?.value ?? '—'}</span>
-          </div>
-          <div className="trend-row">
-            <span className="trend-label">记录</span>
-            <Sparkline values={series.records} color="var(--kind-diary)" width={92} height={20} />
-            <span className="trend-value mono">{trends[3]?.value ?? '—'}</span>
-          </div>
-        </section>
-
         <section className="today-timeline" aria-label="今日记录">
           <div className="block-head">
-            <h2 className="review-title">今日记录</h2>
+            <h2 className="review-title">最近记录</h2>
             <button type="button" className="link-btn" onClick={onOpenRecords}>
               全部 {todayNotes.length}
             </button>
@@ -275,7 +234,7 @@ export function TodayScreen({
             <p className="muted small">今天还没有记录。</p>
           ) : (
             <ul className="timeline">
-              {todayNotes.slice(0, 8).map((note) => (
+              {todayNotes.slice(0, 3).map((note) => (
                 <li key={note.id}>
                   <button
                     type="button"

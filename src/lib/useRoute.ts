@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
  * (including a sub-path or file://) and makes the phone's back gesture work.
  */
 
-export type TabName = 'today' | 'records' | 'plan' | 'agent' | 'more';
+export type TabName = 'today' | 'records' | 'graph' | 'agent' | 'more';
 
 export type Route =
   | { name: 'today' }

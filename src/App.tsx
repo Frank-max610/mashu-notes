@@ -6,7 +6,6 @@ import { downloadText } from './lib/exportImport';
 import { buildDailyBrief } from './lib/brief';
 import { buildDailyDigest, getDigestSchedule, isDigestDue, loadDigestHistory, saveDigestToHistory, type DailyDigest } from './lib/digest';
 import { decodeHealthPayload, healthSamplesToNotes, parseHealthCsv, parseHealthJson } from './lib/health';
-import { summarizeRange } from './lib/insights';
 import type { AgentPersona, Note, NoteKind, NotePosition, RecordDraft, ThemeMode } from './lib/types';
 import type { KindFilter } from './screens/RecordsScreen';
 import { TodayScreen } from './screens/TodayScreen';
@@ -25,18 +24,21 @@ import { NodeEditorSheet, type NodeEditorValues } from './components/NodeEditorS
 import { TabBar } from './components/TabBar';
 import { ActionSheet, type ActionSheetItem } from './components/ActionSheet';
 import { SearchScreen } from './components/SearchScreen';
+import { SplashScreen } from './components/SplashScreen';
+import { Onboarding } from './components/Onboarding';
 
 const APP_TITLE = '麻薯';
 
 function tabForRoute(route: Route): TabName {
   switch (route.name) {
     case 'today':
-    case 'plan':
     case 'agent':
     case 'more':
       return route.name;
     case 'records':
       return 'records';
+    case 'graph':
+      return 'graph';
     default:
       return 'more';
   }
@@ -56,6 +58,11 @@ function safeFileName(title: string): string {
 export default function App() {
   const api = useNotes();
   const route = useRoute();
+  const skipIntro = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('nointro');
+  const [splashVisible, setSplashVisible] = useState(!skipIntro);
+  const [showOnboarding, setShowOnboarding] = useState(
+    () => !skipIntro && typeof localStorage !== 'undefined' && localStorage.getItem('mashu.onboarded.v1') !== '1',
+  );
 
   const [theme, setTheme] = useState<ThemeMode>(() => getStoredTheme());
   const [persona, setPersona] = useState<AgentPersona>(() => getAgentPersona());
@@ -79,6 +86,23 @@ export default function App() {
   const openedFromAppRef = useRef(false);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const healthImportStarted = useRef(false);
+
+  useEffect(() => {
+    if (!splashVisible) return;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const timer = setTimeout(() => setSplashVisible(false), reduce ? 450 : 1600);
+    return () => clearTimeout(timer);
+  }, [splashVisible]);
+
+  const finishOnboarding = useCallback((openGraph: boolean) => {
+    try {
+      localStorage.setItem('mashu.onboarded.v1', '1');
+    } catch {
+      /* ignore */
+    }
+    setShowOnboarding(false);
+    if (openGraph) navigate({ name: 'graph' });
+  }, []);
 
   const notify = useCallback((message: string) => {
     setToast(message);
@@ -431,14 +455,16 @@ export default function App() {
   }, [api.notes, notify]);
 
   const brief = useMemo(() => buildDailyBrief(api.notes), [api.notes]);
-  const range = useMemo(() => summarizeRange(api.notes, 7), [api.notes]);
 
   if (!api.ready) {
     return (
-      <div className="app-loading">
-        <div className="spinner" />
-        <p>正在整理记录…</p>
-      </div>
+      <>
+        {splashVisible ? <SplashScreen /> : null}
+        <div className="app-loading">
+          <div className="spinner" />
+          <p>正在整理记录…</p>
+        </div>
+      </>
     );
   }
 
@@ -525,6 +551,7 @@ export default function App() {
             onToggleModule={toggleModule}
             onOpenRoute={(target) => navigate(target)}
             onOpenNote={openNote}
+            onOpenOnboarding={() => setShowOnboarding(true)}
           />
         );
       case 'graph':
@@ -602,13 +629,13 @@ export default function App() {
           <TodayScreen
             notes={api.sortedNotes}
             brief={brief}
-            range={range}
             onOpenNote={openNote}
             onQuickCapture={openCapture}
             onOpenRecords={() => navigate({ name: 'records' })}
-            onOpenAgent={() => navigate({ name: 'agent' })}
             onOpenSearch={() => navigate({ name: 'search' })}
-            onOpenSettings={() => navigate({ name: 'settings' })}
+            onOpenSettings={() => navigate({ name: 'more' })}
+            onOpenGraph={() => navigate({ name: 'graph' })}
+            onOpenDirectories={() => navigate({ name: 'directories' })}
             storageWarning={api.storageWarning}
           />
         );
@@ -618,7 +645,10 @@ export default function App() {
   const editing = route.name === 'note' && activeNote;
 
   return (
-    <div className="app">
+    <>
+      {splashVisible ? <SplashScreen /> : null}
+      {!splashVisible && showOnboarding ? <Onboarding onDone={finishOnboarding} /> : null}
+      <div className="app">
       {editing ? (
         <EditorScreen
           key={activeNote.id}
@@ -687,6 +717,7 @@ export default function App() {
           {toast}
         </div>
       ) : null}
-    </div>
+      </div>
+    </>
   );
 }

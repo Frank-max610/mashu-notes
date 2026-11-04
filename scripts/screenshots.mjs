@@ -262,7 +262,7 @@ async function capture(shot) {
       })()`,
     });
 
-    const url = `${BASE}/${shot.hash}`;
+    const url = `${BASE}/?nointro=1${shot.hash}`;
     await cdp.send('Page.navigate', { url });
     await waitForExpression(cdp, 'document.readyState === "complete"', 12000);
 

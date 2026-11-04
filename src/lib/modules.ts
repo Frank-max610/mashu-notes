@@ -26,7 +26,7 @@ export interface ModuleDef {
 export const MODULES: readonly ModuleDef[] = [
   { id: 'experience', label: '经历库', description: '所有记录的时间线', icon: 'notes', route: { name: 'records' }, fixed: true },
   { id: 'directories', label: '知识库目录', description: '自己创建目录，图谱跟着长', icon: 'book', route: { name: 'directories' } },
-  { id: 'plan', label: '计划', description: '目标、待办与进度', icon: 'checkbox', route: { name: 'plan' }, fixed: true },
+  { id: 'plan', label: '计划', description: '目标、待办与进度', icon: 'checkbox', route: { name: 'plan' } },
   { id: 'profile', label: '个人画像', description: '从记录里看见自己', icon: 'sparkles', route: { name: 'profile' } },
   { id: 'health', label: '健康数据', description: '睡眠、步数、体重趋势', icon: 'heart', route: { name: 'health' } },
   { id: 'finance', label: '理财', description: '收支与分类汇总', icon: 'tag', route: { name: 'finance' } },

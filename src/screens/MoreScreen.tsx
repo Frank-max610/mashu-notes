@@ -11,10 +11,11 @@ export interface MoreScreenProps {
   onToggleModule: (id: ModuleId, hidden: boolean) => void;
   onOpenRoute: (route: Parameters<typeof navigate>[0]) => void;
   onOpenNote: (id: string) => void;
+  onOpenOnboarding: () => void;
 }
 
 /** 更多 — LifeOS modules, manage-your-own-template controls, help and settings. */
-export function MoreScreen({ notes, hiddenModules, onToggleModule, onOpenRoute, onOpenNote }: MoreScreenProps) {
+export function MoreScreen({ notes, hiddenModules, onToggleModule, onOpenRoute, onOpenNote, onOpenOnboarding }: MoreScreenProps) {
   const shown = useMemo(() => visibleModules(hiddenModules), [hiddenModules]);
   const helpNotes = useMemo(
     () => notes.filter((note) => note.tags.includes('使用手册') || note.title === '开始这里').slice(0, 2),
@@ -77,6 +78,14 @@ export function MoreScreen({ notes, hiddenModules, onToggleModule, onOpenRoute, 
                   <Icon name="arrowRight" size={15} />
                 </button>
               ))}
+              <button type="button" className="settings-row" onClick={onOpenOnboarding}>
+                <span className="settings-row-icon"><Icon name="sparkles" size={18} /></span>
+                <span className="settings-row-text">
+                  <span className="settings-row-label">新手导览</span>
+                  <span className="settings-row-hint">重新看看图谱、记录和助手怎么用</span>
+                </span>
+                <Icon name="arrowRight" size={15} />
+              </button>
             </div>
           </section>
         ) : null}

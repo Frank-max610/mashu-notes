@@ -1,7 +1,7 @@
 {
   "name": "mashu-notes",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "description": "麻薯 — 本地生活操作系统：一句话记录每天，自动连成生活图谱，并在本机生成复盘与建议。",
   "license": "MIT",
