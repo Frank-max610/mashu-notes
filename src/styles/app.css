@@ -2626,3 +2626,5 @@ button.settings-row:active {
 }
 
 .graph-teaser-build { min-height: 32px; color: var(--accent-ink); font-size: var(--text-xs); font-weight: 500; }
+
+.graph-teaser-build { min-height: 44px; }

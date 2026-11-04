@@ -35,6 +35,30 @@ interface ChatMessage {
   sources?: { id: string; title: string }[];
 }
 
+function digestChatMessage(digest: DailyDigest, notes: Note[], id: number): ChatMessage {
+  const lines: string[] = [digest.summary];
+  for (const section of digest.sections) {
+    if (section.highlights.length === 0) continue;
+    lines.push('', `【${section.title}】`);
+    for (const highlight of section.highlights) lines.push(`· ${highlight}`);
+  }
+  if (digest.suggestions.length > 0) {
+    lines.push('', '今天可以试试：');
+    digest.suggestions.forEach((suggestion, index) => lines.push(`${index + 1}. ${suggestion}`));
+  }
+  const titleById = new Map(notes.map((note) => [note.id, note.title]));
+  return {
+    id,
+    role: 'bot',
+    text: lines.join('\n'),
+    at: Date.now(),
+    sources: digest.sourceIds
+      .map((sourceId) => ({ id: sourceId, title: titleById.get(sourceId) ?? '' }))
+      .filter((source) => source.title)
+      .slice(0, 8),
+  };
+}
+
 interface Fact {
   label: string;
   value: string;
@@ -124,32 +148,17 @@ export function AgentPanel({
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     const greeting = agentGreeting(notes);
     const initial: ChatMessage[] = [{ id: 0, role: 'bot', text: greeting.text, at: Date.now() }];
-    if (dailyDigest) {
-      const lines: string[] = [`${dailyDigest.summary}`];
-      for (const section of dailyDigest.sections) {
-        if (section.highlights.length === 0) continue;
-        lines.push('', `【${section.title}】`);
-        for (const highlight of section.highlights) lines.push(`· ${highlight}`);
-      }
-      if (dailyDigest.suggestions.length > 0) {
-        lines.push('', '今天可以试试：');
-        dailyDigest.suggestions.forEach((suggestion, index) => lines.push(`${index + 1}. ${suggestion}`));
-      }
-      const titleById = new Map(notes.map((note) => [note.id, note.title]));
-      initial.push({
-        id: idRef.current++,
-        role: 'bot',
-        text: lines.join('\n'),
-        at: Date.now(),
-        sources: dailyDigest.sourceIds
-          .map((id) => ({ id, title: titleById.get(id) ?? '' }))
-          .filter((source) => source.title)
-          .slice(0, 8),
-      });
-    }
+    if (dailyDigest) initial.push(digestChatMessage(dailyDigest, notes, idRef.current++));
     return initial;
   });
   const [savingId, setSavingId] = useState<number | null>(null);
+  const digestSeenRef = useRef<string | null>(dailyDigest?.dateKey ?? null);
+
+  useEffect(() => {
+    if (!dailyDigest || digestSeenRef.current === dailyDigest.dateKey) return;
+    digestSeenRef.current = dailyDigest.dateKey;
+    setMessages((current) => [...current, digestChatMessage(dailyDigest, notes, idRef.current++)]);
+  }, [dailyDigest, notes]);
 
   const appendBot = useCallback((text: string, suggestions?: string[]) => {
     setMessages((current) => [
